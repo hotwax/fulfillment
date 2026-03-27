@@ -1,77 +1,73 @@
 <template>
   <ion-page>
     <ion-content>
+      <div class="center-div" v-if="!errorMessage">
+        <p>{{ translate("Logging in...") }}</p>
+      </div>
       <div class="center-div">
-        <p>{{ $t("Installing...") }}</p>
+        <ion-item lines="none" v-if='errorMessage'>
+          <ion-icon slot="start" color="warning" :icon="warningOutline" />
+          <h4>{{ translate('Login failed') }}</h4>
+        </ion-item>
+        <p>{{ translate(errorMessage) }}</p>
       </div>
     </ion-content>
   </ion-page>
 </template>
 
-<script>
-import {
-  IonContent,
-  IonPage,
-} from "@ionic/vue";
-import { defineComponent } from "vue";
-import { commonUtil, emitter, ShopifyService, translate } from "@common";
+<script setup lang="ts">
+import { IonContent, IonPage, onIonViewDidEnter, onIonViewDidLeave } from "@ionic/vue";
+import { ref } from "vue";
+import router from "@/router";
+import { emitter, translate, useNotificationStore, useShopify } from "@common";
+import { useUserStore } from "@/store/user";
+import { useProductStore } from "@/store/productStore";
+import { useUtilStore } from "@/store/util";
+import { firebaseUtil } from "@/utils/firebaseUtil";
+import { warningOutline } from "ionicons/icons";
 
-export default defineComponent({
-  name: "Shopify",
-  components: {
-    IonContent,
-    IonPage,
-  },
-  data() {
-    return {
-      apiKey: import.meta.env.VITE_SHOPIFY_API_KEY,
-      shopConfigs: JSON.parse(import.meta.env.VITE_SHOPIFY_SHOP_CONFIG),
-      shopOrigin: '',
-      session: this.$route.query['session'],
-      shop: this.$route.query['shop'],
-      host: this.$route.query['host'],
-      locale: this.$route.query['locale'] || import.meta.env.VITE_I18N_LOCALE || import.meta.env.VITE_I18N_FALLBACK_LOCALE,
-    };
-  },
-  async mounted () {
-    const shop = this.shop || this.shopOrigin
-    const shopConfig = this.shopConfigs[shop];
-    const apiKey = shopConfig ? shopConfig.apiKey : '';
-    if (this.shop || this.host) {
-      this.authorise(shop, this.host, apiKey);
-      this.$router.push("/home");
+const { appBridgeLogin } = useShopify();
+
+const errorMessage = ref('');
+
+onIonViewDidEnter(async () => {
+  try {
+    errorMessage.value = '';
+    emitter.emit("presentLoader");
+
+    let { shop, host } = router.currentRoute.value.query;
+
+    const success = await appBridgeLogin(shop as string, host as string);
+    
+    if (success) {
+      await useUserStore().fetchPermissions()
+      await useUserStore().fetchUserProfile()
+      const productStore = useProductStore()
+      await productStore.fetchUserFacilities()
+      await productStore.fetchFacilityPreference()
+      await productStore.fetchProductStores()
+      await productStore.fetchProductStorePreference()
+      await productStore.fetchEComStoreDependencies(productStore.getCurrentEComStore.productStoreId)
+
+      await useUtilStore().fetchCarrierShipmentBoxTypes()
+      await productStore.fetchAutoShippingLabelConfig()
+
+      const notificationStore = useNotificationStore();
+      await notificationStore.fetchAllNotificationPrefs(import.meta.env.VITE_NOTIF_APP_ID, useUserStore().getUserProfile.userId)
+      await firebaseUtil.initialiseFirebaseMessaging();
+      router.push("/");
     } else {
-      this.$router.push("/error");
+      throw new Error("App Bridge Login failed.");
     }
-  },
-  methods: {
-    authorise(shop, host, apiKey) {
-      const scopes = import.meta.env.VITE_SHOPIFY_SCOPES
-      emitter.emit("presentLoader");
-      const shopConfig = this.shopConfigs[shop];
-      if (!apiKey) apiKey = shopConfig ? shopConfig.apiKey : '';
-      const redirectUri = import.meta.env.VITE_SHOPIFY_REDIRECT_URI;
-      const permissionUrl = `https://${shop}/admin/oauth/authorize?client_id=${apiKey}&scope=${scopes}&redirect_uri=${redirectUri}`;
+  } catch (error: any) {
+    console.error("Error during Shopify view initialization:", error);
+    errorMessage.value = "Something went wrong, please contact administrator";
+  }
+  emitter.emit("dismissLoader");
+});
 
-      if (window.top == window.self) {
-        window.location.assign(permissionUrl);
-      } else {
-        ShopifyService.initialize(apiKey, host);
-        ShopifyService.redirect(permissionUrl);
-      }
-      emitter.emit("dismissLoader");
-    }
-  },
-  beforeUnmount () {
-    emitter.emit("dismissLoader")
-  },
-  setup() {
-    const router = useRouter();
-    return {
-      router,
-      showToast: commonUtil.showToast,
-    };
-  },
+onIonViewDidLeave(() => {
+  emitter.emit("dismissLoader");
 });
 </script>
 
@@ -81,5 +77,6 @@ export default defineComponent({
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
+  text-align: center;
 }
 </style>

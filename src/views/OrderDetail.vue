@@ -319,7 +319,7 @@
             </ion-item>
           </ion-card>
 
-          <Component v-if="useUserStore().hasPermission('FF_INVOICING_STATUS_VIEW')" :is="orderInvoiceExt" :category="category" :order="order" :userProfile="userProfile" :maargBaseUrl="commonUtil.getMaargBaseURL()" :userToken="cookieHelper().get('token')" />
+          <Component v-if="useUserStore().hasPermission('FF_INVOICING_STATUS_VIEW')" :is="orderInvoiceExt" :category="category" :order="order" :userProfile="userProfile" :maargBaseUrl="commonUtil.getMaargBaseURL()" :userToken="commonUtil.getToken()" />
         </div>
         
         <h4 class="ion-padding-top ion-padding-start" v-if="order.otherShipGroups?.length">{{ translate('Other shipments in this order') }}</h4>

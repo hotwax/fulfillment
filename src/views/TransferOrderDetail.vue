@@ -24,7 +24,7 @@
             <ion-input :disabled="currentOrder.statusId === 'ORDER_COMPLETED'" :label="translate('Scan items')" autofocus :placeholder="translate('Scan barcodes to pick them')" v-model="queryString" @keyup.enter="updateProductCount(queryString)" />
           </ion-item>
 
-          <ion-button expand="block" fill="outline" :disabled="currentOrder.statusId === 'ORDER_COMPLETED'" @click="scanCode()">
+          <ion-button v-if="!commonUtil.isAppEmbedded() || embeddedApp().posContext.locationId" expand="block" fill="outline" :disabled="currentOrder.statusId === 'ORDER_COMPLETED'" @click="scanCode()">
             <ion-icon slot="start" :icon="barcodeOutline" />{{ translate("Scan") }}
           </ion-button>
         </div>
@@ -142,7 +142,7 @@
 import { IonBadge, IonBackButton, IonButton, IonButtons, IonCard, IonChip, IonContent, IonFooter, IonHeader, IonIcon, IonItem, IonInput, IonLabel, IonPage, IonSegment, IonSegmentButton, IonSpinner, IonThumbnail, IonTitle, IonToolbar, alertController, modalController, onIonViewDidLeave, onIonViewWillEnter } from "@ionic/vue";
 import { computed, ref } from "vue";
 import { barcodeOutline, pricetagOutline, printOutline, trashOutline } from "ionicons/icons";
-import { commonUtil, DxpShopifyImg, emitter, translate } from "@common";
+import { commonUtil, DxpShopifyImg, embeddedApp, emitter, translate, useShopify } from "@common";
 import { useProductStore as useAppProductStore } from "@/store/productStore";
 import { useRoute, useRouter } from "vue-router";
 import Scanner from "@/components/Scanner.vue";
@@ -270,18 +270,27 @@ const updateProductCount = async (payload: any) => {
 };
 
 const scanCode = async () => {
-  if (!(await commonUtil.hasWebcamAccess())) {
-    commonUtil.showToast(translate("Camera access not allowed, please check permissons."));
-    return;
-  }
-  const modal = await modalController.create({
-    component: Scanner
-  });
-  modal.onDidDismiss()
-    .then((result) => {
-      updateProductCount(result.role);
+  if (embeddedApp().posContext.locationId) {
+    try {
+      const scannedCode = await useShopify().openPosScanner();
+      if (scannedCode) updateProductCount(scannedCode);
+    } catch(err) {
+      console.error("POS Scanner error:", err);
+    }
+  } else {
+    if (!(await commonUtil.hasWebcamAccess())) {
+      commonUtil.showToast(translate("Camera access not allowed, please check permissons."));
+      return;
+    }
+    const modal = await modalController.create({
+      component: Scanner
     });
-  return modal.present();
+    modal.onDidDismiss()
+      .then((result) => {
+        updateProductCount(result.role);
+      });
+    return modal.present();
+  }
 };
 
 const showShippingLabelErrorModal = async (shipment: any) => {
