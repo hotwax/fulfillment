@@ -12,29 +12,29 @@ import { DateTime } from 'luxon';
 const actions: ActionTree<OrderState, RootState> = {
 
   // get open orders
-  async findOpenOrders ({ commit, state }) {
+  async findOpenOrders({ commit, state }) {
     emitter.emit('presentLoader');
 
     const openOrderQuery = JSON.parse(JSON.stringify(state.open.query))
     openOrderQuery.groupBy = "orderItemShipGroupIdentifier"
     const resp = await OrderService.findOpenOrders({ openOrderQuery });
-    
+
     const productIds = [
-      ...new Set(resp.orders.flatMap((order:any) => order.items.map((item:any) => item.productId)))
+      ...new Set(resp.orders.flatMap((order: any) => order.items.map((item: any) => item.productId)))
     ];
     this.dispatch('product/fetchProducts', { productIds })
 
     openOrderQuery.viewSize = resp?.orders?.length
     commit(types.ORDER_OPEN_QUERY_UPDATED, { ...openOrderQuery })
-    commit(types.ORDER_OPEN_UPDATED, {list: resp?.orders, total: resp?.total})
+    commit(types.ORDER_OPEN_UPDATED, { list: resp?.orders, total: resp?.total })
 
     emitter.emit('dismissLoader');
   },
 
-  async findInProgressOrders ({ commit, dispatch, state }) {
+  async findInProgressOrders({ commit, dispatch, state }) {
     const inProgressQuery = JSON.parse(JSON.stringify(state.inProgress.query))
 
-    if(!inProgressQuery.hideLoader) emitter.emit('presentLoader');
+    if (!inProgressQuery.hideLoader) emitter.emit('presentLoader');
     let orders = [];
 
     inProgressQuery.statusId = "SHIPMENT_APPROVED"
@@ -45,8 +45,8 @@ const actions: ActionTree<OrderState, RootState> = {
       category: 'in-progress',
       items: order.items.map((item: any) => {
         const packageName = order?.shipmentPackageRouteSegDetails.find(
-            (shipmentPackageContent: any) =>
-              shipmentPackageContent.shipmentItemSeqId === item.shipmentItemSeqId
+          (shipmentPackageContent: any) =>
+            shipmentPackageContent.shipmentItemSeqId === item.shipmentItemSeqId
         )?.packageName || null
         return {
           ...item,
@@ -55,13 +55,13 @@ const actions: ActionTree<OrderState, RootState> = {
         };
       })
     }));
-    
-    const productIds = [...new Set(orders.flatMap((order:any) => order.items.map((item:any) => item.productId)))];
-    const shipmentMethodTypeIds = [...new Set(orders.map((order:any) => order.shipmentMethodTypeId))];
+
+    const productIds = [...new Set(orders.flatMap((order: any) => order.items.map((item: any) => item.productId)))];
+    const shipmentMethodTypeIds = [...new Set(orders.map((order: any) => order.shipmentMethodTypeId))];
 
     this.dispatch('product/fetchProducts', { productIds })
     this.dispatch('util/fetchShipmentMethodTypeDesc', shipmentMethodTypeIds);
-    orders = await dispatch("fetchGiftCardActivationDetails", { isDetailsPage: false, currentOrders: orders})
+    orders = await dispatch("fetchGiftCardActivationDetails", { isDetailsPage: false, currentOrders: orders })
 
     inProgressQuery.viewSize = orders?.length
     commit(types.ORDER_INPROGRESS_QUERY_UPDATED, { ...inProgressQuery })
@@ -70,7 +70,7 @@ const actions: ActionTree<OrderState, RootState> = {
     emitter.emit('dismissLoader');
   },
 
-  async findCompletedOrders ({ commit, dispatch, state }) {
+  async findCompletedOrders({ commit, dispatch, state }) {
     emitter.emit('presentLoader');
     let orders = [];
 
@@ -82,17 +82,17 @@ const actions: ActionTree<OrderState, RootState> = {
       ...order,
       category: 'completed'
     }))
-    
-    const productIds = [...new Set(orders.flatMap((order:any) => order.items.map((item:any) => item.productId)))];
-    const shipmentMethodTypeIds = [...new Set(orders.map((order:any) => order.shipmentMethodTypeId))];
+
+    const productIds = [...new Set(orders.flatMap((order: any) => order.items.map((item: any) => item.productId)))];
+    const shipmentMethodTypeIds = [...new Set(orders.map((order: any) => order.shipmentMethodTypeId))];
 
     this.dispatch('product/fetchProducts', { productIds })
     this.dispatch('util/fetchShipmentMethodTypeDesc', shipmentMethodTypeIds);
-    orders = await dispatch("fetchGiftCardActivationDetails", { isDetailsPage: false, currentOrders: orders});
+    orders = await dispatch("fetchGiftCardActivationDetails", { isDetailsPage: false, currentOrders: orders });
 
     completedOrderQuery.viewSize = orders?.length
     commit(types.ORDER_COMPLETED_QUERY_UPDATED, { ...completedOrderQuery })
-    commit(types.ORDER_COMPLETED_UPDATED, {list: orders, total: resp.total})
+    commit(types.ORDER_COMPLETED_UPDATED, { list: orders, total: resp.total })
 
     emitter.emit('dismissLoader');
   },
@@ -104,19 +104,19 @@ const actions: ActionTree<OrderState, RootState> = {
     openOrderQuery.orderId = payload.orderId;
     openOrderQuery.shipGroupSeqId = payload.shipGroupSeqId;
     openOrderQuery.viewSize = 1;
-    
+
     const resp = await OrderService.findOpenOrders({ openOrderQuery });
     const order = resp?.orders[0];
 
     const productIds = order.items.map((item: any) => item.productId)
     this.dispatch('product/fetchProducts', { productIds })
     this.dispatch('util/fetchShipmentMethodTypeDesc', [order.shipmentMethodTypeId]);
-    
+
     dispatch('updateCurrent', order)
     emitter.emit('dismissLoader');
   },
 
-  async getInProgressOrder ({ dispatch, state }, payload) {
+  async getInProgressOrder({ dispatch, state }, payload) {
     emitter.emit('presentLoader');
     let order = {} as any;
 
@@ -134,8 +134,8 @@ const actions: ActionTree<OrderState, RootState> = {
       ...order,
       items: order.items.map((item: any) => {
         const packageName = order?.shipmentPackageRouteSegDetails.find(
-            (shipmentPackageContent: any) =>
-              shipmentPackageContent.shipmentItemSeqId === item.shipmentItemSeqId
+          (shipmentPackageContent: any) =>
+            shipmentPackageContent.shipmentItemSeqId === item.shipmentItemSeqId
         )?.packageName || null
         return {
           ...item,
@@ -145,10 +145,10 @@ const actions: ActionTree<OrderState, RootState> = {
       })
     }
 
-    const productIds = order.items.map((item:any) => item.productId)
+    const productIds = order.items.map((item: any) => item.productId)
     this.dispatch('product/fetchProducts', { productIds })
     this.dispatch('util/fetchShipmentMethodTypeDesc', [order.shipmentMethodTypeId]);
-    order = await dispatch("fetchGiftCardActivationDetails", { isDetailsPage: true, currentOrders: [order]});
+    order = await dispatch("fetchGiftCardActivationDetails", { isDetailsPage: true, currentOrders: [order] });
 
     await dispatch('updateCurrent', order)
     emitter.emit('dismissLoader');
@@ -156,11 +156,11 @@ const actions: ActionTree<OrderState, RootState> = {
 
   async getCompletedOrder({ dispatch, state }, payload) {
     emitter.emit('presentLoader');
-    let order = {} as  any;
+    let order = {} as any;
 
     const completedOrderQuery = JSON.parse(JSON.stringify(state.completed.query))
-    completedOrderQuery.orderId =  payload.orderId
-    completedOrderQuery.shipmentId =  payload.shipmentId
+    completedOrderQuery.orderId = payload.orderId
+    completedOrderQuery.shipmentId = payload.shipmentId
     completedOrderQuery.statusId = ['SHIPMENT_PACKED']
     completedOrderQuery.shippedDateFrom = DateTime.now().startOf('day').toMillis();
 
@@ -168,15 +168,15 @@ const actions: ActionTree<OrderState, RootState> = {
     order = resp?.orders[0]
     order.category = 'completed'
 
-    const productIds = order.items.map((item:any) => item.productId)
+    const productIds = order.items.map((item: any) => item.productId)
     this.dispatch('product/fetchProducts', { productIds })
     this.dispatch('util/fetchShipmentMethodTypeDesc', [order.shipmentMethodTypeId]);
-    order = await dispatch("fetchGiftCardActivationDetails", { isDetailsPage: true, currentOrders: [order]});
+    order = await dispatch("fetchGiftCardActivationDetails", { isDetailsPage: true, currentOrders: [order] });
     await dispatch('updateCurrent', order)
     emitter.emit('dismissLoader');
   },
 
-  async fetchOtherShipments ({ commit, state }) {
+  async fetchOtherShipments({ commit, state }) {
     let otherShipments = [];
     const currentOrder = JSON.parse(JSON.stringify(state.current))
     const currentShipmentId = currentOrder.shipmentId;
@@ -189,9 +189,9 @@ const actions: ActionTree<OrderState, RootState> = {
     openOrderQuery.orderId = currentOrder.orderId
     openOrderQuery.viewIndex = 0
     openOrderQuery.viewSize = process.env.VUE_APP_VIEW_SIZE
-    
+
     //filter to exclue current ship group
-    openOrderQuery.shipGroupFilter =  {'-shipGroupSeqId': { value: shipGroupSeqId }}  
+    openOrderQuery.shipGroupFilter = { '-shipGroupSeqId': { value: shipGroupSeqId } }
     const openOrderResp = await OrderService.findOpenOrders({ openOrderQuery });
     if (openOrderResp.orders && openOrderResp.orders.length) {
       otherShipments = openOrderResp.orders
@@ -204,12 +204,12 @@ const actions: ActionTree<OrderState, RootState> = {
     shipmentQuery.orderId = currentOrder.orderId;
     shipmentQuery.excludeFacilityFilter = true
     const resp = await OrderService.findShipments(shipmentQuery);
-    
+
     if (resp.orders && resp.orders.length) {
       const filteredShipments = resp.orders.filter((order: any) => order.shipmentId !== currentShipmentId)
       otherShipments = [...otherShipments, ...filteredShipments]
     }
-    
+
     //fetching/preparing pending allocation items
     try {
       const resp = await OrderService.fetchOrderItems({
@@ -223,11 +223,11 @@ const actions: ActionTree<OrderState, RootState> = {
       if (!hasError(resp)) {
         const allocatedOrderItemSeqIds = [
           ...new Set(
-            otherShipments.flatMap((shipment:any) => shipment.items.map((item:any) => item.orderItemSeqId))
+            otherShipments.flatMap((shipment: any) => shipment.items.map((item: any) => item.orderItemSeqId))
           )
         ];
 
-        const pendingAllocationItems = resp.data.filter((item:any) =>  item.shipGroupSeqId !== shipGroupSeqId && !allocatedOrderItemSeqIds.includes(item.orderItemSeqId));
+        const pendingAllocationItems = resp.data.filter((item: any) => item.shipGroupSeqId !== shipGroupSeqId && !allocatedOrderItemSeqIds.includes(item.orderItemSeqId));
         if (pendingAllocationItems.length) {
           //fetching facility details
           let facilityInfo = {} as any
@@ -252,7 +252,7 @@ const actions: ActionTree<OrderState, RootState> = {
             }
           }
 
-          const pendingItemsByShipGroup = pendingAllocationItems.reduce((shipGroupDetail:any, item:any) => {
+          const pendingItemsByShipGroup = pendingAllocationItems.reduce((shipGroupDetail: any, item: any) => {
             const itemShipGroup = currentOrder.shipGroups.find((shipGroup: any) => shipGroup.shipGroupSeqId === item.shipGroupSeqId);
             const facility = facilityInfo[itemShipGroup.facilityId];
             const groupId = item.shipGroupSeqId;
@@ -271,7 +271,7 @@ const actions: ActionTree<OrderState, RootState> = {
           otherShipments = [...otherShipments, ...Object.values(pendingItemsByShipGroup)]
         }
       }
-    } catch(err) {
+    } catch (err) {
       logger.error("Failed to fetch ship group info for order", err)
     }
 
@@ -295,19 +295,19 @@ const actions: ActionTree<OrderState, RootState> = {
     const orderIds = [] as any;
     let giftCardActivations = [] as any;
 
-    if(isDetailsPage) {
+    if (isDetailsPage) {
       orderIds.push(orders[0].orderId);
     } else {
       orders.map((order: any) => {
         order.items.map((item: any) => {
-          if(item.productTypeId === 'GIFT_CARD' && !orderIds.includes(item.orderId)) {
+          if (item.productTypeId === 'GIFT_CARD' && !orderIds.includes(item.orderId)) {
             orderIds.push(item.orderId);
           }
         })
       })
     }
 
-    if(!orderIds.length) return orders;
+    if (!orderIds.length) return orders;
 
     try {
       const resp = await UtilService.fetchGiftCardFulfillmentInfo({
@@ -317,20 +317,20 @@ const actions: ActionTree<OrderState, RootState> = {
         pageSize: 250
       })
 
-      if(!hasError(resp)) {
+      if (!hasError(resp)) {
         giftCardActivations = resp.data
       } else {
         throw resp.data
       }
-    } catch(error) {
+    } catch (error) {
       logger.error(error)
     }
 
-    if(giftCardActivations.length) {
-      if(isDetailsPage) {
+    if (giftCardActivations.length) {
+      if (isDetailsPage) {
         orders[0].items.map((item: any) => {
           const activationRecord = giftCardActivations.find((card: any) => card.orderId === item.orderId && card.orderItemSeqId === item.orderItemSeqId)
-          if(activationRecord?.cardNumber) {
+          if (activationRecord?.cardNumber) {
             item.isGCActivated = true;
             item.gcInfo = activationRecord
           }
@@ -339,7 +339,7 @@ const actions: ActionTree<OrderState, RootState> = {
         orders.map((order: any) => {
           order.items.map((item: any) => {
             const activationRecord = giftCardActivations.find((card: any) => card.orderId === item.orderId && card.orderItemSeqId === item.orderItemSeqId)
-            if(activationRecord?.cardNumber) {
+            if (activationRecord?.cardNumber) {
               item.isGCActivated = true;
               item.gcInfo = activationRecord
             }
@@ -363,35 +363,35 @@ const actions: ActionTree<OrderState, RootState> = {
         pageSize: 1
       })
 
-      if(!hasError(resp)) {
+      if (!hasError(resp)) {
         isGCActivated = true;
         gcInfo = resp.data[0];
       } else {
         throw resp.data
       }
-    } catch(error) {
+    } catch (error) {
       logger.error(error)
     }
 
-    if(!isGCActivated) return;
+    if (!isGCActivated) return;
 
     const orders = JSON.parse(JSON.stringify(category === "in-progress" ? state.inProgress.list : state.completed.list));
 
-    if(isDetailsPage) {
+    if (isDetailsPage) {
       const order = JSON.parse(JSON.stringify(state.current));
 
       order.items?.map((currentItem: any) => {
-        if(currentItem.orderId === item.orderId && currentItem.orderItemSeqId === item.orderItemSeqId) {
+        if (currentItem.orderId === item.orderId && currentItem.orderItemSeqId === item.orderItemSeqId) {
           currentItem.isGCActivated = true;
           currentItem.gcInfo = gcInfo
         }
       })
 
       orders.map((currentOrder: any) => {
-        if(currentOrder.orderId === order.orderId) currentOrder.items = order.items
+        if (currentOrder.orderId === order.orderId) currentOrder.items = order.items
       })
 
-      if(category === "in-progress") {
+      if (category === "in-progress") {
         commit(types.ORDER_INPROGRESS_UPDATED, { orders, total: state.inProgress.total })
       } else {
         commit(types.ORDER_COMPLETED_UPDATED, { list: orders, total: state.completed.total })
@@ -403,21 +403,21 @@ const actions: ActionTree<OrderState, RootState> = {
 
     orders.map((order: any) => {
       order.items.map((currentItem: any) => {
-        if(currentItem.orderId === item.orderId && currentItem.orderItemSeqId === item.orderItemSeqId) {
+        if (currentItem.orderId === item.orderId && currentItem.orderItemSeqId === item.orderItemSeqId) {
           currentItem.isGCActivated = true;
           currentItem.gcInfo = gcInfo;
         }
       })
     })
 
-    if(category === "in-progress") {
+    if (category === "in-progress") {
       commit(types.ORDER_INPROGRESS_UPDATED, { orders, total: state.inProgress.total })
     } else {
       commit(types.ORDER_COMPLETED_UPDATED, { list: orders, total: state.completed.total })
     }
   },
 
-  async updateShipmentPackageDetail ({ commit, state }, payload) {
+  async updateShipmentPackageDetail({ commit, state }, payload) {
     let currentOrder = JSON.parse(JSON.stringify(state.current));
     const completedOrders = JSON.parse(JSON.stringify(state.completed.list));
     const inProgressOrders = JSON.parse(JSON.stringify(state.inProgress.list));
@@ -427,10 +427,10 @@ const actions: ActionTree<OrderState, RootState> = {
         return currentOrder
       }
 
-      const resp = await OrderService.fetchShipmentPackageRouteSegDetails({shipmentId: payload.shipmentId, pageSize: 10}) as any
+      const resp = await OrderService.fetchShipmentPackageRouteSegDetails({ shipmentId: payload.shipmentId, pageSize: 10 }) as any
       if (!hasError(resp)) {
         const responseData = resp.data?.shipmentPackageRouteSegDetails || resp.data;
-        const shipmentPackageRouteSegDetails = responseData.filter((shipmentPackageRouteSegDetail:any) => shipmentPackageRouteSegDetail.carrierServiceStatusId !== "SHRSCS_VOIDED")
+        const shipmentPackageRouteSegDetails = responseData.filter((shipmentPackageRouteSegDetail: any) => shipmentPackageRouteSegDetail.carrierServiceStatusId !== "SHRSCS_VOIDED")
 
         let missingLabelImage = false;
         if (this.state.util.productStoreShipmentMethCount > 0) {
@@ -446,7 +446,7 @@ const actions: ActionTree<OrderState, RootState> = {
           return { ...shipmentPackage, ...shipmentPackageRouteSegDetail };
         });
 
-        const updateShipmentPackages = (order:any) => {
+        const updateShipmentPackages = (order: any) => {
           order.shipmentPackageRouteSegDetails = responseData
           order.shipmentPackages = shipmentPackages
           order.labelImageUrl = shipmentPackageRouteSegDetails[0]?.labelImageUrl
@@ -457,14 +457,14 @@ const actions: ActionTree<OrderState, RootState> = {
           order.missingLabelImage = missingLabelImage
           order.gatewayMessage = responseData[0]?.gatewayMessage
         };
-    
+
         if (currentOrder && currentOrder.shipmentId === payload.shipmentId) {
           updateShipmentPackages(currentOrder);
           commit(types.ORDER_CURRENT_UPDATED, currentOrder);
         }
-    
+
         if (completedOrders && completedOrders.length > 0) {
-          const order = completedOrders.find((completedOrder:any) => completedOrder.shipmentId === payload.shipmentId);
+          const order = completedOrders.find((completedOrder: any) => completedOrder.shipmentId === payload.shipmentId);
           if (order) {
             updateShipmentPackages(order);
             currentOrder = order
@@ -472,7 +472,7 @@ const actions: ActionTree<OrderState, RootState> = {
           }
         }
         if (inProgressOrders && inProgressOrders.length > 0) {
-          const order = inProgressOrders.find((inProgressOrder:any) => inProgressOrder.shipmentId === payload.shipmentId);
+          const order = inProgressOrders.find((inProgressOrder: any) => inProgressOrder.shipmentId === payload.shipmentId);
           if (order) {
             updateShipmentPackages(order);
             currentOrder = order
@@ -482,14 +482,14 @@ const actions: ActionTree<OrderState, RootState> = {
       } else {
         throw resp.data;
       }
-      
-    } catch(err) {
+
+    } catch (err) {
       logger.error('Failed to fetch shipment packages.', err)
     }
     return currentOrder
   },
 
-  async fetchOrderDetail ({ commit, state }) {
+  async fetchOrderDetail({ commit, state }) {
     let order = JSON.parse(JSON.stringify(state.current))
 
     try {
@@ -507,11 +507,11 @@ const actions: ActionTree<OrderState, RootState> = {
             const { data } = facilityContactResp;
             const address = data.facilityContactMechs?.find((contactMech: any) => contactMech.contactMechId === (order.destinationContactMechId || currentShipGroup.contactMechId));
             if (address) {
-              shippingAddress = { 
-                ...address, 
-                stateName: address.stateGeoName, 
-                countryName: address.countryGeoName, 
-                toName: currentShipGroup.facilityName || address.facilityName || address.toName || shippingAddress?.toName 
+              shippingAddress = {
+                ...address,
+                stateName: address.stateGeoName,
+                countryName: address.countryGeoName,
+                toName: currentShipGroup.facilityName || address.facilityName || address.toName || shippingAddress?.toName
               }
               const { contactNumber } = data.facilityContactMechs.find((contactMech: any) => contactMech.contactMechId === currentShipGroup.telecomContactMechId) || {};
               if (contactNumber) telecomNumber = { contactNumber };
@@ -525,18 +525,18 @@ const actions: ActionTree<OrderState, RootState> = {
           ...order,
           shipGroups: resp.data.shipGroups,
           paymentPreferences: resp.data.paymentPreferences,
-          currencyUom:resp.data.currencyUom,
+          currencyUom: resp.data.currencyUom,
           adjustments: resp.data.adjustments,
           attributes: resp.data.attributes,
           shippingAddress,
           telecomNumber,
-        }  
+        }
         if (order.paymentPreferences.length > 0) {
           const paymentMethodTypeIds = order?.paymentPreferences.map((orderPaymentPreference: any) => orderPaymentPreference.paymentMethodTypeId);
           if (paymentMethodTypeIds.length > 0) {
             this.dispatch('util/fetchPaymentMethodTypeDesc', paymentMethodTypeIds);
           }
-          
+
           const statusIds = order?.paymentPreferences.map((orderPaymentPreference: any) => orderPaymentPreference.statusId);
           if (statusIds.length > 0) {
             this.dispatch('util/fetchStatusDesc', statusIds);
@@ -546,11 +546,11 @@ const actions: ActionTree<OrderState, RootState> = {
     } catch (err: any) {
       logger.error("Error in fetching order detail for current order", err);
     }
-    commit(types.ORDER_CURRENT_UPDATED,  order)
+    commit(types.ORDER_CURRENT_UPDATED, order)
   },
 
   async updateOpenOrders({ commit }, payload) {
-    commit(types.ORDER_OPEN_UPDATED, {list: payload?.orders, total: payload?.total})
+    commit(types.ORDER_OPEN_UPDATED, { list: payload?.orders, total: payload?.total })
   },
   async updateOpenQuery({ commit, dispatch }, payload) {
     commit(types.ORDER_OPEN_QUERY_UPDATED, payload)
@@ -562,7 +562,7 @@ const actions: ActionTree<OrderState, RootState> = {
   async clearOpenOrders({ commit }) {
     commit(types.ORDER_OPEN_CLEARED)
   },
-  
+
   async updateInProgressQuery({ commit, dispatch }, payload) {
     commit(types.ORDER_INPROGRESS_QUERY_UPDATED, payload)
     await dispatch('findInProgressOrders');
@@ -570,7 +570,7 @@ const actions: ActionTree<OrderState, RootState> = {
   async clearInProgressOrders({ commit }) {
     commit(types.ORDER_INPROGRESS_CLEARED)
   },
-  updateInProgressOrder ({ commit, state }, updatedOrder) {
+  updateInProgressOrder({ commit, state }, updatedOrder) {
     const orders = state.inProgress.list.map((order: any) => {
       if (updatedOrder.shipmentId === order.shipmentId) {
         return {
@@ -581,7 +581,7 @@ const actions: ActionTree<OrderState, RootState> = {
       return order;
     })
 
-    commit(types.ORDER_INPROGRESS_UPDATED, {orders, total: state.inProgress.total})
+    commit(types.ORDER_INPROGRESS_UPDATED, { orders, total: state.inProgress.total })
   },
   async updateCompletedQuery({ commit, dispatch }, payload) {
     commit(types.ORDER_COMPLETED_QUERY_UPDATED, payload)
@@ -597,7 +597,7 @@ const actions: ActionTree<OrderState, RootState> = {
   async clearCompletedOrders({ commit }) {
     commit(types.ORDER_COMPLETED_CLEARED)
   },
-  
+
   async updateOpenOrderIndex({ commit }, payload) {
     commit(types.ORDER_OPEN_QUERY_UPDATED, payload)
   },
@@ -612,7 +612,7 @@ const actions: ActionTree<OrderState, RootState> = {
     await dispatch('fetchPaymentDetail');
     await dispatch('getShippingPhoneNumber');*/
   },
-  async clearOrders ({ commit }) {
+  async clearOrders({ commit }) {
     commit(types.ORDER_INPROGRESS_CLEARED)
     commit(types.ORDER_OPEN_CLEARED)
     commit(types.ORDER_COMPLETED_CLEARED)

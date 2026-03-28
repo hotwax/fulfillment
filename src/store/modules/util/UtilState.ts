@@ -15,7 +15,7 @@ export default interface UtilState {
   fulfillmentRejectReasons: any;
   rejectReasonOptions: any;
   barcodeIdentificationPref: string;
-  carrierShipmentBoxTypes: {};
+  carrierShipmentBoxTypes: any;
   carrierDesc: any;
   shipmentMethodsByCarrier: any;
   facilityAddresses: any;
@@ -27,7 +27,7 @@ export default interface UtilState {
   affectQohConfig: any;
   isShipNowDisabled: boolean;
   isUnpackDisabled: boolean;
-  isReservationFacilityFieldEnabled:boolean;
+  isReservationFacilityFieldEnabled: boolean;
   productStoreSettings: Record<string, any>;
   isAutoShippingLabelEnabled: boolean;
 
