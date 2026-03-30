@@ -117,10 +117,10 @@
     <ion-footer v-if="currentOrder.statusId === 'ORDER_APPROVED' && selectedSegment === 'open'">
       <ion-toolbar>
         <ion-buttons slot="end">
-          <ion-button color="dark" fill="outline" :disabled="!userStore.hasPermission('STOREFULFILLMENT_ADMIN') || isCreatingShipment" @click="closeTOItems()">
+          <ion-button color="dark" fill="outline" :disabled="!userStore.hasPermission('ORD_TRANSFER_ORDER_CANCEL') || isCreatingShipment" @click="closeTOItems()">
             {{ translate("Close Items") }}
           </ion-button>
-          <ion-button v-show="areItemsEligibleForRejection" color="danger" fill="outline" :disabled="!userStore.hasPermission('STOREFULFILLMENT_ADMIN') || isCreatingShipment" @click="rejectItems()">
+          <ion-button v-show="areItemsEligibleForRejection" color="danger" fill="outline" :disabled="!userStore.hasPermission('ORD_TRANSFER_ORDER_CANCEL') || isCreatingShipment" @click="rejectItems()">
             <ion-icon slot="start" :icon="trashOutline" />
             {{ translate("Reject Items") }}
           </ion-button>
