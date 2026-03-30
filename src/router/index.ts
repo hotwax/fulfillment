@@ -21,6 +21,7 @@ import Notifications from '@/views/Notifications.vue'
 import CreateTransferOrder from '@/views/CreateTransferOrder.vue';
 import ShipTransferOrder from '@/views/ShipTransferOrder.vue';
 
+import { businessOutline, mailUnreadOutline, mailOpenOutline, checkmarkDoneOutline, settingsOutline } from "ionicons/icons";
 import { useAuth } from '@/composables/useAuth';
 import Login from '@/views/Login.vue';
 import OrderLookup from '@/views/OrderLookup.vue';
@@ -56,7 +57,11 @@ const routes: Array<RouteRecordRaw> = [
     component: OpenOrders,
     beforeEnter: authGuard,
     meta: {
-      permissionId: ""
+      permissionId: "",
+      title: "Open",
+      icon: mailUnreadOutline,
+      menuIndex: 1,
+      childRoutes: ["/open/"]
     }
   },
   {
@@ -65,7 +70,11 @@ const routes: Array<RouteRecordRaw> = [
     component: InProgress,
     beforeEnter: authGuard,
     meta: {
-      permissionId: ""
+      permissionId: "",
+      title: "In Progress",
+      icon: mailOpenOutline,
+      menuIndex: 2,
+      childRoutes: ["/in-progress/"]
     }
   },
   {
@@ -74,7 +83,11 @@ const routes: Array<RouteRecordRaw> = [
     component: Completed,
     beforeEnter: authGuard,
     meta: {
-      permissionId: ""
+      permissionId: "",
+      title: "Completed",
+      icon: checkmarkDoneOutline,
+      menuIndex: 3,
+      childRoutes: ["/completed/"]
     }
   },
   {
@@ -83,7 +96,11 @@ const routes: Array<RouteRecordRaw> = [
     component: TransferOrders,
     beforeEnter: authGuard,
     meta: {
-      permissionId: "ORD_TRANSFER_ORDER_VIEW OR ORD_TRANSFER_ORDER_ADMIN"
+      permissionId: "ORD_TRANSFER_ORDER_VIEW OR ORD_TRANSFER_ORDER_ADMIN",
+      title: "Transfer Orders",
+      icon: businessOutline,
+      menuIndex: 4,
+      childRoutes: ["/transfer-order-details", "/create-transfer-order", "/ship-transfer-order"]
     }
   },
   {
@@ -147,15 +164,25 @@ const routes: Array<RouteRecordRaw> = [
     path: "/settings",
     name: "Settings",
     component: Settings,
-    beforeEnter: authGuard
+    beforeEnter: authGuard,
+    meta: {
+      title: "Settings",
+      icon: settingsOutline,
+      menuIndex: 5
+    }
   },
+
   {
     path: "/rejection-reasons",
     name: "RejectionReasons",
     component: RejectionReasons,
     beforeEnter: authGuard,
     meta: {
-      permissionId: "STOREFULFILLMENT_ADMIN"
+      permissionId: "STOREFULFILLMENT_ADMIN",
+      title: "Rejection reasons",
+      menuIndex: 6,
+      groupMenuName: "Organization",
+      childRoutes: ["/rejection-reasons/"]
     }
   },
   {
@@ -164,7 +191,11 @@ const routes: Array<RouteRecordRaw> = [
     component: OrderLookup,
     beforeEnter: authGuard,
     meta: {
-      permissionId: "FF_ORDER_LOOKUP_VIEW"
+      permissionId: "FF_ORDER_LOOKUP_VIEW",
+      title: "Order Lookup",
+      menuIndex: 8,
+      groupMenuName: "Organization",
+      childRoutes: ["/order-lookup/"]
     }
   },
   {
@@ -183,7 +214,11 @@ const routes: Array<RouteRecordRaw> = [
     component: Carriers,
     beforeEnter: authGuard,
     meta: {
-      permissionId: "CARRIER_SETUP_VIEW"
+      permissionId: "CARRIER_SETUP_VIEW",
+      title: "Carriers & Shipment Methods",
+      menuIndex: 7,
+      groupMenuName: "Organization",
+      childRoutes: ["/carrier-details"]
     }
   },
   {
