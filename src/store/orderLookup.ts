@@ -31,6 +31,7 @@ interface OrderLookupState {
   current: any
   channels: any[]
   productStores: any[]
+  facilities: any[]
   orderStatuses: any[]
   carriersTrackingInfo: any
 }
@@ -59,6 +60,7 @@ export const useOrderLookupStore = defineStore("orderLookup", {
     current: {},
     channels: [],
     productStores: [],
+    facilities: [],
     orderStatuses: [],
     carriersTrackingInfo: {}
   }),
@@ -83,6 +85,9 @@ export const useOrderLookupStore = defineStore("orderLookup", {
     },
     getOrderStatusOptions: (state) => {
       return state.orderStatuses || []
+    },
+    getFacilityOptions: (state) => {
+      return state.facilities || []
     },
     getCarriersTrackingInfo: (state) => (carrierId: any) => {
       return state.carriersTrackingInfo[carrierId]
@@ -111,6 +116,9 @@ export const useOrderLookupStore = defineStore("orderLookup", {
     },
     updateStatusOptions(payload: any) {
       this.orderStatuses = payload
+    },
+    updateFacilityOptions(payload: any) {
+      this.facilities = payload
     },
     updateCarrierTrackingUrls(payload: any) {
       this.carriersTrackingInfo = payload
@@ -180,6 +188,7 @@ export const useOrderLookupStore = defineStore("orderLookup", {
           })
 
           if (params?.fetchFacets) {
+            const facilities = resp.data.facets?.facilityNameFacet?.buckets.map((bucket: any) => bucket.val)
             const productStores = resp.data.facets?.productStoreIdFacet?.buckets.map((bucket: any) => bucket.val)
             const channels = resp.data.facets?.salesChannelDescFacet?.buckets.map((bucket: any) => bucket.val)
             const statuses = resp.data.facets?.orderStatusDescFacet?.buckets.map((bucket: any) => bucket.val)
@@ -187,6 +196,7 @@ export const useOrderLookupStore = defineStore("orderLookup", {
             this.updateChannelOptions(channels)
             this.updateProductStoreOptions(productStores)
             this.updateStatusOptions(statuses)
+            this.updateFacilityOptions(facilities)
           }
 
           if (query.json.params.start && query.json.params.start > 0) stateOrders = stateOrders.concat(orders)
@@ -325,7 +335,7 @@ export const useOrderLookupStore = defineStore("orderLookup", {
 
           if (orderFacilityChangeResp.status === "fulfilled" && !commonUtil.hasError(orderFacilityChangeResp.value)) {
             order.shipGroupFacilityAllocationTime = {}
-            order.firstBrokeredDate = orderFacilityChangeResp.value.data[0].changeDatetime
+            order.firstBrokeredDate = orderFacilityChangeResp.value.data[0] ? orderFacilityChangeResp.value.data[0].changeDatetime : ""
             orderFacilityChangeResp.value.data.map((brokeringInfo: any) => {
               order.shipGroupFacilityAllocationTime[brokeringInfo.shipGroupSeqId] = brokeringInfo.changeDatetime
             })

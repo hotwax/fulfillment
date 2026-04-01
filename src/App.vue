@@ -1,17 +1,51 @@
 <template>
   <ion-app>
     <ion-split-pane content-id="main-content" when="lg">
-      <Menu v-if="router && router.currentRoute.value.name !== 'Login'" />
+      <ion-menu side="start" content-id="main-content" type="overlay" :disabled="!isAuthenticated || (router.currentRoute.value.name as string) === 'Login'">
+        <ion-header>
+          <ion-toolbar>
+            <ion-title>{{ currentFacility.facilityName }}</ion-title>
+          </ion-toolbar>
+        </ion-header>
+
+        <ion-content>
+          <ion-list>
+            <template v-for="(page, index) in menuItems" :key="index">
+              <ion-item-divider color="light" v-if="page.groupMenuName && (index === 0 || menuItems[index - 1].groupMenuName !== page.groupMenuName)">
+                <ion-label>
+                  {{ translate(page.groupMenuName) }}
+                </ion-label>
+              </ion-item-divider>
+              <ion-menu-toggle :auto-hide="false">
+                <ion-item-divider color="light" v-if="page.isDivider">
+                  <ion-label>
+                    {{ translate(page.title) }}
+                  </ion-label>
+                </ion-item-divider>
+                <ion-item
+                  v-else
+                  button
+                  router-direction="root"
+                  :router-link="page.url"
+                  class="hydrated"
+                  :class="{ selected: selectedIndex === index }">
+                  <ion-icon v-if="page.icon" slot="start" :ios="page.icon" :md="page.icon" />
+                  <ion-label>{{ translate(page.title) }}</ion-label>
+                </ion-item>
+              </ion-menu-toggle>
+            </template>
+          </ion-list>
+        </ion-content>
+      </ion-menu>
       <ion-router-outlet id="main-content" />
     </ion-split-pane>
   </ion-app>
 </template>
 
 <script setup lang="ts">
-import { createAnimation, IonApp, IonRouterOutlet, IonSplitPane, loadingController } from "@ionic/vue";
+import { createAnimation, IonApp, IonContent, IonHeader, IonIcon, IonItem, IonItemDivider, IonLabel, IonList, IonMenu, IonMenuToggle, IonRouterOutlet, IonSplitPane, IonTitle, IonToolbar, loadingController } from "@ionic/vue";
 import { computed, onMounted, onUnmounted, ref } from "vue";
-import Menu from "@/components/Menu.vue";
-import { translate, emitter, logger, firebaseMessaging, useNotificationStore, initialise } from "@common";
+import { translate, emitter, logger, useNotificationStore, initialise } from "@common";
 import { Settings } from "luxon";
 import { init } from "@module-federation/runtime";
 import { useUserStore } from "@/store/user";
@@ -39,6 +73,28 @@ initialise({
     }
   }
 })
+const currentFacility = computed(() => useProductStore().currentFacility);
+
+const menuItems = computed(() => {
+  return router.getRoutes()
+    .filter(route => route.meta && route.meta.menuIndex)
+    .filter(route => !route.meta.permissionId || (useUserStore() as any).hasPermission(route.meta.permissionId as string))
+    .sort((a, b) => (a.meta!.menuIndex as number) - (b.meta!.menuIndex as number))
+    .map(route => ({
+      title: route.meta!.title as string,
+      url: route.path,
+      icon: route.meta!.icon as string,
+      isDivider: route.meta!.isDivider as boolean,
+      groupMenuName: route.meta!.groupMenuName as string,
+      childRoutes: route.meta!.childRoutes as string[],
+      menuIndex: route.meta!.menuIndex as number
+    }));
+});
+
+const selectedIndex = computed(() => {
+  const path = router.currentRoute.value.path;
+  return menuItems.value.findIndex((item) => item.url === path || item.childRoutes?.includes(path) || item.childRoutes?.some((route: any) => path.includes(route)));
+});
 
 const presentLoader = async (options = { message: "", backdropDismiss: false }) => {
   if (options.message && loader.value) dismissLoader();
@@ -131,3 +187,17 @@ async function unauthorized() {
   })
 }
 </script>
+
+<style scoped>
+ion-menu.md ion-item.selected ion-icon {
+  color: var(--ion-color-secondary);
+}
+
+ion-menu.ios ion-item.selected ion-icon {
+  color: var(--ion-color-secondary);
+}
+
+ion-item.selected {
+  --color: var(--ion-color-secondary);
+}
+</style>

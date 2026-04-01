@@ -34,7 +34,7 @@
   </ion-content>
 
   <ion-fab vertical="bottom" horizontal="end" slot="fixed">
-    <ion-fab-button :disabled="!userStore.hasPermission('STOREFULFILLMENT_ADMIN') || !isEligibleToCloseTOItems()" @click="confirmSave">
+    <ion-fab-button :disabled="!userStore.hasPermission('ORD_TRANSFER_ORDER_CANCEL') || !isEligibleToCloseTOItems()" @click="confirmSave">
       <ion-icon :icon="saveOutline" />
     </ion-fab-button>
   </ion-fab>
