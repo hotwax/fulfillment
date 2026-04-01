@@ -1,4 +1,4 @@
-import { api, client, commonUtil, cookieHelper, embeddedApp, emitter, logger, translate, useNotificationStore } from "@common";
+import { api, client, commonUtil, cookieHelper, useEmbeddedAppStore, emitter, logger, translate, useNotificationStore } from "@common";
 import { useUserStore } from "@/store/user";
 import { useUtilStore } from "@/store/util";
 import { DateTime } from "luxon";
@@ -119,8 +119,8 @@ export function useAuth() {
     // This only runs when token gets expired, since embedded app user can't logout on it's own,
     // token expiry on navigation is handled on the auth guard.
     if (commonUtil.isAppEmbedded()) {
-      redirectionUrl = window.location.origin + `/shopify?shop=${embeddedApp().shop}&host=${embeddedApp().host}&embedded=1`;
-      embeddedApp().$reset();
+      redirectionUrl = window.location.origin + `/shopify?shop=${useEmbeddedAppStore().shop}&host=${useEmbeddedAppStore().host}&embedded=1`;
+      useEmbeddedAppStore().$reset();
     }
     useUserStore().$reset();
     cookieHelper().remove('token');

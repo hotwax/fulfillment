@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import { api, commonUtil, embeddedApp, logger, translate, useSolrSearch } from '@common'
+import { api, commonUtil, useEmbeddedAppStore, logger, translate, useSolrSearch } from '@common'
 import { useUserStore } from '@/store/user'
 const defaultProductStoreSettings = JSON.parse(import.meta.env.VITE_DEFAULT_PRODUCT_STORE_SETTINGS as string || '{}')
 
@@ -168,12 +168,12 @@ export const useProductStore = defineStore('productStore', {
         }
 
         // Only Location's facility for Shopify POS Users.
-        if (commonUtil.isAppEmbedded() && embeddedApp().posContext.locationId) {
+        if (commonUtil.isAppEmbedded() && useEmbeddedAppStore().posContext.locationId) {
           resp = await api({
             url: "oms/shopifyShops/locations",
             method: "GET",
             params: {
-              locationId: embeddedApp().posContext.locationId
+              locationId: useEmbeddedAppStore().posContext.locationId
             }
           });
 
