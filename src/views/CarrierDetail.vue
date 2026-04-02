@@ -110,14 +110,14 @@ import { IonButton, IonBackButton, IonCard, IonCardHeader, IonCardSubtitle, IonC
 import { computed, onMounted, ref } from "vue";
 import { addCircleOutline, addOutline, peopleOutline, shieldCheckmarkOutline } from "ionicons/icons";
 import { commonUtil, emitter, logger, translate } from "@common";
-import { useRoute } from "vue-router";
 import CreateShipmentMethodModal from "@/components/CreateShipmentMethodModal.vue";
 import ShipmentMethods from "@/components/ShipmentMethods.vue";
 import { useCarrierStore } from "@/store/carrier";
 import { useProductStore as useAppProductStore } from "@/store/productStore";
 import { useUtilStore } from "@/store/util";
+import router from "@/router";
 
-const route = useRoute();
+const route = router.currentRoute.value;
 const carrierStore = useCarrierStore();
 
 const selectedSegment = ref("shipping-methods");

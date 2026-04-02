@@ -53,7 +53,6 @@
 <script setup lang="ts">
 import { IonBadge, IonIcon, IonContent, IonFab, IonFabButton, IonHeader, IonInfiniteScroll, IonInfiniteScrollContent, IonItem, IonLabel, IonList, IonMenuButton, IonPage, IonSearchbar, IonSegment, IonSegmentButton, IonTitle, IonToolbar, modalController, onIonViewDidLeave, onIonViewWillEnter } from "@ionic/vue";
 import { computed, ref } from "vue";
-import { useRouter } from "vue-router";
 import { addOutline } from "ionicons/icons";
 import { emitter, translate } from "@common";
 
@@ -61,8 +60,8 @@ import { useProductStore as useAppProductStore } from "@/store/productStore";
 import { DateTime } from "luxon";
 import CreateTransferOrderModal from "@/components/CreateTransferOrderModal.vue";
 import { useTransferOrderStore } from "@/store/transferorder";
+import router from "@/router";
 
-const router = useRouter();
 const searchedQuery = ref("");
 const isScrollingEnabled = ref(false);
 const hasCompletedTransferOrders = ref(true);

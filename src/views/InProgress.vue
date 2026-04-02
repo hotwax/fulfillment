@@ -250,8 +250,8 @@ import ScanOrderItemModal from "@/components/ScanOrderItemModal.vue";
 import GenerateTrackingCodeModal from "@/components/GenerateTrackingCodeModal.vue";
 import GiftCardActivationModal from "@/components/GiftCardActivationModal.vue";
 
-import { useRouter, onBeforeRouteLeave } from "vue-router";
-
+import { onBeforeRouteLeave } from "vue-router";
+import router from "@/router";
 import { useOrderStore } from "@/store/order";
 import { useCarrierStore } from "@/store/carrier";
 import { useProductStore as useProduct } from "@/store/product";
@@ -264,7 +264,6 @@ const userStore = useUserStore();
 const orderStore = useOrderStore();
 const carrierStore = useCarrierStore();
 
-const router = useRouter();
 const picklists = ref([] as any);
 const defaultShipmentBoxType = ref({} as any);
 const searchedQuery = ref("");

@@ -129,13 +129,12 @@ import { computed, defineProps, onMounted, ref } from "vue";
 import { archiveOutline, closeOutline, copyOutline, informationCircleOutline, openOutline, trashOutline } from "ionicons/icons";
 import { commonUtil, logger, translate } from "@common";
 import { useOrderStore } from "@/store/order";
-import { useRouter } from "vue-router";
+import router from "@/router";
 import { useCarrierStore } from "@/store/carrier";
 import { useUserStore } from "@/store/user";
 
 const props = defineProps(["order", "updateCarrierShipmentDetails", "executePackOrder", "rejectEntireOrder", "updateParameter", "documentOptions", "packingError", "isDetailPage", "initialShipmentMethodTypeId"]);
 
-const router = useRouter();
 const orderStore = useOrderStore();
 const shippingRejectionReason = "NO_VARIANCE_LOG";
 const rejectOrder = ref(false);

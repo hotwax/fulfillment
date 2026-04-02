@@ -140,7 +140,7 @@
 <script setup lang="ts">
 import { IonBadge, IonButton, IonButtons, IonCard, IonChip, IonCheckbox, IonContent, IonFab, IonFabButton, IonHeader, IonIcon, IonInfiniteScroll, IonInfiniteScrollContent, IonItem, IonLabel, IonMenuButton, IonNote, IonPage, IonSearchbar, IonSkeletonText, IonSpinner, IonThumbnail, IonTitle, IonToolbar, alertController, modalController, onIonViewWillEnter, popoverController } from "@ionic/vue";
 import { computed, ref } from "vue";
-import { useRouter, onBeforeRouteLeave } from "vue-router";
+import { onBeforeRouteLeave } from "vue-router";
 import { caretDownOutline, chevronUpOutline, cubeOutline, listOutline, notificationsOutline, optionsOutline, pricetagOutline, printOutline } from "ionicons/icons";
 import AssignPickerModal from "@/views/AssignPickerModal.vue";
 import { commonUtil, DxpShopifyImg, emitter, logger, moduleFederationUtil, useSolrSearch, translate, useNotificationStore } from "@common";
@@ -155,11 +155,11 @@ import { useStockStore } from "@/store/stock";
 import { useUtilStore } from "@/store/util";
 import { useUserStore } from "@/store/user";
 import { useProductStore as useAppProductStore } from "@/store/productStore";
+import router from "@/router";
 
 const userStore = useUserStore();
 const carrierStore = useCarrierStore();
 
-const router = useRouter();
 const shipmentMethods = ref([] as Array<any>);
 const searchedQuery = ref("");
 const isScrollingEnabled = ref(false);

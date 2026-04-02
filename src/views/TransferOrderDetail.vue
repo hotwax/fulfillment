@@ -144,7 +144,6 @@ import { computed, ref } from "vue";
 import { barcodeOutline, pricetagOutline, printOutline, trashOutline } from "ionicons/icons";
 import { commonUtil, DxpShopifyImg, useEmbeddedAppStore, emitter, translate, useShopify } from "@common";
 import { useProductStore as useAppProductStore } from "@/store/productStore";
-import { useRoute, useRouter } from "vue-router";
 import Scanner from "@/components/Scanner.vue";
 import { DateTime } from "luxon";
 import { useOrderStore } from "@/store/order";
@@ -156,6 +155,7 @@ import { useUserStore } from "@/store/user";
 import { useTransferOrderStore } from "@/store/transferorder";
 import { useUtilStore } from "@/store/util";
 import { useProductStore } from "@/store/product";
+import router from "@/router";
 
 const userStore = useUserStore();
 const orderStore = useOrderStore();
@@ -163,8 +163,7 @@ const transferOrderStore = useTransferOrderStore();
 
 const getProductIdentificationValue = commonUtil.getProductIdentificationValue;
 
-const route = useRoute();
-const router = useRouter();
+const route = router.currentRoute.value;
 const queryString = ref("");
 const selectedSegment = ref("open");
 const isCreatingShipment = ref(false);

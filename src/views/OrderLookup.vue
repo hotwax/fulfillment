@@ -118,7 +118,6 @@
 <script setup lang="ts">
 import { IonBadge, IonButtons, IonChip, IonContent, IonHeader, IonIcon, IonInfiniteScroll, IonInfiniteScrollContent, IonItem, IonLabel, IonMenuButton, IonNote, IonPage, IonSearchbar, IonSelect, IonSelectOption, IonSpinner, IonThumbnail, IonTitle, IonToggle, IonToolbar, menuController, onIonViewWillEnter } from "@ionic/vue";
 import { computed, ref } from "vue";
-import { useRouter } from "vue-router";
 import { documentTextOutline, filterOutline, pricetag, swapVerticalOutline } from "ionicons/icons";
 import { commonUtil, translate } from "@common";
 import { useOrderLookupStore } from "@/store/orderLookup";
@@ -126,13 +125,12 @@ import { useProductStore } from "@/store/product";
 import { useUtilStore } from "@/store/util";
 import { useUserStore } from "@/store/user";
 import OrderLookupFilters from "@/components/OrderLookupFilters.vue";
-
+import router from "@/router";
 import Image from "@/components/Image.vue";
 
 
 
 const userStore = useUserStore();
-const router = useRouter();
 const sort = ref("orderDate desc");
 const showOrderItems = ref(true);
 const isLoading = ref(false);

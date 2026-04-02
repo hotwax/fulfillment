@@ -152,16 +152,16 @@ import { openOutline, pricetagOutline, printOutline, storefrontOutline } from "i
 import { commonUtil, logger, translate } from "@common";
 import { useProductStore as useAppProductStore } from "@/store/productStore";
 import { useOrderStore } from "@/store/order";
-import { onBeforeRouteLeave, useRoute, useRouter } from "vue-router";
+import { onBeforeRouteLeave } from "vue-router";
 import Image from "@/components/Image.vue";
 import { useProductStore } from "@/store/product";
 import { useUtilStore } from "@/store/util";
 import { useCarrierStore } from "@/store/carrier";
 import { useTransferOrderStore } from "@/store/transferorder";
 import { useUserStore } from "@/store/user";
+import router from "@/router";
 
-const route = useRoute();
-const router = useRouter();
+const route = router.currentRoute.value;
 const productIdentificationPref = computed(() => useAppProductStore().getProductIdentificationPref);
 
 const userStore = useUserStore();

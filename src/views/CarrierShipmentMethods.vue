@@ -49,13 +49,12 @@ import { IonButton, IonButtons, IonContent, IonFooter, IonHeader, IonIcon, IonIt
 import { computed, onMounted } from "vue";
 import { addCircleOutline, checkmarkDoneOutline, peopleOutline, shieldCheckmarkOutline } from "ionicons/icons";
 import { commonUtil, translate } from "@common";
-import { useRoute, useRouter } from "vue-router";
 import ShipmentMethods from "@/components/ShipmentMethods.vue";
 import CreateShipmentMethodModal from "@/components/CreateShipmentMethodModal.vue";
 import { useCarrierStore } from "@/store/carrier";
+import router from "@/router";
 
-const router = useRouter();
-const route = useRoute();
+const route = router.currentRoute.value;
 
 const shipmentMethodQuery = computed(() => useCarrierStore().getShipmentMethodQuery);
 const currentCarrier = computed(() => useCarrierStore().getCurrent);
