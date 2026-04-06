@@ -1,4 +1,4 @@
-import { api, commonUtil, emitter, logger, ShopifyService, useSolrSearch, translate } from "@common";
+import { api, commonUtil, emitter, logger, useShopify, useSolrSearch, translate } from "@common";
 import { defineStore } from "pinia"
 import { orderUtil } from "@/utils/orderUtil";
 
@@ -1178,8 +1178,8 @@ export const useOrderStore = defineStore("order", {
 
         const pdfUrl = window.URL.createObjectURL(resp.data);
         try {
-          if (ShopifyService.getApp()) {
-            ShopifyService.redirect(pdfUrl);
+          if (commonUtil.isAppEmbedded()) {
+            useShopify().redirect(pdfUrl);
           } else {
             window.open(pdfUrl, "_blank")?.focus();
           }

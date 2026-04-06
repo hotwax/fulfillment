@@ -267,6 +267,11 @@ const routes: Array<RouteRecordRaw> = [
     }
   },
   {
+    path: '/shopify-app-install',
+    name: 'ShopifyAppInstall',
+    component: () => import('@/views/ShopifyAppInstall.vue')
+  },
+  {
     path: '/shopify-login',
     name: 'ShopifyLogin',
     component: ShopifyLogin
