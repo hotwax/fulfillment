@@ -53,7 +53,6 @@ import { useProductStore } from "@/store/productStore";
 import router from './router';
 import { useAuth } from "@/composables/useAuth";
 import { firebaseUtil } from "@/utils/firebaseUtil";
-import { useOrderStore } from "./store/order";
 
 const { isAuthenticated } = useAuth();
 const loader = ref<any>(null);
@@ -64,7 +63,7 @@ const maxAge = import.meta.env.VITE_VUE_APP_CACHE_MAX_AGE ? parseInt(import.meta
 initialise({
   cacheMaxAge: maxAge,
   events: {
-    unauthorised: unauthorized,
+    unauthorised: useAuth().logout,
     responseError: () => {
       setTimeout(() => dismissLoader(), 100);
     },
@@ -174,18 +173,6 @@ onUnmounted(() => {
   emitter.off("dismissLoader", dismissLoader);
   emitter.off("playAnimation", playAnimation);
 });
-
-async function unauthorized() {
-  useAuth().logout({ isUserUnauthorised: true }).then((redirectionUrl) => {
-    // redirectionUrl is only present when SSO enables, thus when not present redirect user to login
-    useOrderStore().clearOrders();
-    if(!redirectionUrl) {
-      router.replace("/login");
-    } else {
-      window.location.href = redirectionUrl
-    }
-  })
-}
 </script>
 
 <style scoped>
