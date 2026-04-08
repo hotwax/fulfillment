@@ -92,6 +92,12 @@ export function useAuth() {
   }
 
   const logout = async (payload?: any) => {
+    try {
+      const notificationStore = useNotificationStore();
+      await notificationStore.removeClientRegistrationToken(notificationStore.getFirebaseDeviceId, import.meta.env.VITE_NOTIF_APP_ID as any);
+    } catch (error) {
+      logger.error(error);
+    }
     let redirectionUrl = "";
 
     if (!payload?.isUserUnauthorised) {

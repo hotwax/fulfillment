@@ -324,22 +324,7 @@ const getEcomInvStatus = async () => {
 
 
 const logout = async () => {
-  try {
-    const notificationStore = useNotificationStore();
-    await notificationStore.removeClientRegistrationToken(firebaseDeviceId.value, import.meta.env.VITE_NOTIF_APP_ID as any);
-  } catch (error) {
-    logger.error(error);
-  }
-
-  useAuth().logout({ isUserUnauthorised: false }).then((redirectionUrl) => {
-    // redirectionUrl is only present when SSO enables, thus when not present redirect user to login
-    useOrderStore().clearOrders();
-    if(!redirectionUrl) {
-      router.replace("/login");
-    } else {
-      window.location.href = redirectionUrl
-    }
-  })
+  useAuth().logout({ isUserUnauthorised: false });
 }
 
 const goToLaunchpad = () => {
