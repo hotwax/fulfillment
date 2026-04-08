@@ -4,6 +4,8 @@ import vue from '@vitejs/plugin-vue'
 import path from 'path'
 import { defineConfig } from 'vite'
 import federation from '@originjs/vite-plugin-federation'
+import { versionInfoUtil } from '../../common/utils/versionInfoUtil'
+import pkg from './package.json'
 
 // https://vitejs.dev/config/
 export default defineConfig({
@@ -26,14 +28,11 @@ export default defineConfig({
       }
     })
   ],
+  define: {
+    'import.meta.env.VITE_APP_VERSION_INFO': JSON.stringify(JSON.stringify(versionInfoUtil.getVersionInfo(pkg.version)))
+  },
   build: {
     target: 'esnext',
-    rollupOptions: {
-      external: [
-        'child_process',
-        '@hotwax/app-version-info'
-      ]
-    },
     commonjsOptions: {
       transformMixedEsModules: true
     }
