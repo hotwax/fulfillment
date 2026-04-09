@@ -81,29 +81,6 @@
           </ion-item> 
         </div>
       </div>
-      <!-- Staff Performance -->
-      <section class="staff-performance">
-        <p class="overline">{{ translate("Staff Performance") }}</p>
-        <div class="staff-list">
-          <ion-card v-for="staff in staffPerformance" :key="staff.id">
-            <ion-item lines="none">
-              <ion-avatar slot="start">
-                <img :src="'https://gravatar.com/avatar/' + staff.id + '?s=100&d=identicon'" />
-              </ion-avatar>
-              <ion-label>
-                {{ staff.name }}
-                <p>{{ staff.role }}</p>
-              </ion-label>
-            </ion-item>
-            <ion-item lines="none">
-              <div class="performance-metric">
-                <p class="overline">{{ translate("Orders packed") }}</p>
-                <h1>{{ staff.completed }}</h1>
-              </div>
-            </ion-item>
-          </ion-card>
-        </div>
-      </section>
     </ion-content>
   </ion-page>
 </template>
