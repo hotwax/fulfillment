@@ -97,8 +97,6 @@ import {
   IonItem,
   IonLabel,
   IonIcon,
-  IonAvatar,
-  IonNote,
   onIonViewDidEnter
 } from '@ionic/vue';
 import { informationCircleOutline, mailUnreadOutline, mailOpenOutline, sendOutline, storefrontOutline } from 'ionicons/icons';
@@ -120,14 +118,6 @@ const packedShipments = ref<any[]>([]);
 
 const todayDate = computed(() => getDateWithOrdinalSuffix(DateTime.now().toMillis(), 'MMMM'))
 const fillrate = computed(() => (packedShipments.value.length / (packedShipments.value.length + rejectedOrderFacilityChange.value.length)) * 100)
-
-const staffPerformance = ref([
-  { id: '1', name: 'John Doe', role: 'Picker', completed: 45 },
-  { id: '2', name: 'Jane Smith', role: 'Packer', completed: 32 },
-  { id: '3', name: 'Bob Johnson', role: 'Picker', completed: 28 },
-  { id: '4', name: 'Alice Brown', role: 'Picker', completed: 25 },
-  { id: '5', name: 'Charlie Davis', role: 'Packer', completed: 20 },
-])
 
 onIonViewDidEnter(async () => {
   try {
