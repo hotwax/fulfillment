@@ -74,7 +74,7 @@ const chartData = computed(() => {
   }
 })
 
-const chartOptions = {
+const chartOptions = computed(() => ({
   responsive: true,
   maintainAspectRatio: false,
   indexAxis: 'y',
@@ -82,8 +82,7 @@ const chartOptions = {
     x: {
       stacked: true,
       display: false,
-      max: props.total,
-      borderRadius: 10
+      max: props.total
     },
     y: {
       stacked: true,
@@ -98,7 +97,7 @@ const chartOptions = {
       },
     },
   },
-}
+}))
 </script>
 
 <style scoped>

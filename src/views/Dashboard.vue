@@ -34,7 +34,7 @@
         <ion-card class="orders">
           <p class="overline title">Orders Pending Fulfillment</p>
           <div class="pending">
-            <h1>3</h1>
+            <h1>{{ openOrderIds.length + inProgressOrderIds.length }}</h1>
             <ion-item lines="none">
               <ion-label>
                 <p>Oldest order assigned</p>
@@ -43,13 +43,13 @@
             </ion-item>
           </div>
           <div class="fulfill">
-            <ion-item lines="full" detail>
+            <ion-item lines="full" :button="openOrderIds.length > 0" :detail="openOrderIds.length > 0" @click="() => { if(openOrderIds.length > 0) router.push('open')} ">
               <ion-icon :icon="mailUnreadOutline" slot="start" />
-              <ion-label>1 open</ion-label>
+              <ion-label>{{ openOrderIds.length }} open</ion-label>
             </ion-item>
-            <ion-item lines="none" detail>
+            <ion-item lines="none" :button="inProgressOrderIds.length > 0" :detail="inProgressOrderIds.length > 0" @click="() => { if(inProgressOrderIds.length > 0) router.push('in-progress')} ">
               <ion-icon :icon="mailOpenOutline" slot="start" />
-              <ion-label>2 in progress</ion-label>
+              <ion-label>{{ inProgressOrderIds.length }} in progress</ion-label>
             </ion-item>
           </div>
         </ion-card>
@@ -80,6 +80,35 @@
             </ion-label>
           </ion-item> 
         </div>
+
+        <!-- Staff Performance -->
+        <div>
+          <h1>{{ translate("Staff Performance") }}</h1>
+          <div class="staff-list">
+            <ion-card>
+              <p class="overline title">{{ translate("Most Orders Picked") }}</p>
+              <ion-item lines="none">
+                <ion-label>
+                  <h1>{{ mostOrdersPicked.firstName ? (mostOrdersPicked.firstName + " " + (mostOrdersPicked.lastName || "")) : "-" }}</h1>
+                </ion-label>
+              </ion-item>
+              <ion-item lines="none">
+                {{ (mostOrdersPicked.pickedShipments?.length || 0) + " " + translate("orders picked") }}
+              </ion-item>
+            </ion-card>
+            <ion-card>
+              <p class="overline title">{{ translate("Fastest Picker") }}</p>
+              <ion-item lines="none">
+                <ion-label>
+                  <h1>{{ "First" + " " + "Last Name" }}</h1>
+                </ion-label>
+              </ion-item>
+              <ion-item lines="none">
+                {{ "20 minutes average" }}
+              </ion-item>
+            </ion-card>
+          </div>
+        </div>
       </div>
     </ion-content>
   </ion-page>
@@ -109,15 +138,27 @@ import { UserService } from '@/services/UserService';
 import { hasError } from '@hotwax/oms-api';
 import logger from '@/logger';
 import { getDateWithOrdinalSuffix, showToast } from '@/utils';
+import router from '@/router';
 
 const currentFacility: any = computed(() => useUserStore().getCurrentFacility);
 const currentFacilityDetails = ref(null as any)
 const facilityAllocationsOfDay = ref<any[]>([]);
 const rejectedOrderFacilityChange = ref<any[]>([]);
 const packedShipments = ref<any[]>([]);
-
+const pendingFulfillmentOrders = ref<any[]>([]);
+const openOrderItems = computed(() => pendingFulfillmentOrders.value.filter((order: any) => !order.shipmentId))
+const inProgressOrderItems = computed(() => pendingFulfillmentOrders.value.filter((order: any) => order.shipmentStatus === 'SHIPMENT_APPROVED'))
+const openOrderIds = computed(() => [...new Set(openOrderItems.value.map((order: any) => order.orderId))])
+const inProgressOrderIds = computed(() => [...new Set(inProgressOrderItems.value.map((order: any) => order.orderId))])
+const shipmentAndPicklists = ref<any[]>([]);
+const pickedOrderByPicker = ref<any[]>([]);
+const packedOrderByPicker = ref<any[]>([]);
 const todayDate = computed(() => getDateWithOrdinalSuffix(DateTime.now().toMillis(), 'MMMM'))
 const fillrate = computed(() => (packedShipments.value.length / (packedShipments.value.length + rejectedOrderFacilityChange.value.length)) * 100)
+
+const mostOrdersPicked = computed(() => {
+  return [...pickedOrderByPicker.value].sort((a: any, b: any) => b.pickedShipments.length - a.pickedShipments.length)[0] || {}
+})
 
 onIonViewDidEnter(async () => {
   try {
@@ -157,6 +198,7 @@ onIonViewDidEnter(async () => {
       customParametersMap: {
         facilityId: currentFacility.value.facilityId,
         shipmentTypeId: "SALES_SHIPMENT",
+        statusId: "SHIPMENT_PACKED",
         shipmentMethodTypeId: "STOREPICKUP",
         shipmentMethodTypeId_not: "Y",
         pageNoLimit: true,
@@ -168,9 +210,14 @@ onIonViewDidEnter(async () => {
       throw packedShipmentsResp.data
     }
     packedShipments.value = packedShipmentsResp.data.entityValueList;
+
+    await getPendingFulfillmentOrders();
+    await getApprovedShipmentAndPicklistAndRole();
+    getPickedOrderByPicker();
+    getPackedOrderByPicker();
   } catch (error) { 
     logger.error(error);
-    showToast(translate("Failed to get today's facility allocations."))
+    showToast(translate("Failed to get today's store performance stats"))
   }
 })
 
@@ -187,6 +234,94 @@ const getCurrentFacilityDetails = async () => {
     }
   } catch(err) {
     logger.error("Failed to fetch total orders count", err);
+  }
+}
+
+// This will return both Orders without shipment and Order with Approved Shipment.
+const getPendingFulfillmentOrders = async () => {
+  try {
+    const resp = await UtilService.getPendingFulfillmentOrders({
+      customParametersMap: {
+        pageNoLimit: true,
+        orderTypeId: "SALES_ORDER",
+        orderStatusId: "ORDER_APPROVED",
+        facilityId: currentFacility.value.facilityId,
+        facilityId_op: "in",
+        shipmentStatus_op: "in",
+        shipmentStatus_not: "Y",
+        shipmentStatus: "SHIPMENT_PACKED,SHIPMENT_SHIPPED,SHIPMENT_CANCELLED,SHIPMENT_INPUT",
+        shipmentMethodTypeId: "STOREPICKUP",
+        shipmentMethodTypeId_not: "Y",
+        reservedDatetime_from: DateTime.now().startOf('day').toFormat('yyyy-MM-dd')
+      }
+    });
+    if (hasError(resp) || !resp.data || !resp.data.entityValueList) {
+      throw resp.data
+    }
+    pendingFulfillmentOrders.value = resp.data.entityValueList;
+  } catch(error) {
+    logger.error("Failed to fetch pending fulfillment orders", error);
+    showToast(translate("Failed to fetch pending fulfillment orders"))
+  }
+}
+
+const getPickedOrderByPicker = () => {
+  pickedOrderByPicker.value = shipmentAndPicklists.value.reduce((pickers: any, shipment: any) => {
+    const picker = pickers.find((p: any) => p.partyId === shipment.partyId)
+    if (picker) {
+      picker.pickedShipments.push(shipment)
+    } else {
+      pickers.push({
+        partyId: shipment.partyId,
+        firstName: shipment.firstName,
+        lastName: shipment.lastName,
+        pickedShipments: [shipment]
+      })
+    }
+    return pickers
+  }, [])
+}
+
+const getPackedOrderByPicker = () => {
+  packedOrderByPicker.value = packedShipments.value.reduce((packers: any, shipment: any) => {
+    const packer = packers.find((p: any) => p.partyId === shipment.partyId)
+    if (packer) {
+      packer.packedShipments.push(shipment)
+    } else {
+      packers.push({
+        partyId: shipment.partyId,
+        firstName: shipment.firstName,
+        lastName: shipment.lastName,
+        packedShipments: [shipment]
+      })
+    }
+    return packers
+  }, [])
+}
+
+const getApprovedShipmentAndPicklistAndRole = async () => {
+  try {
+    const resp = await UtilService.shipmentAndPicklistAndRole({
+      customParametersMap: {
+        pageNoLimit: true,
+        shipmentTypeId: "SALES_SHIPMENT",
+        statusId: "SHIPMENT_APPROVED",
+        shipmentMethodTypeId: "STOREPICKUP",
+        shipmentMethodTypeId_not: "Y",
+        partyId_op: "empty",
+        partyId_not: "Y",
+        originFacilityId: currentFacility.value.facilityId,
+        picklistDate_from: DateTime.now().startOf('day').toFormat('yyyy-MM-dd'),
+        roleTypeId: "WAREHOUSE_PICKER"
+      }
+    });
+    if (hasError(resp) || !resp.data || !resp.data.entityValueList) {
+      throw resp.data
+    }
+    shipmentAndPicklists.value = resp.data.entityValueList;
+  } catch(error) {
+    logger.error("Failed to fetch pending fulfillment orders", error);
+    showToast(translate("Failed to fetch pending fulfillment orders"))
   }
 }
 

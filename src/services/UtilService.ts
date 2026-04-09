@@ -746,6 +746,44 @@ const getPackedShipments = async function (payload: any): Promise<any> {
   })
 }
 
+const getPendingFulfillmentOrders = async function (payload: any): Promise<any> {
+  const omstoken = store.getters['user/getUserToken'];
+  const baseURL = store.getters['user/getMaargBaseUrl'];
+
+  return await apiClient({
+    url: `/oms/dataDocumentView`,
+    method: "POST",
+    baseURL,
+    headers: {
+      "Authorization": "Bearer " + omstoken,
+      "Content-Type": "application/json"
+    },
+    data: {
+      dataDocumentId: "OrderHeaderItemShipGroupShipment",
+      ...payload
+    }
+  })
+}
+
+const shipmentAndPicklistAndRole = async function (payload: any): Promise<any> {
+  const omstoken = store.getters['user/getUserToken'];
+  const baseURL = store.getters['user/getMaargBaseUrl'];
+
+  return await apiClient({
+    url: `/oms/dataDocumentView`,
+    method: "POST",
+    baseURL,
+    headers: {
+      "Authorization": "Bearer " + omstoken,
+      "Content-Type": "application/json"
+    },
+    data: {
+      dataDocumentId: "ShipmentAndPicklistAndRole",
+      ...payload
+    }
+  })
+}
+
 export const UtilService = {
   fetchCarriers,
   createEnumerationGroupMember,
@@ -789,5 +827,7 @@ export const UtilService = {
   getFacilityGroupAndMemberDetails,
   getFacilityAllocationsOfDay,
   getRejectedOrderFacilityChange,
-  getPackedShipments
+  getPackedShipments,
+  getPendingFulfillmentOrders,
+  shipmentAndPicklistAndRole
 }
