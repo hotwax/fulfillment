@@ -55,6 +55,7 @@
         </ion-card>
 
         <FulfillmentProgressBar
+          class="fulfillment-progress-bar"
           :total="currentFacilityDetails?.maximumOrderLimit"
           :dataSegments="{
             Packed: { value: packedShipments.length, color: '#3FBF60' },
@@ -104,7 +105,7 @@
                 </ion-label>
               </ion-item>
               <ion-item lines="none">
-                <p v-if="fastestPacker.averageTime"> {{ fastestPacker.averageTime + " " + translate("minutes average") }} </p>
+                <p v-if="fastestPacker.averageTime"> {{ formatDuration(fastestPacker.averageTime) + " " + translate("average") }} </p>
                 <p v-else>-</p>
               </ion-item>
             </ion-card>
@@ -169,7 +170,7 @@ import { UtilService } from '@/services/UtilService';
 import { UserService } from '@/services/UserService';
 import { hasError } from '@hotwax/oms-api';
 import logger from '@/logger';
-import { getDateWithOrdinalSuffix, showToast } from '@/utils';
+import { getDateWithOrdinalSuffix, showToast, formatDuration } from '@/utils';
 import router from '@/router';
 import Image from '@/components/Image.vue';
 import emitter from '@/event-bus';
@@ -231,7 +232,7 @@ const fastestPacker = computed(() => {
         minTime = avg;
         bestPacker = {
           ...performance,
-          averageTime: Math.round(avg)
+          averageTime: Math.round(totalTimeMinutes / validCount * 60 * 1000)
         };
       }
     }
@@ -393,7 +394,21 @@ onIonViewDidEnter(async () => {
     packedShipments.value = packedShipmentsResp.data.entityValueList;
 
     await getPendingFulfillmentOrders();
-    await getApprovedShipmentAndPicklistAndRole();
+    await getShipmentAndPicklistAndRole();
+    
+    // Check for shipments that are packed or rejected but don't have a picker record (e.g. they were picked on a previous day)
+    const missingShipmentIds = packedShipments.value
+      .filter(shipment => !shipmentAndPicklists.value.some(sap => sap.shipmentId === shipment.shipmentId))
+      .map(shipment => shipment.shipmentId);
+    
+    const missingOrderIds = rejectedOrderFacilityChange.value
+      .filter(rejection => !shipmentAndPicklists.value.some(sap => sap.primaryOrderId === rejection.orderId))
+      .map((rejection: any) => rejection.orderId);
+    
+    if (missingShipmentIds.length || missingOrderIds.length) {
+      await getMissingShipmentPicklists(missingShipmentIds, missingOrderIds);
+    }
+
     getPickedOrderByPicker();
     getPackedOrderByPicker();
     getRejectedOrderByPicker();
@@ -466,6 +481,11 @@ const getPendingFulfillmentOrders = async () => {
 
 const getPickedOrderByPicker = () => {
   pickedOrderByPicker.value = shipmentAndPicklists.value.reduce((pickers: any, shipment: any) => {
+    // Only count if the order was picked today
+    if (!isToday(shipment.picklistDate)) {
+      return pickers
+    }
+
     const picker = pickers.find((p: any) => p.partyId === shipment.partyId)
     if (picker) {
       picker.pickedShipments.push(shipment)
@@ -483,14 +503,32 @@ const getPickedOrderByPicker = () => {
 
 const getPackedOrderByPicker = () => {
   packedOrderByPicker.value = packedShipments.value.reduce((packers: any, shipment: any) => {
-    const packer = packers.find((p: any) => p.partyId === shipment.partyId)
+    // Cross-reference with shipmentAndPicklists to find the picker for this shipment
+    const pickerRecord = shipmentAndPicklists.value.find((s: any) => s.shipmentId === shipment.shipmentId)
+    
+    let partyId, firstName, lastName, isMappingFound = false;
+
+    if (pickerRecord) {
+      partyId = pickerRecord.partyId
+      firstName = pickerRecord.firstName
+      lastName = pickerRecord.lastName
+      isMappingFound = true
+    } else {
+      // Fallback to the packer if no picker record is found
+      partyId = shipment.partyId
+      firstName = translate("Picklist not found")
+      lastName = "(" + translate("older data may not support performance tracking") + ")"
+    }
+
+    const packer = packers.find((p: any) => p.partyId === partyId)
     if (packer) {
       packer.packedShipments.push(shipment)
     } else {
       packers.push({
-        partyId: shipment.partyId,
-        firstName: shipment.firstName,
-        lastName: shipment.lastName,
+        partyId,
+        firstName,
+        lastName,
+        isMappingFound,
         packedShipments: [shipment]
       })
     }
@@ -500,14 +538,34 @@ const getPackedOrderByPicker = () => {
 
 const getRejectedOrderByPicker = () => {
   rejectedOrderByPicker.value = rejectedOrderFacilityChange.value.reduce((pickers: any, rejection: any) => {
-    const picker = pickers.find((p: any) => p.partyId === rejection.partyId)
+    // Rejections are already filtered by today's date in the API call
+    
+    // Cross-reference with shipmentAndPicklists to find the picker for this order
+    const pickerRecord = shipmentAndPicklists.value.find((s: any) => s.primaryOrderId === rejection.orderId)
+    
+    let partyId, firstName, lastName, isMappingFound = false;
+
+    if (pickerRecord) {
+      partyId = pickerRecord.partyId
+      firstName = pickerRecord.firstName
+      lastName = pickerRecord.lastName
+      isMappingFound = true
+    } else {
+      // Fallback to the user who rejected if no picker record is found
+      partyId = rejection.partyId
+      firstName = translate("Picklist not found")
+      lastName = "(" + translate("older data may not support performance tracking") + ")"
+    }
+
+    const picker = pickers.find((p: any) => p.partyId === partyId)
     if (picker) {
       picker.rejectedOrders.push(rejection)
     } else {
       pickers.push({
-        partyId: rejection.partyId,
-        firstName: rejection.firstName,
-        lastName: rejection.lastName,
+        partyId,
+        firstName,
+        lastName,
+        isMappingFound,
         rejectedOrders: [rejection]
       })
     }
@@ -521,7 +579,7 @@ const getAveragePackingTime = (performance: any) => {
     return "-";
   }
 
-  let totalTimeMinutes = 0;
+  let totalTimeMs = 0;
   let validCount = 0;
 
   packedShipments.forEach((packedShipment: any) => {
@@ -530,7 +588,7 @@ const getAveragePackingTime = (performance: any) => {
     if (pickedRecord && pickedRecord.picklistDate && packedShipment.statusDate) {
       const diffMs = packedShipment.statusDate - pickedRecord.picklistDate;
       if (diffMs > 0) {
-        totalTimeMinutes += diffMs / (1000 * 60);
+        totalTimeMs += diffMs;
         validCount++;
       }
     }
@@ -538,17 +596,17 @@ const getAveragePackingTime = (performance: any) => {
 
   if (validCount === 0) return "-";
   
-  const averageMinutes = Math.round(totalTimeMinutes / validCount);
-  return `${averageMinutes} minutes`;
+  return formatDuration(totalTimeMs / validCount);
 }
 
-const getApprovedShipmentAndPicklistAndRole = async () => {
+const getShipmentAndPicklistAndRole = async () => {
   try {
     const resp = await UtilService.shipmentAndPicklistAndRole({
       customParametersMap: {
         pageNoLimit: true,
         shipmentTypeId: "SALES_SHIPMENT",
-        statusId: "SHIPMENT_APPROVED",
+        statusId: "SHIPMENT_APPROVED,SHIPMENT_PACKED",
+        statusId_op: "in",
         shipmentMethodTypeId: "STOREPICKUP",
         shipmentMethodTypeId_not: "Y",
         partyId_op: "empty",
@@ -564,8 +622,55 @@ const getApprovedShipmentAndPicklistAndRole = async () => {
     shipmentAndPicklists.value = resp.data.entityValueList;
   } catch(error) {
     logger.error("Failed to fetch pending fulfillment orders", error);
-    showToast(translate("Failed to fetch pending fulfillment orders"))
   }
+}
+
+const getMissingShipmentPicklists = async (shipmentIds: any, orderIds: any = []) => {
+  try {
+    const queries = [];
+    
+    if (shipmentIds.length) {
+      queries.push(UtilService.shipmentAndPicklistAndRole({
+        customParametersMap: {
+          pageNoLimit: true,
+          shipmentId: shipmentIds.join(','),
+          shipmentId_op: "in",
+          roleTypeId: "WAREHOUSE_PICKER"
+        }
+      }));
+    }
+    
+    if (orderIds.length) {
+      queries.push(UtilService.shipmentAndPicklistAndRole({
+        customParametersMap: {
+          pageNoLimit: true,
+          primaryOrderId: orderIds.join(','),
+          primaryOrderId_op: "in",
+          roleTypeId: "WAREHOUSE_PICKER"
+        }
+      }));
+    }
+
+    const responses = await Promise.all(queries);
+    
+    responses.forEach(resp => {
+      if (!hasError(resp) && resp.data && resp.data.entityValueList) {
+        // Append the explicitly fetched shipments to our record list, avoiding duplicates
+        const newRecords = resp.data.entityValueList.filter((newRec: any) => 
+          !shipmentAndPicklists.value.some((oldRec: any) => oldRec.shipmentId === newRec.shipmentId)
+        );
+        shipmentAndPicklists.value = [...shipmentAndPicklists.value, ...newRecords];
+      }
+    });
+
+  } catch(error) {
+    logger.error("Failed to fetch missing picklist records", error);
+  }
+}
+
+const isToday = (date: any) => {
+  if (!date) return false;
+  return DateTime.fromMillis(Number(date)).hasSame(DateTime.now(), 'day');
 }
 
 </script>
@@ -574,14 +679,22 @@ const getApprovedShipmentAndPicklistAndRole = async () => {
 
 /* add media query for desktop only */
 .fulfillment {
-  display: grid;
-  grid-template-areas: "fill-rate orders"
-                       "fill-rate progress-bar"
-                       "fill-rate scheduling";
-  grid-template-columns: 1fr 3fr;
-  grid-template-rows: 1fr auto auto;
+  display: flex;
+  flex-direction: column;
   gap: var(--spacer-base);
   padding: var(--spacer-base);
+}
+
+@media (min-width: 991px) {
+  .fulfillment {
+    display: grid;
+    grid-template-areas: "fill-rate orders"
+                        "fill-rate progress-bar"
+                        "fill-rate scheduling";
+    grid-template-columns: 350px 1fr;
+    grid-template-rows: auto auto auto;
+    align-items: start;
+  }
 }
 
 .fulfillment > * {
@@ -600,12 +713,19 @@ const getApprovedShipmentAndPicklistAndRole = async () => {
 
 .orders {
   grid-area: orders;
-  display: grid;
-  grid-template-areas: "title title"
-                       "pending fulfill";
-  grid-template-columns: auto 343px;
-  grid-template-rows: min-content auto;
-  align-items: end;
+  display: flex;
+  flex-direction: column;
+}
+
+@media (min-width: 991px) {
+  .orders {
+    display: grid;
+    grid-template-areas: "title title"
+                         "pending fulfill";
+    grid-template-columns: 1fr 1fr; /* Use 1fr instead of fixed width to avoid clipping */
+    grid-template-rows: min-content auto;
+    align-items: end;
+  }
 }
 
 .title {
@@ -627,8 +747,9 @@ const getApprovedShipmentAndPicklistAndRole = async () => {
   grid-area: fulfill;
 }
 
-FulfillmentProgressBar {
+.fulfillment-progress-bar {
   grid-area: progress-bar;
+  min-width: 0;
 }
 
 .scheduling {

@@ -37,8 +37,15 @@ const chartData = computed(() => {
   const datasets = entries.map(([label, { value, color }], index, arr) => {
     usedCount += value
 
-    const isFirst = index === 0
-    const isLast = index === arr.length - 1 && props.total - usedCount <= 0
+    const borderRadius = {}
+    if (index === 0) {
+      borderRadius.topLeft = 16
+      borderRadius.bottomLeft = 16
+    }
+    if (index === arr.length - 1 && props.total - usedCount <= 0) {
+      borderRadius.topRight = 16
+      borderRadius.bottomRight = 16
+    }
 
     return {
       label,
@@ -47,7 +54,7 @@ const chartData = computed(() => {
       borderColor: '#ccc',
       borderWidth: 1,
       borderSkipped: false,
-      borderRadius: isFirst || isLast ? 16 : 0,
+      borderRadius: Object.keys(borderRadius).length > 0 ? borderRadius : 0,
     }
   })
 
@@ -104,5 +111,8 @@ const chartOptions = computed(() => ({
 .order-status-bar {
   height: 68px;
   align-self: center;
+  position: relative;
+  width: 100%;
+  min-width: 0;
 }
 </style>
