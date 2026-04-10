@@ -215,11 +215,11 @@ const getProductStoreId = () => {
   return currentEComStore.productStoreId
 };
 
-function getDateWithOrdinalSuffix(time: any) {
+function getDateWithOrdinalSuffix(time: any, format?: string) {
   if (!time) return "-";
   const dateTime = DateTime.fromMillis(time);
   const suffix = dateOrdinalSuffix[dateTime.day] || "th"
-  return `${dateTime.day}${suffix} ${dateTime.toFormat("MMM yyyy")}`;
+  return `${dateTime.day}${suffix} ${dateTime.toFormat(format ? format : 'MMM yyyy')}`;
 }
 
 const hasWebcamAccess = async () => {

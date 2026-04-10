@@ -46,7 +46,7 @@ import {
 } from "@ionic/vue";
 import { computed, defineComponent } from "vue";
 import { mapGetters } from "vuex";
-import { backspaceOutline, businessOutline, mailUnreadOutline, mailOpenOutline, checkmarkDoneOutline, settingsOutline } from "ionicons/icons";
+import { backspaceOutline, businessOutline, mailUnreadOutline, mailOpenOutline, checkmarkDoneOutline, settingsOutline, statsChartOutline } from "ionicons/icons";
 import { useStore } from "@/store";
 import { useRouter } from "vue-router";
 import { hasPermission } from "@/authorization";
@@ -84,6 +84,12 @@ export default defineComponent({
     let currentFacility: any = computed(() => userStore.getCurrentFacility) 
 
     const appPages = [
+      {
+        title: "Dashboard",
+        url: "/dashboard",
+        iosIcon: statsChartOutline,
+        mdIcon: statsChartOutline,
+      },
       {
         title: "Open",
         url: "/open",
@@ -187,6 +193,7 @@ export default defineComponent({
       hasPermission,
       mailUnreadOutline,
       mailOpenOutline,
+      statsChartOutline,
       selectedIndex,
       settingsOutline,
       store,

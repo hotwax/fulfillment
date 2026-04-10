@@ -71,6 +71,12 @@ const routes: Array<RouteRecordRaw> = [
     redirect: '/open'
   },
   {
+    path: '/dashboard',
+    name: 'Dashboard',
+    component: () => import('@/views/Dashboard.vue'),
+    beforeEnter: authGuard
+  },
+  {
     path: '/open',
     name: 'OpenOrders',
     component: OpenOrders,
