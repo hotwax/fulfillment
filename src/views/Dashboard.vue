@@ -639,6 +639,8 @@ FulfillmentProgressBar {
 
 .scheduling ion-item {
   flex: 1;
+  border: var(--border-medium);
+  border-radius: 10px;
 }
 
 .scheduling ion-item::part(native) {
@@ -653,7 +655,7 @@ FulfillmentProgressBar {
 .staff-list {
   display: flex;
   gap: var(--spacer-base);
-  overflow-x: auto;
+  overflow-x: visible;
   padding-bottom: var(--spacer-sm);
   scrollbar-width: none;
 }
