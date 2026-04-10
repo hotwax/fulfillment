@@ -784,6 +784,22 @@ const shipmentAndPicklistAndRole = async function (payload: any): Promise<any> {
   })
 }
 
+const storeLookup = async function (payload: any): Promise<any> {
+  const omstoken = store.getters['user/getUserToken'];
+  const baseURL = store.getters['user/getMaargBaseUrl'];
+
+  return await apiClient({
+    url: `/api/stores`,
+    method: "POST",
+    baseURL,
+    headers: {
+      "Authorization": "Bearer " + omstoken,
+      "Content-Type": "application/json"
+    },
+    data: payload
+  })
+}
+
 export const UtilService = {
   fetchCarriers,
   createEnumerationGroupMember,
@@ -829,5 +845,6 @@ export const UtilService = {
   getRejectedOrderFacilityChange,
   getPackedShipments,
   getPendingFulfillmentOrders,
-  shipmentAndPicklistAndRole
+  shipmentAndPicklistAndRole,
+  storeLookup
 }

@@ -72,11 +72,11 @@
               <p>04:30pm</p>
             </ion-label>
           </ion-item>
-          <ion-item lines="none">
+          <ion-item lines="none" v-if="closingTimeInfo">
             <ion-icon slot="start" :icon="storefrontOutline" color="danger" />
             <ion-label>
-              Store closes in 30 minutes
-              <p>04:30pm</p>
+              {{ closingTimeInfo.label }}
+              <p>{{ closingTimeInfo.time }}</p>
             </ion-label>
           </ion-item> 
         </div>
@@ -175,6 +175,7 @@ import Image from '@/components/Image.vue';
 
 const currentFacility: any = computed(() => useUserStore().getCurrentFacility);
 const currentFacilityDetails = ref(null as any)
+const storeDetails = ref(null as any)
 const facilityAllocationsOfDay = ref<any[]>([]);
 const rejectedOrderFacilityChange = ref<any[]>([]);
 const packedShipments = ref<any[]>([]);
@@ -236,6 +237,27 @@ const fastestPacker = computed(() => {
   });
 
   return bestPacker || {};
+})
+const closingTimeInfo = computed(() => {
+  if (!storeDetails.value) return null;
+  const now = DateTime.now();
+  const currentDay = now.toLocaleString({ weekday: 'long' }).toLowerCase();
+  const closingTimeStr = storeDetails.value[`${currentDay}_close`];
+  if (!closingTimeStr) return null;
+  const [hours, minutes] = closingTimeStr.split(':').map(Number);
+  const closingTime = now.set({ hour: hours, minute: minutes, second: 0, millisecond: 0 });
+  if (now > closingTime) {
+    return {
+      isClosed: true,
+      label: translate("Store is closed"),
+      time: closingTime.toFormat('hh:mm a')
+    };
+  }
+  return {
+    isClosed: false,
+    label: translate("Store closes") + " " + closingTime.toRelative(),
+    time: closingTime.toFormat('hh:mm a')
+  };
 })
 
 const performanceByPicker = computed(() => {
@@ -362,6 +384,22 @@ const getCurrentFacilityDetails = async () => {
     }
   } catch(err) {
     logger.error("Failed to fetch total orders count", err);
+  }
+
+  try {
+    const resp = await UtilService.storeLookup({
+      viewSize: 1,
+      filters: [
+        `storeCode: ${currentFacility.value.facilityId}`
+      ]
+    });
+    if (!hasError(resp) && resp) {
+      storeDetails.value = resp.data.response?.docs ? resp.data.response.docs[0] : (resp.data.docs ? resp.data.docs[0] : resp.data[0])
+    } else {
+      throw resp.data
+    }
+  } catch (error) {
+    logger.error("Failed to fetch store details", error);
   }
 }
 
