@@ -172,6 +172,7 @@ import logger from '@/logger';
 import { getDateWithOrdinalSuffix, showToast } from '@/utils';
 import router from '@/router';
 import Image from '@/components/Image.vue';
+import emitter from '@/event-bus';
 
 const currentFacility: any = computed(() => useUserStore().getCurrentFacility);
 const currentFacilityDetails = ref(null as any)
@@ -310,6 +311,7 @@ const performanceByPicker = computed(() => {
 }) as any
 
 onIonViewDidEnter(async () => {
+  emitter.emit('presentLoader', { message: 'Loading...', backdropDismiss: false })
   try {
     await getCurrentFacilityDetails()
     const resp = await UtilService.getFacilityAllocationsOfDay({
@@ -369,6 +371,7 @@ onIonViewDidEnter(async () => {
     logger.error(error);
     showToast(translate("Failed to get today's store performance stats"))
   }
+  emitter.emit('dismissLoader')
 })
 
 const getCurrentFacilityDetails = async () => {
