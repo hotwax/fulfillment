@@ -110,6 +110,32 @@
           </div>
         </div>
       </div>
+      <div v-if="performanceByPicker.length">
+        <ion-list>
+          <div class="list-item" v-for="performance in performanceByPicker" :key="performance.partyId"> 
+            <ion-item lines="none">
+              <ion-thumbnail slot="start">
+                <Image :src="performance.partyImageUrl"/>
+              </ion-thumbnail>
+              <ion-label>
+                {{ performance.name }}
+              </ion-label>
+            </ion-item>
+            <ion-label>
+              {{ performance.pickedCount }}
+              <p>{{ translate("Picked") }}</p>
+            </ion-label>
+            <ion-label>
+              {{ performance.packedCount }}
+              <p>{{ translate("Packed") }}</p>
+            </ion-label>
+            <ion-label>
+              {{ performance.rejectedCount }}
+              <p>{{ translate("Rejected") }}</p>
+            </ion-label>
+          </div>
+        </ion-list>
+      </div>
     </ion-content>
   </ion-page>
 </template>
@@ -126,6 +152,7 @@ import {
   IonItem,
   IonLabel,
   IonIcon,
+  IonThumbnail,
   onIonViewDidEnter
 } from '@ionic/vue';
 import { informationCircleOutline, mailUnreadOutline, mailOpenOutline, sendOutline, storefrontOutline } from 'ionicons/icons';
@@ -139,6 +166,7 @@ import { hasError } from '@hotwax/oms-api';
 import logger from '@/logger';
 import { getDateWithOrdinalSuffix, showToast } from '@/utils';
 import router from '@/router';
+import Image from '@/components/Image.vue';
 
 const currentFacility: any = computed(() => useUserStore().getCurrentFacility);
 const currentFacilityDetails = ref(null as any)
@@ -153,12 +181,61 @@ const inProgressOrderIds = computed(() => [...new Set(inProgressOrderItems.value
 const shipmentAndPicklists = ref<any[]>([]);
 const pickedOrderByPicker = ref<any[]>([]);
 const packedOrderByPicker = ref<any[]>([]);
+const rejectedOrderByPicker = ref<any[]>([]);
 const todayDate = computed(() => getDateWithOrdinalSuffix(DateTime.now().toMillis(), 'MMMM'))
 const fillrate = computed(() => (packedShipments.value.length / (packedShipments.value.length + rejectedOrderFacilityChange.value.length)) * 100)
 
 const mostOrdersPicked = computed(() => {
   return [...pickedOrderByPicker.value].sort((a: any, b: any) => b.pickedShipments.length - a.pickedShipments.length)[0] || {}
 })
+
+const performanceByPicker = computed(() => {
+  const performance: any = {}
+
+  // Process picked orders
+  pickedOrderByPicker.value.forEach((picker: any) => {
+    if (!performance[picker.partyId]) {
+      performance[picker.partyId] = {
+        partyId: picker.partyId,
+        name: picker.firstName ? (picker.firstName + " " + (picker.lastName || "")) : picker.partyId,
+        pickedCount: 0,
+        packedCount: 0,
+        rejectedCount: 0
+      }
+    }
+    performance[picker.partyId].pickedCount = picker.pickedShipments.length
+  })
+
+  // Process packed orders
+  packedOrderByPicker.value.forEach((picker: any) => {
+    if (!performance[picker.partyId]) {
+      performance[picker.partyId] = {
+        partyId: picker.partyId,
+        name: picker.firstName ? (picker.firstName + " " + (picker.lastName || "")) : picker.partyId,
+        pickedCount: 0,
+        packedCount: 0,
+        rejectedCount: 0
+      }
+    }
+    performance[picker.partyId].packedCount = picker.packedShipments.length
+  })
+
+  // Process rejected orders
+  rejectedOrderByPicker.value.forEach((picker: any) => {
+    if (!performance[picker.partyId]) {
+      performance[picker.partyId] = {
+        partyId: picker.partyId,
+        name: picker.firstName ? (picker.firstName + " " + (picker.lastName || "")) : picker.partyId,
+        pickedCount: 0,
+        packedCount: 0,
+        rejectedCount: 0
+      }
+    }
+    performance[picker.partyId].rejectedCount = picker.rejectedOrders.length
+  })
+
+  return Object.values(performance)
+}) as any
 
 onIonViewDidEnter(async () => {
   try {
@@ -187,7 +264,7 @@ onIonViewDidEnter(async () => {
         pageNoLimit: true,
         changeDatetime_from: DateTime.now().startOf('day').toFormat('yyyy-MM-dd')
       },
-      fieldsToSelect: "orderId",
+      fieldsToSelect: "orderId,partyId",
       distinct: true
     });
     if (hasError(rejectedOrderFacilityChangeResp) || !rejectedOrderFacilityChangeResp.data || !rejectedOrderFacilityChangeResp.data.entityValueList) {
@@ -215,6 +292,7 @@ onIonViewDidEnter(async () => {
     await getApprovedShipmentAndPicklistAndRole();
     getPickedOrderByPicker();
     getPackedOrderByPicker();
+    getRejectedOrderByPicker();
   } catch (error) { 
     logger.error(error);
     showToast(translate("Failed to get today's store performance stats"))
@@ -296,6 +374,23 @@ const getPackedOrderByPicker = () => {
       })
     }
     return packers
+  }, [])
+}
+
+const getRejectedOrderByPicker = () => {
+  rejectedOrderByPicker.value = rejectedOrderFacilityChange.value.reduce((pickers: any, rejection: any) => {
+    const picker = pickers.find((p: any) => p.partyId === rejection.partyId)
+    if (picker) {
+      picker.rejectedOrders.push(rejection)
+    } else {
+      pickers.push({
+        partyId: rejection.partyId,
+        firstName: rejection.firstName,
+        lastName: rejection.lastName,
+        rejectedOrders: [rejection]
+      })
+    }
+    return pickers
   }, [])
 }
 
@@ -423,6 +518,19 @@ FulfillmentProgressBar {
   min-width: 250px;
   margin: 0;
   flex-shrink: 0;
+}
+
+.list-item {
+  --columns-desktop: 5;
+  border-bottom: 1px solid var(--ion-color-medium);
+}
+
+@media (min-width: 991px) {
+  .list-item {
+    display: grid;
+    grid-template-columns: repeat(var(--columns-desktop, 1), minmax(0, 1fr));
+    align-items: center;
+  }
 }
 
 .performance-metric h1 {
