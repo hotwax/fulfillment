@@ -97,14 +97,15 @@
               </ion-item>
             </ion-card>
             <ion-card>
-              <p class="overline title">{{ translate("Fastest Picker") }}</p>
+              <p class="overline title">{{ translate("Fastest Packer") }}</p>
               <ion-item lines="none">
                 <ion-label>
-                  <h1>{{ "First" + " " + "Last Name" }}</h1>
+                  <h1>{{ fastestPacker.name || "-" }}</h1>
                 </ion-label>
               </ion-item>
               <ion-item lines="none">
-                {{ "20 minutes average" }}
+                <p v-if="fastestPacker.averageTime"> {{ fastestPacker.averageTime + " " + translate("minutes average") }} </p>
+                <p v-else>-</p>
               </ion-item>
             </ion-card>
           </div>
@@ -132,6 +133,10 @@
             <ion-label>
               {{ performance.rejectedCount }}
               <p>{{ translate("Rejected") }}</p>
+            </ion-label>
+            <ion-label>
+              {{ getAveragePackingTime(performance) }}
+              <p>{{ translate("Avg. Pack Time") }}</p>
             </ion-label>
           </div>
         </ion-list>
@@ -183,10 +188,54 @@ const pickedOrderByPicker = ref<any[]>([]);
 const packedOrderByPicker = ref<any[]>([]);
 const rejectedOrderByPicker = ref<any[]>([]);
 const todayDate = computed(() => getDateWithOrdinalSuffix(DateTime.now().toMillis(), 'MMMM'))
-const fillrate = computed(() => (packedShipments.value.length / (packedShipments.value.length + rejectedOrderFacilityChange.value.length)) * 100)
+const fillrate = computed(() => {
+  const total = packedShipments.value.length + rejectedOrderFacilityChange.value.length;
+  if (!total) return 0;
+  const rate = (packedShipments.value.length / total) * 100;
+  return rate % 1 === 0 ? rate : rate.toFixed(2);
+})
 
 const mostOrdersPicked = computed(() => {
   return [...pickedOrderByPicker.value].sort((a: any, b: any) => b.pickedShipments.length - a.pickedShipments.length)[0] || {}
+})
+
+const fastestPacker = computed(() => {
+  const performanceList = performanceByPicker.value;
+  let bestPacker = null as any;
+  let minTime = Infinity;
+
+  performanceList.forEach((performance: any) => {
+    const packedShipments = performance.packedShipments;
+    if (!packedShipments || packedShipments.length === 0) return;
+
+    let totalTimeMinutes = 0;
+    let validCount = 0;
+
+    packedShipments.forEach((packedShipment: any) => {
+      const pickedRecord = shipmentAndPicklists.value.find((picked: any) => picked.shipmentId === packedShipment.shipmentId);
+      if (pickedRecord && pickedRecord.picklistDate && packedShipment.statusDate) {
+        // Difference between the picklist creation and packed status date time.
+        const diffMs = packedShipment.statusDate - pickedRecord.picklistDate;
+        if (diffMs > 0) {
+          totalTimeMinutes += diffMs / (1000 * 60);
+          validCount++;
+        }
+      }
+    });
+
+    if (validCount > 0) {
+      const avg = totalTimeMinutes / validCount;
+      if (avg < minTime) {
+        minTime = avg;
+        bestPacker = {
+          ...performance,
+          averageTime: Math.round(avg)
+        };
+      }
+    }
+  });
+
+  return bestPacker || {};
 })
 
 const performanceByPicker = computed(() => {
@@ -218,6 +267,7 @@ const performanceByPicker = computed(() => {
       }
     }
     performance[picker.partyId].packedCount = picker.packedShipments.length
+    performance[picker.partyId].packedShipments = picker.packedShipments
   })
 
   // Process rejected orders
@@ -394,6 +444,33 @@ const getRejectedOrderByPicker = () => {
   }, [])
 }
 
+const getAveragePackingTime = (performance: any) => {
+  const packedShipments = performance.packedShipments;
+  if (!packedShipments || packedShipments.length === 0) {
+    return "-";
+  }
+
+  let totalTimeMinutes = 0;
+  let validCount = 0;
+
+  packedShipments.forEach((packedShipment: any) => {
+    const pickedRecord = shipmentAndPicklists.value.find((picked: any) => picked.shipmentId === packedShipment.shipmentId);
+    
+    if (pickedRecord && pickedRecord.picklistDate && packedShipment.statusDate) {
+      const diffMs = packedShipment.statusDate - pickedRecord.picklistDate;
+      if (diffMs > 0) {
+        totalTimeMinutes += diffMs / (1000 * 60);
+        validCount++;
+      }
+    }
+  });
+
+  if (validCount === 0) return "-";
+  
+  const averageMinutes = Math.round(totalTimeMinutes / validCount);
+  return `${averageMinutes} minutes`;
+}
+
 const getApprovedShipmentAndPicklistAndRole = async () => {
   try {
     const resp = await UtilService.shipmentAndPicklistAndRole({
@@ -521,7 +598,7 @@ FulfillmentProgressBar {
 }
 
 .list-item {
-  --columns-desktop: 5;
+  --columns-desktop: 6;
   border-bottom: 1px solid var(--ion-color-medium);
 }
 
