@@ -465,8 +465,7 @@ const getPendingFulfillmentOrders = async () => {
         shipmentStatus_not: "Y",
         shipmentStatus: "SHIPMENT_PACKED,SHIPMENT_SHIPPED,SHIPMENT_CANCELLED,SHIPMENT_INPUT",
         shipmentMethodTypeId: "STOREPICKUP",
-        shipmentMethodTypeId_not: "Y",
-        reservedDatetime_from: DateTime.now().startOf('day').toFormat('yyyy-MM-dd')
+        shipmentMethodTypeId_not: "Y"
       }
     });
     if (hasError(resp) || !resp.data || !resp.data.entityValueList) {
