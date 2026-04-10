@@ -38,7 +38,7 @@
             <ion-item lines="none">
               <ion-label>
                 <p>Oldest order assigned</p>
-                1 hour 10 minutes ago
+                {{ oldestOrderWaitTime }}
               </ion-label>
             </ion-item>
           </div>
@@ -310,6 +310,36 @@ const performanceByPicker = computed(() => {
   return Object.values(performance)
 }) as any
 
+const oldestOrderWaitTime = computed(() => {
+  if (!pendingFulfillmentOrders.value.length) return "-";
+
+  const oldestReservedDatetime = pendingFulfillmentOrders.value.reduce((oldest: any, order: any) => {
+    if (order.reservedDatetime && (!oldest || order.reservedDatetime < oldest)) {
+      return order.reservedDatetime;
+    }
+    return oldest;
+  }, null);
+
+  if (!oldestReservedDatetime) return "-";
+
+  return findTimeDiff(oldestReservedDatetime, DateTime.now().toMillis(), 'ago');
+})
+
+const findTimeDiff = (startTime: any, endTime: any, format = "") => {
+  const timeDiff = DateTime.fromMillis(endTime).diff(DateTime.fromMillis(startTime), ["years", "months", "days", "hours", "minutes"]).toObject();
+  const parts = [];
+  if (timeDiff.years && Math.floor(timeDiff.years) > 0) parts.push(`${Math.floor(timeDiff.years)} ${Math.floor(timeDiff.years) > 1 ? translate("years") : translate("year")}`);
+  if (timeDiff.months && Math.floor(timeDiff.months) > 0) parts.push(`${Math.floor(timeDiff.months)} ${Math.floor(timeDiff.months) > 1 ? translate("months") : translate("month")}`);
+  if (timeDiff.days && Math.floor(timeDiff.days) > 0) parts.push(`${Math.floor(timeDiff.days)} ${Math.floor(timeDiff.days) > 1 ? translate("days") : translate("day")}`);
+  if (timeDiff.hours && Math.floor(timeDiff.hours) > 0) parts.push(`${Math.floor(timeDiff.hours)} ${Math.floor(timeDiff.hours) > 1 ? translate("hours") : translate("hour")}`);
+  if (timeDiff.minutes !== undefined && (Math.floor(timeDiff.minutes) > 0 || parts.length === 0)) parts.push(`${Math.floor(timeDiff.minutes)} ${Math.floor(timeDiff.minutes) > 1 ? translate("minutes") : translate("minute")}`);
+
+  const diffString = parts.join(" ");
+  if (format === "ago") return `${diffString} ${translate("ago")}`;
+  if (format === "prefix") return `+ ${diffString}`;
+  return diffString;
+}
+
 onIonViewDidEnter(async () => {
   emitter.emit('presentLoader', { message: 'Loading...', backdropDismiss: false })
   try {
@@ -397,7 +427,7 @@ const getCurrentFacilityDetails = async () => {
       ]
     });
     if (!hasError(resp) && resp) {
-      storeDetails.value = resp.data.response?.docs ? resp.data.response.docs[0] : (resp.data.docs ? resp.data.docs[0] : resp.data[0])
+      storeDetails.value = resp.data.response?.docs?.[0]
     } else {
       throw resp.data
     }
