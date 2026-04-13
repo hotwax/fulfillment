@@ -689,26 +689,7 @@ const fetchShopifyShopLocation = async (omsRedirectionUrl: string, token: any, p
   });
 }
 
-const getFacilityAllocationsOfDay = async (payload: any): Promise<any> => {
-  const omstoken = store.getters['user/getUserToken'];
-  const baseURL = store.getters['user/getMaargBaseUrl'];
-
-  return await apiClient({
-    url: `/oms/dataDocumentView`,
-    method: "POST",
-    baseURL,
-    headers: {
-      "Authorization": "Bearer " + omstoken,
-      "Content-Type": "application/json"
-    },
-    data: {
-      dataDocumentId: "OrderFacilityChange",
-      ...payload
-    }
-  })
-}
-
-const getRejectedOrderFacilityChange = async function (payload: any): Promise<any> {
+const getOrderFacilityChange = async (payload: any): Promise<any> => {
   const omstoken = store.getters['user/getUserToken'];
   const baseURL = store.getters['user/getMaargBaseUrl'];
 
@@ -841,8 +822,7 @@ export const UtilService = {
   updateProductStoreSetting,
   createProductStoreSetting,
   getFacilityGroupAndMemberDetails,
-  getFacilityAllocationsOfDay,
-  getRejectedOrderFacilityChange,
+  getOrderFacilityChange,
   getPackedShipments,
   getPendingFulfillmentOrders,
   shipmentAndPicklistAndRole,

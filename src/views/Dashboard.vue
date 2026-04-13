@@ -347,7 +347,7 @@ onIonViewDidEnter(async () => {
   emitter.emit('presentLoader', { message: 'Loading...', backdropDismiss: false })
   try {
     await getCurrentFacilityDetails()
-    const resp = await UtilService.getFacilityAllocationsOfDay({
+    const resp = await UtilService.getOrderFacilityChange({
       customParametersMap: {
         facilityId: currentFacility.value.facilityId,
         shipmentMethodTypeId: "STOREPICKUP",
@@ -363,7 +363,7 @@ onIonViewDidEnter(async () => {
       throw resp.data
     }
     facilityAllocationsOfDay.value = resp.data.entityValueList;
-    const rejectedOrderFacilityChangeResp = await UtilService.getRejectedOrderFacilityChange({
+    const rejectedOrderFacilityChangeResp = await UtilService.getOrderFacilityChange({
       customParametersMap: {
         fromFacilityId: currentFacility.value.facilityId,
         facilityId: "REJECTED_ITM_PARKING",
