@@ -45,7 +45,7 @@ import { IonButton, IonButtons, IonCheckbox, IonContent, IonFab, IonFabButton, I
 import { arrowBackOutline, saveOutline } from "ionicons/icons";
 import { computed } from "vue";
 import { commonUtil, translate, DxpShopifyImg } from "@common";
-import { useRouter } from "vue-router";
+import router from "@/router";
 import { useUserStore } from "@/store/user";
 import { useTransferOrderStore } from "@/store/transferorder";
 import { useProductStore } from "@/store/product";
@@ -54,7 +54,6 @@ import { useProductStore as useAppProductStore } from "@/store/productStore";
 const userStore = useUserStore();
 const getProductIdentificationValue = commonUtil.getProductIdentificationValue;
 
-const router = useRouter();
 const productIdentificationPref = computed(() => useAppProductStore().getProductIdentificationPref);
 const order = computed(() => useTransferOrderStore().getCurrent);
 const getProduct = (productId: string) => useProductStore().getProduct(productId);

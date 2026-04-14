@@ -45,7 +45,7 @@
 <script setup lang="ts">
 import { createAnimation, IonApp, IonContent, IonHeader, IonIcon, IonItem, IonItemDivider, IonLabel, IonList, IonMenu, IonMenuToggle, IonRouterOutlet, IonSplitPane, IonTitle, IonToolbar, loadingController } from "@ionic/vue";
 import { computed, onMounted, onUnmounted, ref } from "vue";
-import { translate, emitter, logger, useNotificationStore } from "@common";
+import { translate, emitter, logger, useNotificationStore, initialise } from "@common";
 import { Settings } from "luxon";
 import { init } from "@module-federation/runtime";
 import { useUserStore } from "@/store/user";
@@ -59,6 +59,19 @@ const loader = ref<any>(null);
 
 const userProfile = computed(() => useUserStore().getUserProfile);
 const allNotificationPrefs = computed(() => useNotificationStore().getAllNotificationPrefs);
+const maxAge = import.meta.env.VITE_VUE_APP_CACHE_MAX_AGE ? parseInt(import.meta.env.VITE_VUE_APP_CACHE_MAX_AGE) : 0
+initialise({
+  cacheMaxAge: maxAge,
+  events: {
+    unauthorised: useAuth().logout,
+    responseError: () => {
+      setTimeout(() => dismissLoader(), 100);
+    },
+    queueTask: (payload: any) => {
+      emitter.emit("queueTask", payload);
+    }
+  }
+})
 const currentFacility = computed(() => useProductStore().currentFacility);
 
 const menuItems = computed(() => {

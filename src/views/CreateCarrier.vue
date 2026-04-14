@@ -28,12 +28,11 @@
 <script setup lang="ts">
 import { IonButton, IonBackButton, IonContent, IonHeader, IonIcon, IonInput, IonItem, IonPage, IonText, IonTitle, IonToolbar, onIonViewWillEnter } from "@ionic/vue";
 import { ref } from "vue";
-import { useRouter } from "vue-router";
 import { arrowForwardOutline } from "ionicons/icons";
 import { commonUtil, logger, translate } from "@common";
 import { useCarrierStore } from "@/store/carrier";
+import router from "@/router";
 
-const router = useRouter();
 const carrier = ref({} as any);
 const carrierStore = useCarrierStore();
 

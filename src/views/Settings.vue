@@ -15,12 +15,12 @@
               <Image :src="userProfile.partyImageUrl" />
             </ion-avatar>
             <ion-card-header class="ion-no-padding ion-padding-vertical">
-              <ion-card-subtitle>{{ userProfile?.userLoginId }}</ion-card-subtitle>
+              <ion-card-subtitle>{{ userProfile?.username }}</ion-card-subtitle>
               <ion-card-title>{{ userProfile?.partyName }}</ion-card-title>
             </ion-card-header>
           </ion-item>
-          <ion-button color="danger" @click="logout()">{{ translate("Logout") }}</ion-button>
-          <ion-button fill="outline" @click="goToLaunchpad()">
+          <ion-button v-if="!commonUtil.isAppEmbedded()" color="danger" @click="logout()">{{ translate("Logout") }}</ion-button>
+          <ion-button v-if="!commonUtil.isAppEmbedded()" fill="outline" @click="goToLaunchpad()">
             {{ translate("Go to Launchpad") }}
             <ion-icon slot="end" :icon="openOutline" />
           </ion-button>
@@ -32,7 +32,7 @@
       </div>
 
       <section>
-        <DxpOmsInstanceNavigator />
+        <DxpOmsInstanceNavigator :is-embedded="commonUtil.isAppEmbedded()" />
         <DxpProductStoreSelector @updateProductStore="refreshProductStoreData($event)" />
         <DxpFacilitySwitcher @updateFacility="fetchFacilityDependencies($event)" />
 
@@ -324,22 +324,7 @@ const getEcomInvStatus = async () => {
 
 
 const logout = async () => {
-  try {
-    const notificationStore = useNotificationStore();
-    await notificationStore.removeClientRegistrationToken(firebaseDeviceId.value, import.meta.env.VITE_NOTIF_APP_ID as any);
-  } catch (error) {
-    logger.error(error);
-  }
-
-  useAuth().logout({ isUserUnauthorised: false }).then((redirectionUrl) => {
-    // redirectionUrl is only present when SSO enables, thus when not present redirect user to login
-    useOrderStore().clearOrders();
-    if(!redirectionUrl) {
-      router.replace("/login");
-    } else {
-      window.location.href = redirectionUrl
-    }
-  })
+  useAuth().logout({ isUserUnauthorised: false });
 }
 
 const goToLaunchpad = () => {

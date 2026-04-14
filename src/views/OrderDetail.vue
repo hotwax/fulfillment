@@ -319,7 +319,7 @@
             </ion-item>
           </ion-card>
 
-          <Component v-if="useUserStore().hasPermission('FF_INVOICING_STATUS_VIEW')" :is="orderInvoiceExt" :category="category" :order="order" :userProfile="userProfile" :maargBaseUrl="commonUtil.getMaargBaseURL()" :userToken="cookieHelper().get('token')" />
+          <Component v-if="useUserStore().hasPermission('FF_INVOICING_STATUS_VIEW')" :is="orderInvoiceExt" :category="category" :order="order" :userProfile="userProfile" :maargBaseUrl="commonUtil.getMaargBaseURL()" :userToken="commonUtil.getToken()" />
         </div>
         
         <h4 class="ion-padding-top ion-padding-start" v-if="order.otherShipGroups?.length">{{ translate('Other shipments in this order') }}</h4>
@@ -410,7 +410,6 @@ import { orderUtil } from "@/utils/orderUtil";
 import ScanOrderItemModal from "@/components/ScanOrderItemModal.vue";
 import GenerateTrackingCodeModal from "@/components/GenerateTrackingCodeModal.vue";
 import GiftCardActivationModal from "@/components/GiftCardActivationModal.vue";
-import { useRouter } from "vue-router";
 import { useOrderStore } from "@/store/order";
 import { useProductStore as useProduct } from "@/store/product";
 import { useStockStore } from "@/store/stock";
@@ -420,13 +419,13 @@ import { useUserStore } from "@/store/user";
 import OrderAdjustmentModal from "@/components/OrderAdjustmentModal.vue";
 import ShippingLabelActionPopover from "@/components/ShippingLabelActionPopover.vue";
 import TrackingCodeModal from "@/components/TrackingCodeModal.vue";
+import router from "@/router";
 
 const props = defineProps(["category", "orderId", "shipGroupSeqId", "shipmentId"]);
 
 const userStore = useUserStore();
 const orderStore = useOrderStore();
 const carrierStore = useCarrierStore();
-const router = useRouter();
 
 const addingBoxForShipmentIds = ref([] as any);
 const isUpdatingCarrierDetail = ref(false);

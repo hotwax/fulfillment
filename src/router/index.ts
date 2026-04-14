@@ -27,12 +27,13 @@ import Login from '@/views/Login.vue';
 import OrderLookup from '@/views/OrderLookup.vue';
 import OrderLookupDetail from '@/views/OrderLookupDetail.vue';
 import Rejections from '@/views/Rejections.vue';
-import Shopify from '@/views/Shopify.vue';
+import ShopifyLogin from '@/views/ShopifyLogin.vue';
 
 const authGuard = async (to: any, from: any, next: any) => {
   const { isAuthenticated } = useAuth()
   if (!isAuthenticated.value) {
-    next('/login');
+    if (!commonUtil.isAppEmbedded()) next('/login')
+    else next('/shopify-login')
   } else {
     next()
   }
@@ -266,9 +267,14 @@ const routes: Array<RouteRecordRaw> = [
     }
   },
   {
-    path: '/shopify',
-    name: 'Shopify',
-    component: Shopify
+    path: '/shopify-app-install',
+    name: 'ShopifyAppInstall',
+    component: () => import('@/views/ShopifyAppInstall.vue')
+  },
+  {
+    path: '/shopify-login',
+    name: 'ShopifyLogin',
+    component: ShopifyLogin
   }
 ]
 

@@ -23,10 +23,11 @@
 <script setup lang="ts">
 import { IonContent, IonHeader, IonItem, IonList, IonMenu, IonRadio, IonRadioGroup, IonTitle, IonToolbar, menuController } from "@ionic/vue";
 import { computed } from "vue";
-import { useRoute } from "vue-router";
 import { useOrderStore } from "@/store/order";
 import { emitter, translate } from "@common";
-const route = useRoute();
+import router from "@/router";
+
+const route = router.currentRoute.value;
 
 const title = computed(() => {
   if (route.name === "OpenOrders") return "Picklist Size";

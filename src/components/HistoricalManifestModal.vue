@@ -38,7 +38,7 @@
 import { IonButton, IonButtons, IonContent, IonHeader, IonIcon, IonItem, IonLabel, IonList, IonListHeader, IonSpinner, IonTitle, IonToolbar, modalController } from "@ionic/vue";
 import { computed, defineProps, ref } from "vue";
 import { cogOutline, closeOutline, printOutline } from "ionicons/icons";
-import { commonUtil, logger, ShopifyService, translate } from "@common";
+import { commonUtil, logger, useShopify, translate } from "@common";
 import { useProductStore as useAppProductStore } from "@/store/productStore";
 import { DateTime } from "luxon";
 import { useCarrierStore } from "@/store/carrier";
@@ -74,8 +74,8 @@ const downloadCarrierManifest = async (manifest: any) => {
         // Open the file in new tab
         try {
           // If we have an app bridge instance, use it to open the pdf
-          if (ShopifyService.getApp()) {
-            ShopifyService.redirect(pdfUrl);
+          if (commonUtil.isAppEmbedded()) {
+            useShopify().redirect(pdfUrl);
           } else {
             window.open(pdfUrl, "_blank")?.focus();
           }

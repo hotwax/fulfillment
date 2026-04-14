@@ -80,7 +80,7 @@ import { caretDownOutline, checkmarkDone, closeCircleOutline, removeCircleOutlin
 import { commonUtil, DxpShopifyImg, emitter, logger, translate } from "@common";
 import { useProductStore as useProductStore } from "@/store/productStore";
 import { useTransferOrderStore } from "@/store/transferorder";
-import { useRouter } from "vue-router";
+import router from "@/router";
 
 import ShippedHistoryModal from "@/components/ShippedHistoryModal.vue";
 import ReportIssuePopover from "./ReportIssuePopover.vue";
@@ -88,7 +88,6 @@ import { useProductStore as useProduct } from "@/store/product";
 
 const props = defineProps(["itemDetail", "isRejectionSupported", "lastScannedId", "orderStatus"]);
 
-const router = useRouter();
 const pickedQuantityInput = ref<any>(null);
 const pickedQuantity = ref(props.itemDetail.pickedQuantity);
 const item = ref(props.itemDetail);

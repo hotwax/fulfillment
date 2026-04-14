@@ -197,7 +197,7 @@
 import { ref, computed, watch, nextTick } from "vue";
 import { IonPage, IonHeader, IonToolbar, IonBackButton, IonTitle, IonContent, IonCard, IonList, IonItem, IonInput, IonLabel, IonButton, IonIcon, IonToggle, IonSegment, IonSegmentButton, IonThumbnail, IonBadge, IonSearchbar, IonSpinner, IonFooter, IonButtons, onIonViewWillEnter, alertController, modalController, onIonViewWillLeave } from "@ionic/vue";
 import { barcodeOutline, checkmarkDoneOutline, checkmarkCircle, cloudOfflineOutline, locateOutline, searchOutline, shirtOutline, storefrontOutline } from "ionicons/icons";
-import { onBeforeRouteLeave, useRoute } from "vue-router";
+import { onBeforeRouteLeave } from "vue-router";
 import router from "@/router";
 import { api, commonUtil, DxpShopifyImg, emitter, logger, translate } from "@common";
 import { useProductStore as useProductStore } from "@/store/productStore";
@@ -209,7 +209,7 @@ import { useProductStore as useProduct } from "@/store/product";
 import { useTransferOrderStore } from "@/store/transferorder";
 import { useOrderStore } from "@/store/order";
 
-const route = useRoute();
+const route = router.currentRoute.value;
 const productIdentificationPref = computed(() => useProductStore().getProductIdentificationPref);
 
 const productQueue = useProductQueue();

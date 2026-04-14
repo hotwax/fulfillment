@@ -56,7 +56,7 @@
 import { IonButton, IonButtons, IonCheckbox, IonContent, IonFab, IonFabButton, IonHeader, IonIcon, IonInput, IonItem, IonLabel, IonThumbnail, IonTitle, IonToolbar, modalController } from "@ionic/vue";
 import { computed, defineProps, onMounted, ref } from "vue";
 import { cameraOutline, closeOutline, saveOutline } from "ionicons/icons";
-import { commonUtil, DxpShopifyImg, translate } from "@common";
+import { commonUtil, DxpShopifyImg, translate, useShopify, useEmbeddedAppStore } from "@common";
 import { useProductStore as useAppProductStore } from "@/store/productStore";
 import { useUserStore as useAuthStore } from "@/store/user";
 import Scanner from "@/components/Scanner.vue";
@@ -82,17 +82,26 @@ const closeModal = (payload = {}) => {
 };
 
 const scan = async () => {
-  if (!(await commonUtil.hasWebcamAccess())) {
-    commonUtil.showToast(translate("Camera access not allowed, please check permissons."));
-    return;
-  }
-  const modal = await modalController.create({ component: Scanner });
-  modal.onDidDismiss().then((result) => {
-    if (result.role) {
-      updateProductScannedStatus(result.role);
+  if (useEmbeddedAppStore().getPosLocationId) {
+    try {
+      const scannedCode = await useShopify().openPosScanner();
+      if (scannedCode) updateProductScannedStatus(scannedCode);
+    } catch(err) {
+      console.error("POS Scanner error:", err);
     }
-  });
-  modal.present();
+  } else {
+    if (!(await commonUtil.hasWebcamAccess())) {
+      commonUtil.showToast(translate("Camera access not allowed, please check permissons."));
+      return;
+    }
+    const modal = await modalController.create({ component: Scanner });
+    modal.onDidDismiss().then((result) => {
+      if (result.role) {
+        updateProductScannedStatus(result.role);
+      }
+    });
+    modal.present();
+  }
 };
 
 const updateProductScannedStatus = async (payload?: any) => {

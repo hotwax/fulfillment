@@ -1,4 +1,4 @@
-import { api, client, commonUtil, cookieHelper, emitter, logger, translate, useNotificationStore } from "@common";
+import { api, client, commonUtil, cookieHelper, useEmbeddedAppStore, emitter, logger, translate, useNotificationStore } from "@common";
 import { useUserStore } from "@/store/user";
 import { useUtilStore } from "@/store/util";
 import { DateTime } from "luxon";
@@ -6,6 +6,7 @@ import { computed, ref } from "vue";
 import router from '@/router';
 import { useProductStore as useAppProductStore } from "@/store/productStore";
 import { firebaseUtil } from "@/utils/firebaseUtil";
+import { useOrderStore } from "@/store/order";
 
 interface LoginOption {
   loginAuthType?: string,
@@ -26,8 +27,8 @@ export function useAuth() {
 
   const isAuthenticated = computed(() => {
     let isTokenExpired = false;
-    const token = cookieHelper().get("token");
-    const expirationTime = Number(cookieHelper().get("expirationTime"));
+    const token = commonUtil.getToken();
+    const expirationTime = Number(commonUtil.getTokenExpiration());
     if (expirationTime) {
       const currTime = DateTime.now().toMillis();
       isTokenExpired = expirationTime < currTime;
@@ -92,12 +93,19 @@ export function useAuth() {
 
   const logout = async (payload?: any) => {
     let redirectionUrl = "";
-    emitter.emit("presentLoader", {
-      message: "Logging out",
-      backdropDismiss: false,
-    });
 
     if (!payload?.isUserUnauthorised) {
+      emitter.emit("presentLoader", {
+        message: "Logging out",
+        backdropDismiss: false,
+      });
+      try {
+        const notificationStore = useNotificationStore();
+        await notificationStore.removeClientRegistrationToken(notificationStore.getFirebaseDeviceId, import.meta.env.VITE_NOTIF_APP_ID as any);
+        notificationStore.$reset();
+      } catch (error) {
+        logger.error(error);
+      }
       let resp;
       try {
         resp = await api({
@@ -115,14 +123,24 @@ export function useAuth() {
       if (resp?.logoutAuthType == "SAML2SSO") {
         redirectionUrl = resp.logoutUrl;
       }
+      emitter.emit("dismissLoader");
     }
-
+    // This only runs when token gets expired, since embedded app user can't logout on it's own,
+    // token expiry on navigation is handled on the auth guard.
+    if (commonUtil.isAppEmbedded()) {
+      redirectionUrl = window.location.origin + `/shopify-login?shop=${useEmbeddedAppStore().getShop}&host=${useEmbeddedAppStore().getHost}&embedded=1`;
+      useEmbeddedAppStore().$reset();
+    }
+    useNotificationStore().clearNotificationState();
     useUserStore().$reset();
+    useOrderStore().clearOrders();
     cookieHelper().remove('token');
     cookieHelper().remove('expirationTime');
-
-    emitter.emit("dismissLoader");
-    return redirectionUrl;
+    if(!redirectionUrl) {
+      router.replace("/login");
+    } else {
+      window.location.href = redirectionUrl
+    }
   }
 
   const fetchLoginOptions = async () => {

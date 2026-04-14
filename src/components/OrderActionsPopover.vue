@@ -25,11 +25,10 @@ import { arrowForwardOutline, bagCheckOutline, copyOutline } from "ionicons/icon
 import { commonUtil, emitter, translate } from "@common";
 import AssignPickerModal from "@/views/AssignPickerModal.vue";
 import { useOrderStore } from "@/store/order";
-import { useRouter } from "vue-router";
+import router from "@/router";
 
 const props = defineProps(["order", "category"]);
 
-const router = useRouter();
 const closePopover = () => {
   popoverController.dismiss();
 };
