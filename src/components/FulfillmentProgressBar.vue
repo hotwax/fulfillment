@@ -26,14 +26,6 @@ const chartData = computed(() => {
   const entries = Object.entries(props.dataSegments)
 
   let usedCount = 0
-  // const datasets = entries.map(([label, { value, color }]) => {
-  //   usedCount += value
-  //   return {
-  //     label,
-  //     data: [value],
-  //     backgroundColor: color
-  //   }
-  // })
   const datasets = entries.map(([label, { value, color }], index, arr) => {
     usedCount += value
 
