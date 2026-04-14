@@ -20,7 +20,8 @@ import { useUserStore } from '@/store/user';
 
 const userStore = useUserStore();
 
-const pwaState = computed(() => userStore.pwaState)
+const userProfile = computed(() => userStore.getUserProfile)
+const pwaState = computed(() => userStore.getPwaState)
 
 const refreshApp = () => {
   userStore.updatePwaState({ registration: pwaState.value.registration, updateExists: false });
@@ -28,7 +29,16 @@ const refreshApp = () => {
   pwaState.value.registration.waiting.postMessage({ type: 'SKIP_WAITING' })
 }
 
-const appInfo = (import.meta.env.VUE_APP_VERSION_INFO ? JSON.parse(import.meta.env.VUE_APP_VERSION_INFO) : {}) as any;
-const appVersion = appInfo.branch ? (appInfo.branch + "-" + appInfo.revision) : appInfo.tag;
-const getDateTime = (time: any) => DateTime.fromMillis(time).setZone(userStore.currentTimeZoneId).toLocaleString(DateTime.DATETIME_MED);
+const appInfo = (import.meta.env.VITE_APP_VERSION_INFO ? JSON.parse(import.meta.env.VITE_APP_VERSION_INFO as string) : {}) as any;
+const appVersion = appInfo.branch ? (appInfo.branch + "-" + appInfo.revision) : appInfo.tag ? appInfo.tag : "";
+const getDateTime = (time: any) => time ? DateTime.fromMillis(time).setZone(userProfile.value?.timeZone).toLocaleString(DateTime.DATETIME_MED) : "";
 </script>
+
+<style scoped>
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--spacer-xs) 10px 0px;
+}
+</style>
