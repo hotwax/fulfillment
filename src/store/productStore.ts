@@ -168,7 +168,7 @@ export const useProductStore = defineStore('productStore', {
         }
 
         // Only Location's facility for Shopify POS Users.
-        const shopifyLocationId = useEmbeddedAppStore().posContext.locationId
+        const shopifyLocationId = useEmbeddedAppStore().getPosLocationId
         if (commonUtil.isAppEmbedded() && shopifyLocationId) {
           const locationFacilityId = await this.fetchShopifyShopLocation({
             shopifyLocationId,
@@ -231,7 +231,7 @@ export const useProductStore = defineStore('productStore', {
       if (!this.facilities.length) return;
       let facilityId: string | undefined;
       try {
-        const locationId = useEmbeddedAppStore().posContext.locationId;
+        const locationId = useEmbeddedAppStore().getPosLocationId;
         if (commonUtil.isAppEmbedded() && locationId) {
           facilityId = await this.fetchShopifyShopLocation({
             shopifyLocationId: locationId,

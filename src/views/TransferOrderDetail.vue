@@ -24,7 +24,7 @@
             <ion-input :disabled="currentOrder.statusId === 'ORDER_COMPLETED'" :label="translate('Scan items')" autofocus :placeholder="translate('Scan barcodes to pick them')" v-model="queryString" @keyup.enter="updateProductCount(queryString)" />
           </ion-item>
 
-          <ion-button v-if="!commonUtil.isAppEmbedded() || useEmbeddedAppStore().posContext.locationId" expand="block" fill="outline" :disabled="currentOrder.statusId === 'ORDER_COMPLETED'" @click="scanCode()">
+          <ion-button v-if="!commonUtil.isAppEmbedded() || useEmbeddedAppStore().getPosLocationId" expand="block" fill="outline" :disabled="currentOrder.statusId === 'ORDER_COMPLETED'" @click="scanCode()">
             <ion-icon slot="start" :icon="barcodeOutline" />{{ translate("Scan") }}
           </ion-button>
         </div>
@@ -269,7 +269,7 @@ const updateProductCount = async (payload: any) => {
 };
 
 const scanCode = async () => {
-  if (useEmbeddedAppStore().posContext.locationId) {
+  if (useEmbeddedAppStore().getPosLocationId) {
     try {
       const scannedCode = await useShopify().openPosScanner();
       if (scannedCode) updateProductCount(scannedCode);

@@ -137,7 +137,7 @@ const getCreatedDateTime = () => {
 };
 
 const scan = async () => {
-  if (useEmbeddedAppStore().posContext.locationId) {
+  if (useEmbeddedAppStore().getPosLocationId) {
     try {
       const scannedCode = await useShopify().openPosScanner();
       if (scannedCode) activationCode.value = scannedCode;

@@ -92,12 +92,6 @@ export function useAuth() {
   }
 
   const logout = async (payload?: any) => {
-    try {
-      const notificationStore = useNotificationStore();
-      await notificationStore.removeClientRegistrationToken(notificationStore.getFirebaseDeviceId, import.meta.env.VITE_NOTIF_APP_ID as any);
-    } catch (error) {
-      logger.error(error);
-    }
     let redirectionUrl = "";
 
     if (!payload?.isUserUnauthorised) {
@@ -105,6 +99,13 @@ export function useAuth() {
         message: "Logging out",
         backdropDismiss: false,
       });
+      try {
+        const notificationStore = useNotificationStore();
+        await notificationStore.removeClientRegistrationToken(notificationStore.getFirebaseDeviceId, import.meta.env.VITE_NOTIF_APP_ID as any);
+        notificationStore.$reset();
+      } catch (error) {
+        logger.error(error);
+      }
       let resp;
       try {
         resp = await api({
@@ -127,14 +128,14 @@ export function useAuth() {
     // This only runs when token gets expired, since embedded app user can't logout on it's own,
     // token expiry on navigation is handled on the auth guard.
     if (commonUtil.isAppEmbedded()) {
-      redirectionUrl = window.location.origin + `/shopify-login?shop=${useEmbeddedAppStore().shop}&host=${useEmbeddedAppStore().host}&embedded=1`;
+      redirectionUrl = window.location.origin + `/shopify-login?shop=${useEmbeddedAppStore().getShop}&host=${useEmbeddedAppStore().getHost}&embedded=1`;
       useEmbeddedAppStore().$reset();
     }
+    useNotificationStore().clearNotificationState();
     useUserStore().$reset();
     useOrderStore().clearOrders();
     cookieHelper().remove('token');
     cookieHelper().remove('expirationTime');
-
     if(!redirectionUrl) {
       router.replace("/login");
     } else {
