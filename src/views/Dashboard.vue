@@ -90,7 +90,7 @@
               <p class="overline title">{{ translate("Most Orders Picked") }}</p>
               <ion-item lines="none">
                 <ion-label>
-                  <h1>{{ mostOrdersPicked.firstName ? (mostOrdersPicked.firstName + " " + (mostOrdersPicked.lastName || "")) : "-" }}</h1>
+                  <h1>{{ mostOrdersPicked.groupName || (mostOrdersPicked.firstName ? (mostOrdersPicked.firstName + " " + (mostOrdersPicked.lastName || "")) : "-") }}</h1>
                 </ion-label>
               </ion-item>
               <ion-item lines="none">
@@ -190,6 +190,8 @@ const shipmentAndPicklists = ref<any[]>([]);
 const pickedOrderByPicker = ref<any[]>([]);
 const packedOrderByPicker = ref<any[]>([]);
 const rejectedOrderByPicker = ref<any[]>([]);
+const currentEcomStore: any = computed(() => useUserStore().getCurrentEComStore)
+
 const todayDate = computed(() => getDateWithOrdinalSuffix(DateTime.now().toMillis(), 'MMMM'))
 const fillrate = computed(() => {
   const total = packedShipments.value.length + rejectedOrderFacilityChange.value.length;
@@ -270,7 +272,7 @@ const performanceByPicker = computed(() => {
     if (!performance[picker.partyId]) {
       performance[picker.partyId] = {
         partyId: picker.partyId,
-        name: picker.firstName ? (picker.firstName + " " + (picker.lastName || "")) : picker.partyId,
+        name: picker.groupName || (picker.firstName ? (picker.firstName + " " + (picker.lastName || "")) : picker.partyId),
         pickedCount: 0,
         packedCount: 0,
         rejectedCount: 0
@@ -284,7 +286,7 @@ const performanceByPicker = computed(() => {
     if (!performance[picker.partyId]) {
       performance[picker.partyId] = {
         partyId: picker.partyId,
-        name: picker.firstName ? (picker.firstName + " " + (picker.lastName || "")) : picker.partyId,
+        name: picker.groupName || (picker.firstName ? (picker.firstName + " " + (picker.lastName || "")) : picker.partyId),
         pickedCount: 0,
         packedCount: 0,
         rejectedCount: 0
@@ -299,7 +301,7 @@ const performanceByPicker = computed(() => {
     if (!performance[picker.partyId]) {
       performance[picker.partyId] = {
         partyId: picker.partyId,
-        name: picker.firstName ? (picker.firstName + " " + (picker.lastName || "")) : picker.partyId,
+        name: picker.groupName || (picker.firstName ? (picker.firstName + " " + (picker.lastName || "")) : picker.partyId),
         pickedCount: 0,
         packedCount: 0,
         rejectedCount: 0
@@ -345,11 +347,12 @@ onIonViewDidEnter(async () => {
   emitter.emit('presentLoader', { message: 'Loading...', backdropDismiss: false })
   try {
     await getCurrentFacilityDetails()
-    const resp = await UtilService.getFacilityAllocationsOfDay({
+    const resp = await UtilService.getOrderFacilityChange({
       customParametersMap: {
         facilityId: currentFacility.value.facilityId,
         shipmentMethodTypeId: "STOREPICKUP",
         shipmentMethodTypeId_not: "Y",
+        productStoreId: currentEcomStore.value.productStoreId,
         pageNoLimit: true,
         changeDatetime_from: DateTime.now().startOf('day').toFormat('yyyy-MM-dd')
       },
@@ -360,12 +363,13 @@ onIonViewDidEnter(async () => {
       throw resp.data
     }
     facilityAllocationsOfDay.value = resp.data.entityValueList;
-    const rejectedOrderFacilityChangeResp = await UtilService.getRejectedOrderFacilityChange({
+    const rejectedOrderFacilityChangeResp = await UtilService.getOrderFacilityChange({
       customParametersMap: {
         fromFacilityId: currentFacility.value.facilityId,
         facilityId: "REJECTED_ITM_PARKING",
         shipmentMethodTypeId: "STOREPICKUP",
         shipmentMethodTypeId_not: "Y",
+        productStoreId: currentEcomStore.value.productStoreId,
         pageNoLimit: true,
         changeDatetime_from: DateTime.now().startOf('day').toFormat('yyyy-MM-dd')
       },
@@ -383,6 +387,7 @@ onIonViewDidEnter(async () => {
         statusId: "SHIPMENT_PACKED",
         shipmentMethodTypeId: "STOREPICKUP",
         shipmentMethodTypeId_not: "Y",
+        productStoreId: currentEcomStore.value.productStoreId,
         pageNoLimit: true,
         statusDate_from: DateTime.now().startOf('day').toFormat('yyyy-MM-dd')
       },
@@ -459,13 +464,16 @@ const getPendingFulfillmentOrders = async () => {
         pageNoLimit: true,
         orderTypeId: "SALES_ORDER",
         orderStatusId: "ORDER_APPROVED",
+        itemStatusId: "ITEM_CANCELLED",
+        itemStatusId_not: "Y",
         facilityId: currentFacility.value.facilityId,
         facilityId_op: "in",
         shipmentStatus_op: "in",
         shipmentStatus_not: "Y",
         shipmentStatus: "SHIPMENT_PACKED,SHIPMENT_SHIPPED,SHIPMENT_CANCELLED,SHIPMENT_INPUT",
         shipmentMethodTypeId: "STOREPICKUP",
-        shipmentMethodTypeId_not: "Y"
+        shipmentMethodTypeId_not: "Y",
+        productStoreId: currentEcomStore.value.productStoreId
       }
     });
     if (hasError(resp) || !resp.data || !resp.data.entityValueList) {
@@ -493,6 +501,7 @@ const getPickedOrderByPicker = () => {
         partyId: shipment.partyId,
         firstName: shipment.firstName,
         lastName: shipment.lastName,
+        groupName: shipment.groupName,
         pickedShipments: [shipment]
       })
     }
@@ -505,12 +514,13 @@ const getPackedOrderByPicker = () => {
     // Cross-reference with shipmentAndPicklists to find the picker for this shipment
     const pickerRecord = shipmentAndPicklists.value.find((s: any) => s.shipmentId === shipment.shipmentId)
     
-    let partyId, firstName, lastName, isMappingFound = false;
+    let partyId, firstName, lastName, groupName, isMappingFound = false;
 
     if (pickerRecord) {
       partyId = pickerRecord.partyId
       firstName = pickerRecord.firstName
       lastName = pickerRecord.lastName
+      groupName = pickerRecord.groupName
       isMappingFound = true
     } else {
       // Fallback to the packer if no picker record is found
@@ -527,6 +537,7 @@ const getPackedOrderByPicker = () => {
         partyId,
         firstName,
         lastName,
+        groupName,
         isMappingFound,
         packedShipments: [shipment]
       })
@@ -542,12 +553,13 @@ const getRejectedOrderByPicker = () => {
     // Cross-reference with shipmentAndPicklists to find the picker for this order
     const pickerRecord = shipmentAndPicklists.value.find((s: any) => s.primaryOrderId === rejection.orderId)
     
-    let partyId, firstName, lastName, isMappingFound = false;
+    let partyId, firstName, lastName, groupName, isMappingFound = false;
 
     if (pickerRecord) {
       partyId = pickerRecord.partyId
       firstName = pickerRecord.firstName
       lastName = pickerRecord.lastName
+      groupName = pickerRecord.groupName
       isMappingFound = true
     } else {
       // Fallback to the user who rejected if no picker record is found
@@ -564,6 +576,7 @@ const getRejectedOrderByPicker = () => {
         partyId,
         firstName,
         lastName,
+        groupName,
         isMappingFound,
         rejectedOrders: [rejection]
       })
@@ -608,6 +621,7 @@ const getShipmentAndPicklistAndRole = async () => {
         statusId_op: "in",
         shipmentMethodTypeId: "STOREPICKUP",
         shipmentMethodTypeId_not: "Y",
+        productStoreId: currentEcomStore.value.productStoreId,
         partyId_op: "empty",
         partyId_not: "Y",
         originFacilityId: currentFacility.value.facilityId,
