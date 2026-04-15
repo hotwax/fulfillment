@@ -23,7 +23,6 @@ export default defineConfig({
         '@ionic/core': { singleton: true },
         '@ionic/vue': { singleton: true },
         '@ionic/vue-router': { singleton: true },
-        '@hotwax/apps-theme': { singleton: true },
         'pinia': { singleton: true }
       }
     })
@@ -42,6 +41,9 @@ export default defineConfig({
       '@': path.resolve(__dirname, 'src'),
       '@common': path.resolve(__dirname, '../../common')
     },
+  },
+  server: {
+    port: 8100
   },
   test: {
     globals: true,

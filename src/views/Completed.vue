@@ -248,7 +248,7 @@ const getShipmentMethodDesc = (shipmentMethodId: string) => useUtilStore().getSh
 const getProductStock = (productId: string) => useStockStore().getProductStock(productId);
 const productStoreShipmentMethCount = computed(() => useProductStore().getProductStoreShipmentMethCount);
 const isProductStoreSettingEnabled = computed(() => (settingTypeEnumId: string) => useProductStore().isProductStoreSettingEnabled(settingTypeEnumId));
-const currentEComStore = computed(() => useProductStore().getCurrentEComStore);
+const currentProductStore = computed(() => useProductStore().getCurrentProductStore);
 const currentFacility = computed(() => useProductStore().getCurrentFacility);
 const productIdentificationPref = computed(() => useProductStore().getProductIdentificationPref);
 
@@ -406,7 +406,7 @@ const fetchShipmentFacets = async () => {
     statusId: "SHIPMENT_PACKED",
     shippedDateFrom: DateTime.now().startOf("day").toMillis(),
     originFacilityId: currentFacility.value?.facilityId,
-    productStoreId: currentEComStore.value.productStoreId
+    productStoreId: currentProductStore.value.productStoreId
   };
   try {
     const resp = await orderStore.fetchShipmentFacets(params) as any;

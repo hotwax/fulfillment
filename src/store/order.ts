@@ -192,7 +192,7 @@ export const useOrderStore = defineStore("order", {
           '-shipmentMethodTypeId': { value: ['STOREPICKUP', 'POS_COMPLETED'] },
           orderStatusId: { value: 'ORDER_APPROVED' },
           orderTypeId: { value: 'SALES_ORDER' },
-          productStoreId: { value: useAppProductStore().getCurrentEComStore?.productStoreId }
+          productStoreId: { value: useAppProductStore().getCurrentProductStore?.productStoreId }
         },
         solrFilters: [
           //it should be explicit what is subtracting the first part of your OR statement from
@@ -276,7 +276,7 @@ export const useOrderStore = defineStore("order", {
           pageSize: query.viewSize,
           orderBy: 'orderDate',
           shipmentTypeId: 'SALES_SHIPMENT',
-          productStoreId: useAppProductStore().getCurrentEComStore?.productStoreId,
+          productStoreId: useAppProductStore().getCurrentProductStore?.productStoreId,
         } as any
 
         if (query.queryString) {

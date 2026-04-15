@@ -957,7 +957,7 @@ export const useCarrierStore = defineStore("carrier", {
           const params = {
             customParametersMap: {
               roleTypeId: "CARRIER",
-              productStoreId: useAppProductStore().getCurrentEComStore?.productStoreId,
+              productStoreId: useAppProductStore().getCurrentProductStore?.productStoreId,
               shipmentMethodTypeId: "STOREPICKUP",
               shipmentMethodTypeId_op: "equals",
               shipmentMethodTypeId_not: "Y",

@@ -34,7 +34,7 @@
           </ion-checkbox>
         </ion-item>
       </div>
-      <Component :is="productCategoryFilterExt" :orderQuery="openOrders.query" :currentFacility="currentFacility" :currentEComStore="currentEComStore" @updateOpenQuery="updateOpenQuery" />
+      <Component :is="productCategoryFilterExt" :orderQuery="openOrders.query" :currentFacility="currentFacility" :currentProductStore="currentProductStore" @updateOpenQuery="updateOpenQuery" />
       <div v-if="openOrders.total">
         <div class="results">
           <ion-button class="bulk-action desktop-only" size="large" @click="assignPickers">{{ translate("Print Picklist") }}</ion-button>
@@ -178,7 +178,7 @@ const getProduct = (productId: string) => useProductStore().getProduct(productId
 const getShipmentMethodDesc = (shipmentMethodId: string) => useUtilStore().getShipmentMethodDesc(shipmentMethodId);
 const getProductStock = (productId: string) => useStockStore().getProductStock(productId);
 const currentFacility = computed(() => useAppProductStore().getCurrentFacility);
-const currentEComStore = computed(() => useAppProductStore().getCurrentEComStore);
+const currentProductStore = computed(() => useAppProductStore().getCurrentProductStore);
 const productIdentificationPref = computed(() => useAppProductStore().getProductIdentificationPref);
 
 const updateOpenQuery = (payload: any) => {
@@ -267,7 +267,7 @@ const fetchShipmentMethods = async () => {
       "-shipmentMethodTypeId": { value: ["STOREPICKUP", "POS_COMPLETED"] },
       orderStatusId: { value: "ORDER_APPROVED" },
       orderTypeId: { value: "SALES_ORDER" },
-      productStoreId: { value: currentEComStore.value.productStoreId },
+      productStoreId: { value: currentProductStore.value.productStoreId },
       ...getFacilityFilter(currentFacility.value?.facilityId)
     },
     solrFilters: [
@@ -349,7 +349,7 @@ const recycleOutstandingOrders = async () => {
         try {
           resp = await useOrderStore().recycleOutstandingOrders({
             facilityId: currentFacility.value?.facilityId,
-            productStoreId: currentEComStore.value.productStoreId,
+            productStoreId: currentProductStore.value.productStoreId,
             reasonId: "INACTIVE_STORE"
           }) as any;
 

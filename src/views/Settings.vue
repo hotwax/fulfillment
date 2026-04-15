@@ -222,11 +222,11 @@ const firebaseDeviceId = computed(() => useNotificationStore().getFirebaseDevice
 const isProductStoreSettingEnabled = computed(() => (settingTypeEnumId: string) => useProductStore().isProductStoreSettingEnabled(settingTypeEnumId));
 const barcodeIdentificationPref = computed(() => useProductStore().getBarcodeIdentifierPref);
 const currentFacility = computed(() => useProductStore().getCurrentFacility as any);
-const preferredStore = computed(() => useProductStore().getCurrentEComStore);
+const preferredStore = computed(() => useProductStore().getCurrentProductStore);
 const barcodeIdentificationOptions = computed(() => useProductStore().getBarcodeIdentifierOptions);
 
 const refreshProductStoreData = (selectedProductStore: any) => {
-  useProductStore().fetchEComStoreDependencies(selectedProductStore?.productStoreId);
+  useProductStore().fetchProductStoreDependencies(selectedProductStore?.productStoreId);
 };
 
 const getCurrentFacilityDetails = async () => {
@@ -351,7 +351,7 @@ const fetchFacilityDependencies = async (facility: any) => {
   const productStore = useProductStore();
   const notificationStore = useNotificationStore();
   await productStore.fetchProductStores(facility?.facilityId)
-  await productStore.fetchEComStoreDependencies(productStore.getCurrentEComStore.productStoreId)
+  await productStore.fetchProductStoreDependencies(productStore.getCurrentProductStore.productStoreId)
   await notificationStore.fetchNotificationPreferences(import.meta.env.VITE_NOTIF_ENUM_TYPE_ID, import.meta.env.VITE_NOTIF_APP_ID, userStore.getUserProfile.userLoginId, (enumId: string) => firebaseMessaging.generateTopicName(commonUtil.getOMSInstanceName(), productStore.getCurrentFacility.facilityId, enumId));
   getCurrentFacilityDetails();
   getFacilityOrderCount();

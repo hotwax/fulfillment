@@ -672,7 +672,7 @@ export const useUtilStore = defineStore("util", {
       try {
         const payload = {
           customParametersMap: {
-            productStoreId: useAppProductStore().getCurrentEComStore?.productStoreId,
+            productStoreId: useAppProductStore().getCurrentProductStore?.productStoreId,
             roleTypeId: "CARRIER",
             shipmentMethodTypeId: "STOREPICKUP",
             shipmentMethodTypeId_op: "equals",
@@ -868,7 +868,7 @@ export const useUtilStore = defineStore("util", {
             data: {
               dataDocumentId: "ProductStoreSetting",
               customParametersMap: {
-                productStoreId: useAppProductStore().getCurrentEComStore?.productStoreId,
+                productStoreId: useAppProductStore().getCurrentProductStore?.productStoreId,
                 settingTypeEnumId: enumId,
                 fieldsToSelect: ["settingTypeEnumId"],
                 pageSize: 1
@@ -883,17 +883,17 @@ export const useUtilStore = defineStore("util", {
         let response
         if (isSettingAlreadyExists) {
           response = await api({
-            url: `/oms/productStores/${useAppProductStore().getCurrentEComStore?.productStoreId}/settings`,
+            url: `/oms/productStores/${useAppProductStore().getCurrentProductStore?.productStoreId}/settings`,
             method: "POST",
             data: {
-              productStoreId: useAppProductStore().getCurrentEComStore?.productStoreId,
+              productStoreId: useAppProductStore().getCurrentProductStore?.productStoreId,
               settingTypeEnumId: enumId,
               ...payload
             }
           });
         } else {
           response = await createService({
-            productStoreId: useAppProductStore().getCurrentEComStore?.productStoreId,
+            productStoreId: useAppProductStore().getCurrentProductStore?.productStoreId,
             settingTypeEnumId: enumId,
             ...payload
           })

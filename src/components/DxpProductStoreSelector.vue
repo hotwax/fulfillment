@@ -14,8 +14,8 @@
     </ion-card-content>
 
     <ion-item lines="none">
-      <ion-select :label="translate('Select store')" interface="popover" :placeholder="translate('store name')" :value="currentEComStore?.productStoreId" @ionChange="updateProductStore($event.target.value)">
-        <ion-select-option v-for="store in (eComStores ? eComStores : [])" :key="store.productStoreId" :value="store.productStoreId">{{ store.storeName }}</ion-select-option>
+      <ion-select :label="translate('Select store')" interface="popover" :placeholder="translate('store name')" :value="currentProductStore?.productStoreId" @ionChange="updateProductStore($event.target.value)">
+        <ion-select-option v-for="store in (productStores ? productStores : [])" :key="store.productStoreId" :value="store.productStoreId">{{ store.storeName }}</ion-select-option>
       </ion-select>
     </ion-item>
   </ion-card>
@@ -29,12 +29,12 @@ import { translate } from '@common';
 
 const emit = defineEmits(["updateProductStore"])
 
-const eComStores = computed(() => useAppProductStore().getProductStores) as any; 
-const currentEComStore = computed(() => useAppProductStore().getCurrentEComStore);
+const productStores = computed(() => useAppProductStore().getProductStores) as any; 
+const currentProductStore = computed(() => useAppProductStore().getCurrentProductStore);
 
-async function updateProductStore(eComStoreId: any) {
-  const selectedProductStore = eComStores.value.find((store: any) => store.productStoreId == eComStoreId)
-  await useAppProductStore().setEComStorePreference(selectedProductStore)
+async function updateProductStore(productStoreId: any) {
+  const selectedProductStore = productStores.value.find((store: any) => store.productStoreId == productStoreId)
+  await useAppProductStore().setProductStorePreference(selectedProductStore)
   emit('updateProductStore', selectedProductStore)
 }
 </script>

@@ -10,7 +10,7 @@ export const useProductStore = defineStore('productStore', {
       facilityName: "",
       productStores: []
     } as any,
-    currentEComStore: {} as any,
+    currentProductStore: {} as any,
     productStoreShipmentMethCount: 0,
     settings: {
       forceScan: "",
@@ -45,7 +45,7 @@ export const useProductStore = defineStore('productStore', {
 
   getters: {
     getCurrentFacility: (state) => state.currentFacility,
-    getCurrentEComStore: (state) => state.currentEComStore,
+    getCurrentProductStore: (state) => state.currentProductStore,
     getProductStoreShipmentMethCount: (state) => state.productStoreShipmentMethCount,
     getProductStores: (state) => state.currentFacility.productStores || [],
     getFacilities: (state) => state.userFacilities || [],
@@ -73,9 +73,9 @@ export const useProductStore = defineStore('productStore', {
     setCurrentFacility(facility: any) {
       this.currentFacility = facility
     },
-    async setCurrentEComStore(store: any) {
-      this.currentEComStore = store
-      await this.fetchEComStoreDependencies(store.productStoreId)
+    async setCurrentProductStore(store: any) {
+      this.currentProductStore = store
+      await this.fetchProductStoreDependencies(store.productStoreId)
     },
     async fetchUserFacilities() {
       const userStore = useUserStore();
@@ -198,6 +198,10 @@ export const useProductStore = defineStore('productStore', {
           method: "GET",
           params: {
             pageSize: 500,
+            facilityTypeId: "VIRTUAL_FACILITY",
+            facilityTypeId_not: "Y",
+            parentTypeId: "VIRTUAL_FACILITY",
+            parentTypeId_not: "Y",
             ...filters
           }
         }
@@ -315,7 +319,7 @@ export const useProductStore = defineStore('productStore', {
           ...this.currentFacility,
           productStores
         }
-        this.setCurrentEComStore(productStores[0])
+        this.setCurrentProductStore(productStores[0])
       } catch (error: any) {
         logger.error("error", error);
         return Promise.reject(new Error(error));
@@ -401,7 +405,7 @@ export const useProductStore = defineStore('productStore', {
     },
     async fetchProductStoreFacilities(): Promise<any> {
       try {
-        const productStoreId = this.getCurrentEComStore?.productStoreId;
+        const productStoreId = this.getCurrentProductStore?.productStoreId;
 
         if (!productStoreId) {
           logger.error('Product store ID not found');
@@ -525,13 +529,13 @@ export const useProductStore = defineStore('productStore', {
         const preferredStoreId = preferredStoreResp.data?.[0]?.preferenceValue
         if (preferredStoreId) {
           const store = this.currentFacility.productStores?.find((store: any) => store.productStoreId === preferredStoreId);
-          store && this.setCurrentEComStore(store)
+          store && this.setCurrentProductStore(store)
         }
       } catch (err) {
         logger.error('Favourite product store not found', err)
       }
     },
-    async fetchEComStoreDependencies(productStoreId: string) {
+    async fetchProductStoreDependencies(productStoreId: string) {
       await useProductStore().fetchProductStoreSettings(productStoreId)
         .catch((error) => logger.error(error))
 
@@ -547,7 +551,7 @@ export const useProductStore = defineStore('productStore', {
         partyId_op: "equals",
         partyId_not: "Y",
         roleTypeId: "CARRIER",
-        productStoreId: this.getCurrentEComStore?.productStoreId,
+        productStoreId: this.getCurrentProductStore?.productStoreId,
         fieldsToSelect: ["roleTypeId", "partyId"],
         pageSize: 1
       }
@@ -570,7 +574,7 @@ export const useProductStore = defineStore('productStore', {
 
       this.setProductStoreShipmentMethCount(productStoreShipmentMethCount)
     },
-    async setEComStorePreference(payload: any) {
+    async setProductStorePreference(payload: any) {
       const userStore = useUserStore();
       try {
         await api({
@@ -585,7 +589,7 @@ export const useProductStore = defineStore('productStore', {
       } catch (error) {
         console.error('error', error)
       }
-      this.currentEComStore = payload;
+      this.currentProductStore = payload;
     },
     async fetchProductStoreSettings(productStoreId: string) {
       const productStoreSettings = {} as any

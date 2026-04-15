@@ -59,7 +59,7 @@ const loader = ref<any>(null);
 
 const userProfile = computed(() => useUserStore().getUserProfile);
 const allNotificationPrefs = computed(() => useNotificationStore().getAllNotificationPrefs);
-const maxAge = import.meta.env.VITE_VUE_APP_CACHE_MAX_AGE ? parseInt(import.meta.env.VITE_VUE_APP_CACHE_MAX_AGE) : 0
+const maxAge = import.meta.env.VITE_CACHE_MAX_AGE ? parseInt(import.meta.env.VITE_CACHE_MAX_AGE) : 0
 initialise({
   cacheMaxAge: maxAge,
   events: {
@@ -153,14 +153,14 @@ onMounted(async () => {
   emitter.on("dismissLoader", dismissLoader);
   emitter.on("playAnimation", playAnimation);
 
-  if (userProfile.value && userProfile.value.userTimeZone) {
-    Settings.defaultZone = userProfile.value.userTimeZone;
+  if (userProfile.value && userProfile.value.timeZone) {
+    Settings.defaultZone = userProfile.value.timeZone;
   }
 
-  const currentEComStore: any = useProductStore().getCurrentEComStore;
+  const currentProductStore: any = useProductStore().getCurrentProductStore;
 
-    if (isAuthenticated.value && currentEComStore?.productStoreId) {
-      await useProductStore().fetchProductStoreSettings(currentEComStore.productStoreId).catch((error) => logger.error(error));
+    if (isAuthenticated.value && currentProductStore?.productStoreId) {
+      await useProductStore().fetchProductStoreSettings(currentProductStore.productStoreId).catch((error) => logger.error(error));
 
       if (allNotificationPrefs.value?.length) {
         await firebaseUtil.initialiseFirebaseMessaging();

@@ -15,12 +15,11 @@ interface UserState {
     registration: any
   }
   timeZones: any[],
-  currentTimeZoneId: string,
   localeOptions: any,
   locale: string,
 }
 
-export const useUserStore = defineStore("appUser", {
+export const useUserStore = defineStore("user", {
   state: (): UserState => ({
     permissions: [],
     current: {},
@@ -33,13 +32,12 @@ export const useUserStore = defineStore("appUser", {
       registration: null
     },
     timeZones: [],
-    currentTimeZoneId: '',
     localeOptions: import.meta.env.VITE_LOCALES ? JSON.parse(import.meta.env.VITE_LOCALES) : { "en-US": "English" },
     locale: 'en-US',
   }),
   getters: {
     getTimeZones: (state) => state.timeZones,
-    getCurrentTimeZone: (state) => state.currentTimeZoneId,
+    getCurrentTimeZone: (state) => state.current.timeZone,
     getLocale: (state) => state.locale,
     getLocaleOptions: (state) => state.localeOptions,
     getUserPermissions(state: UserState) {
@@ -138,7 +136,7 @@ export const useUserStore = defineStore("appUser", {
       }
     },
     async fetchPermissions() {
-      const permissionId = import.meta.env.VITE_VUE_APP_PERMISSION_ID;
+      const permissionId = import.meta.env.VITE_APP_PERMISSION_ID;
       const serverPermissions = [] as any;
 
       // TODO Make it configurable from the environment variables.
@@ -190,10 +188,10 @@ export const useUserStore = defineStore("appUser", {
         await api({
           url: "admin/user/profile",
           method: "POST",
-          data: { userId: this.current.userId, userTimeZone: tzId },
+          data: { userId: this.current.userId, timeZone: tzId },
         });
         this.updateUserInfo({ userTimeZone: tzId })
-        this.currentTimeZoneId = tzId
+        this.current.timeZone = tzId
       } catch (error: any) {
         console.error("Failed to set user time zone", error);
         commonUtil.showToast(translate("Failed to set user time zone"));

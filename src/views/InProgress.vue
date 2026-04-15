@@ -284,7 +284,7 @@ const isProductStoreSettingEnabled = computed(() => (settingTypeEnumId: string) 
 const excludeOrderBrokerDays = computed(() => useProductStore().getSettings.excludeOrderBrokerDays);
 const carrierShipmentBoxTypes = computed(() => useUtilStore().getCarrierShipmentBoxTypes);
 const productIdentificationPref = computed(() => useProductStore().getProductIdentificationPref);
-const currentEComStore = computed(() => useProductStore().getCurrentEComStore);
+const currentProductStore = computed(() => useProductStore().getCurrentProductStore);
 const currentFacility = computed(() => useProductStore().getCurrentFacility as any);
 
 const getProduct = (productId: string) => useProduct().getProduct(productId);
@@ -822,7 +822,7 @@ const fetchPickersInformation = async () => {
 
       if (!commonUtil.hasError(resp)) {
         resp.data?.forEach((shipment: any) => {
-          if (shipment?.order?.statusId === "ORDER_APPROVED" && shipment?.order?.productStoreId === currentEComStore.value.productStoreId) {
+          if (shipment?.order?.statusId === "ORDER_APPROVED" && shipment?.order?.productStoreId === currentProductStore.value.productStoreId) {
             shipment?.picklistShipment?.forEach((picklistShipment: any) => {
               if (!picklistInfo[picklistShipment.picklistId]) {
                 const picklistRoles = picklistShipment?.picklist?.roles.filter((role: any) => !role.thruDate);
@@ -1087,7 +1087,7 @@ const recycleInProgressOrders = async () => {
         try {
           resp = await orderStore.recycleInProgressOrders({
             facilityId: (currentFacility.value as any)?.facilityId,
-            productStoreId: (currentEComStore.value as any).productStoreId,
+            productStoreId: (currentProductStore.value as any).productStoreId,
             reasonId: "INACTIVE_STORE"
           }) as any;
 

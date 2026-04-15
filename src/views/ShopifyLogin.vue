@@ -47,7 +47,7 @@ onIonViewDidEnter(async () => {
       await productStore.fetchFacilityPreference()
       await productStore.fetchProductStores()
       await productStore.fetchProductStorePreference()
-      await productStore.fetchEComStoreDependencies(productStore.getCurrentEComStore.productStoreId)
+      await productStore.fetchProductStoreDependencies(productStore.getCurrentProductStore.productStoreId)
 
       await useUtilStore().fetchCarrierShipmentBoxTypes()
       await productStore.fetchAutoShippingLabelConfig()

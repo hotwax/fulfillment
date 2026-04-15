@@ -81,7 +81,7 @@ async function loadFacilities() {
 
 async function fetchProductStoreDetails() {
   try {
-    const resp = await utilStore.fetchProductStoreDetails({ productStoreId: useAppProductStore().getCurrentEComStore?.productStoreId });
+    const resp = await utilStore.fetchProductStoreDetails({ productStoreId: useAppProductStore().getCurrentProductStore?.productStoreId });
     if(!commonUtil.hasError(resp)) {
       currencyUom.value = resp.data.defaultCurrencyUomId;
     } else {
@@ -123,7 +123,7 @@ async function createTransferOrder() {
     return;
   }
   
-  const productStoreId = useAppProductStore().getCurrentEComStore?.productStoreId || '';
+  const productStoreId = useAppProductStore().getCurrentProductStore?.productStoreId || '';
   const originFacilityId = useAppProductStore().getCurrentFacility?.facilityId || '';
   const orderTimestamp = DateTime.now().toFormat("yyyy-MM-dd 23:59:59.000")
 
