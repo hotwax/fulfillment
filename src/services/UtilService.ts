@@ -2,6 +2,7 @@ import { api, apiClient, hasError } from '@/adapter';
 import { getProductStoreId } from '@/utils'
 import store from '@/store';
 import logger from '@/logger'
+import { DateTime } from 'luxon';
 
 const fetchShipmentMethods = async (query: any): Promise <any>  => {
   return api({
@@ -688,6 +689,98 @@ const fetchShopifyShopLocation = async (omsRedirectionUrl: string, token: any, p
   });
 }
 
+const getOrderFacilityChange = async (payload: any): Promise<any> => {
+  const omstoken = store.getters['user/getUserToken'];
+  const baseURL = store.getters['user/getMaargBaseUrl'];
+
+  return await apiClient({
+    url: `/oms/dataDocumentView`,
+    method: "POST",
+    baseURL,
+    headers: {
+      "Authorization": "Bearer " + omstoken,
+      "Content-Type": "application/json"
+    },
+    data: {
+      dataDocumentId: "OrderFacilityChange",
+      ...payload
+    }
+  })
+}
+
+const getPackedShipments = async function (payload: any): Promise<any> {
+  const omstoken = store.getters['user/getUserToken'];
+  const baseURL = store.getters['user/getMaargBaseUrl'];
+
+  return await apiClient({
+    url: `/oms/dataDocumentView`,
+    method: "POST",
+    baseURL,
+    headers: {
+      "Authorization": "Bearer " + omstoken,
+      "Content-Type": "application/json"
+    },
+    data: {
+      dataDocumentId: "ShipmentAndStatus",
+      ...payload
+    }
+  })
+}
+
+const getPendingFulfillmentOrders = async function (payload: any): Promise<any> {
+  const omstoken = store.getters['user/getUserToken'];
+  const baseURL = store.getters['user/getMaargBaseUrl'];
+
+  return await apiClient({
+    url: `/oms/dataDocumentView`,
+    method: "POST",
+    baseURL,
+    headers: {
+      "Authorization": "Bearer " + omstoken,
+      "Content-Type": "application/json"
+    },
+    data: {
+      dataDocumentId: "OrderHeaderItemShipGroupShipment",
+      ...payload
+    }
+  })
+}
+
+const shipmentAndPicklistAndRole = async function (payload: any): Promise<any> {
+  const omstoken = store.getters['user/getUserToken'];
+  const baseURL = store.getters['user/getMaargBaseUrl'];
+
+  return await apiClient({
+    url: `/oms/dataDocumentView`,
+    method: "POST",
+    baseURL,
+    headers: {
+      "Authorization": "Bearer " + omstoken,
+      "Content-Type": "application/json"
+    },
+    data: {
+      dataDocumentId: "ShipmentAndPicklistAndRole",
+      ...payload
+    }
+  })
+}
+
+const storeLookup = async function (payload: any): Promise<any> {
+  const omstoken = store.getters['user/getUserToken'];
+  const baseURL = store.getters['user/getMaargBaseUrl'];
+
+  return await apiClient({
+    url: `/api/stores`,
+    method: "POST",
+    baseURL,
+    headers: {
+      "Authorization": "Bearer " + omstoken,
+      "Content-Type": "application/json"
+    },
+    data: payload
+  })
+}
+
 export const UtilService = {
   fetchCarriers,
   createEnumerationGroupMember,
@@ -728,5 +821,10 @@ export const UtilService = {
   fetchLabelImageType,
   updateProductStoreSetting,
   createProductStoreSetting,
-  getFacilityGroupAndMemberDetails
+  getFacilityGroupAndMemberDetails,
+  getOrderFacilityChange,
+  getPackedShipments,
+  getPendingFulfillmentOrders,
+  shipmentAndPicklistAndRole,
+  storeLookup
 }

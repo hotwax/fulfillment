@@ -215,11 +215,11 @@ const getProductStoreId = () => {
   return currentEComStore.productStoreId
 };
 
-function getDateWithOrdinalSuffix(time: any) {
+function getDateWithOrdinalSuffix(time: any, format?: string) {
   if (!time) return "-";
   const dateTime = DateTime.fromMillis(time);
   const suffix = dateOrdinalSuffix[dateTime.day] || "th"
-  return `${dateTime.day}${suffix} ${dateTime.toFormat("MMM yyyy")}`;
+  return `${dateTime.day}${suffix} ${dateTime.toFormat(format ? format : 'MMM yyyy')}`;
 }
 
 const hasWebcamAccess = async () => {
@@ -266,4 +266,25 @@ const getFacilityFilter = (value: any): any => {
   return facilityFilter 
 }
 
-export { copyToClipboard, downloadCsv, formatCurrency, formatDate, formatPhoneNumber, formatUtcDate, generateInternalId, getCurrentFacilityId, getFacilityFilter, getFeatures, getProductStoreId, getColorByDesc, getDateWithOrdinalSuffix, getIdentificationId, handleDateTimeInput, hasActiveFilters, isValidDeliveryDays, isValidCarrierCode, isPdf, showToast, sortItems, hasError, jsonToCsv, hasWebcamAccess, parseCsv }
+const formatDuration = (millis: number) => {
+  if (!millis || millis <= 0) return "-";
+  
+  const duration = DateTime.now().diff(DateTime.now().minus({ milliseconds: millis }), ['days', 'hours', 'minutes', 'seconds']).toObject();
+  
+  const days = duration.days ? Math.floor(duration.days) : 0;
+  const hours = duration.hours ? Math.floor(duration.hours) : 0;
+  const minutes = duration.minutes ? Math.floor(duration.minutes) : 0;
+  const seconds = duration.seconds ? Math.floor(duration.seconds) : 0;
+
+  if (days > 0) {
+    return `${days} ${translate(days === 1 ? 'day' : 'days')}`;
+  } else if (hours > 0) {
+    return `${hours} ${translate(hours === 1 ? 'hour' : 'hours')}`;
+  } else if (minutes > 0) {
+    return `${minutes} ${translate(minutes === 1 ? 'minute' : 'minutes')}`;
+  } else {
+    return `${seconds} ${translate(seconds === 1 ? 'second' : 'seconds')}`;
+  }
+}
+
+export { copyToClipboard, downloadCsv, formatCurrency, formatDate, formatDuration, formatPhoneNumber, formatUtcDate, generateInternalId, getCurrentFacilityId, getFacilityFilter, getFeatures, getProductStoreId, getColorByDesc, getDateWithOrdinalSuffix, getIdentificationId, handleDateTimeInput, hasActiveFilters, isValidDeliveryDays, isValidCarrierCode, isPdf, showToast, sortItems, hasError, jsonToCsv, hasWebcamAccess, parseCsv }
