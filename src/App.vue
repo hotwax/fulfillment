@@ -33,6 +33,7 @@ export default defineComponent({
   data() {
     return {
       loader: null as any,
+      isCreatingLoader: false,
       maxAge: process.env.VUE_APP_CACHE_MAX_AGE ? parseInt(process.env.VUE_APP_CACHE_MAX_AGE) : 0,
       appFirebaseConfig: JSON.parse(process.env.VUE_APP_FIREBASE_CONFIG as any),
       appFirebaseVapidKey: process.env.VUE_APP_FIREBASE_VAPID_KEY,
@@ -53,18 +54,35 @@ export default defineComponent({
       // When having a custom message remove already existing loader
       if(options.message && this.loader) this.dismissLoader();
 
-      if (!this.loader) {
-        this.loader = await loadingController
-          .create({
-            message: options.message ? translate(options.message) : (options.backdropDismiss ? translate("Click the backdrop to dismiss.") : translate("Loading...")),
-            translucent: true,
-            backdropDismiss: options.backdropDismiss || false
-          });
+      if (!this.loader && !this.isCreatingLoader) {
+        this.isCreatingLoader = true;
+        try {
+          this.loader = await loadingController
+            .create({
+              message: options.message ? translate(options.message) : (options.backdropDismiss ? translate("Click the backdrop to dismiss.") : translate("Loading...")),
+              translucent: true,
+              backdropDismiss: options.backdropDismiss || false
+            });
+          await this.loader.present();
+        } catch (error) {
+          logger.error('Failed to present loader', error);
+        } finally {
+          this.isCreatingLoader = false;
+        }
       }
-      this.loader.present();
     },
     dismissLoader() {
-      if (this.loader) {
+      if (this.isCreatingLoader) {
+        const interval = setInterval(() => {
+          if (this.loader) {
+            this.loader.dismiss();
+            this.loader = null as any;
+            clearInterval(interval);
+          } else if (!this.isCreatingLoader) {
+            clearInterval(interval);
+          }
+        }, 50);
+      } else if (this.loader) {
         this.loader.dismiss();
         this.loader = null as any;
       }
