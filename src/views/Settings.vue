@@ -199,7 +199,7 @@ import DxpProductIdentifier from "@/components/DxpProductIdentifier.vue";
 import DxpTimeZoneSwitcher from "@/components/DxpTimeZoneSwitcher.vue";
 import DxpLanguageSwitcher from "@/components/DxpLanguageSwitcher.vue";
 import { useOrderStore } from "@/store/order";
-import { useAuth } from "@/composables/useAuth";
+import { useAuth } from "@common/composables/auth";
 import router from "@/router";
 import { firebaseUtil } from "@/utils/firebaseUtil"
 

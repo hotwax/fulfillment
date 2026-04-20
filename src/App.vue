@@ -51,7 +51,7 @@ import { init } from "@module-federation/runtime";
 import { useUserStore } from "@/store/user";
 import { useProductStore } from "@/store/productStore";
 import router from './router';
-import { useAuth } from "@/composables/useAuth";
+import { useAuth } from "@common/composables/auth";
 import { firebaseUtil } from "@/utils/firebaseUtil";
 
 const { isAuthenticated } = useAuth();

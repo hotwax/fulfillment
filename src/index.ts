@@ -3,7 +3,7 @@ import { createPinia } from "pinia"
 import piniaPluginPersistedstate from 'pinia-plugin-persistedstate'
 import App from './App.vue'
 import router from './router';
-import { logger, createDxpI18n, imagePreview } from '@common';
+import { logger, createDxpI18n, imagePreview, initialiseConfig } from '@common';
 
 import { IonicVue } from '@ionic/vue';
 
@@ -29,6 +29,7 @@ import "@common/css/theme.css"
 import './theme/variables.css';
 
 import localeMessages from '@/locales'
+import { useUserStore } from './store/user';
 
 const pinia = createPinia();
 pinia.use(piniaPluginPersistedstate)
@@ -51,6 +52,16 @@ const app = createApp(App)
 // Setting permission before router ready, as router checks for permissions, if not set before ready,
 // user gets redirected to settings page on refresh even when having permissions
 // useUserStore().getUserPermissions;
+
+initialiseConfig({
+  postLogin: useUserStore().postLogin,
+  postLogout: useUserStore().postLogout,
+  get oms() { return useUserStore().oms },
+  set oms(val) { useUserStore().oms = val },
+  get current() { return useUserStore().current },
+  set current(val) { useUserStore().current = val },
+  router: router
+})
 
 router.isReady().then(() => {
   app.directive('image-preview', imagePreview)

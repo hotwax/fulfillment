@@ -1,7 +1,18 @@
-import { api, commonUtil, cookieHelper, i18n, logger, translate } from "@common";
+import { api, commonUtil, cookieHelper, i18n, logger, translate, useNotificationStore, useEmbeddedAppStore } from "@common";
 import { defineStore } from "pinia"
 import { DateTime, Settings } from "luxon"
-import { useAuth } from "@/composables/useAuth";
+import { useAuth } from "@common/composables/auth";
+import router from "@/router";
+import { useUtilStore } from "@/store/util";
+import { useProductStore as useAppProductStore } from "@/store/productStore";
+import { firebaseUtil } from "@/utils/firebaseUtil";
+import { useOrderStore } from "@/store/order";
+import { useTransferOrderStore } from "@/store/transferorder";
+import { useRejectionStore } from "@/store/rejection";
+import { useStockStore } from "@/store/stock";
+import { useCarrierStore } from "@/store/carrier";
+import { useOrderLookupStore } from "@/store/orderLookup";
+import { useProductStore as useProduct} from "@/store/product";
 
 interface UserState {
   permissions: any[]
@@ -227,12 +238,66 @@ export const useUserStore = defineStore("user", {
         this.locale = newLocale
       }
     },
-    async logout(payload: any) {
-      const { logout } = useAuth();
-      return await logout(payload);
-    },
     getUserPreference(key: string) {
       return (this.preference as any)[key]
+    },
+    async postLogin() {
+      try {
+        const productStore = useAppProductStore();
+        await this.fetchPermissions()
+        await this.fetchUserProfile()
+        await productStore.fetchUserFacilities()
+        await productStore.fetchFacilityPreference();
+        await productStore.fetchProductStores()
+        await productStore.fetchProductStorePreference();
+        await productStore.fetchProductStoreDependencies(productStore.getCurrentProductStore.productStoreId)
+
+        await useUtilStore().fetchCarrierShipmentBoxTypes()
+        await productStore.fetchAutoShippingLabelConfig()
+
+        const notificationStore = useNotificationStore();
+        await notificationStore.fetchAllNotificationPrefs(import.meta.env.VITE_NOTIF_APP_ID as any, this.current.userId)
+        await firebaseUtil.initialiseFirebaseMessaging();
+
+        const facilityId = router.currentRoute.value.query.facilityId
+        if (facilityId) {
+          const facility = this.current.facilities.find((facility: any) => facility.facilityId === facilityId);
+          if (facility) {
+            productStore.currentFacility = facility
+          } else {
+            commonUtil.showToast(translate("Redirecting to home page due to incorrect information being passed."))
+          }
+        }
+      } catch (error: any) {
+        return Promise.reject(error);
+      }
+    },
+    async postLogout() {
+      try {
+        const notificationStore = useNotificationStore();
+        if (notificationStore.getFirebaseDeviceId) await notificationStore.removeClientRegistrationToken(notificationStore.getFirebaseDeviceId, import.meta.env.VITE_NOTIF_APP_ID as any);
+      } catch (error) {
+        logger.error(error);
+      }
+
+      if (commonUtil.isAppEmbedded()) {
+        setTimeout(() => {
+          window.location.href = window.location.origin + `/shopify-login?shop=${useEmbeddedAppStore().getShop}&host=${useEmbeddedAppStore().getHost}&embedded=1`;
+        }, 100);
+        useEmbeddedAppStore().$reset();
+      }
+
+      useNotificationStore().clearNotificationState();
+      useCarrierStore().$reset();
+      useOrderStore().$reset();
+      useOrderLookupStore().$reset();
+      useProduct().$reset();
+      useAppProductStore().$reset();
+      useRejectionStore().$reset();
+      useStockStore().$reset();
+      useTransferOrderStore().$reset();
+      this.$reset();
+      useUtilStore().$reset();
     }
   },
   persist: true

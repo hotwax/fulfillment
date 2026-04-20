@@ -22,8 +22,8 @@ import CreateTransferOrder from '@/views/CreateTransferOrder.vue';
 import ShipTransferOrder from '@/views/ShipTransferOrder.vue';
 
 import { businessOutline, mailUnreadOutline, mailOpenOutline, checkmarkDoneOutline, settingsOutline } from "ionicons/icons";
-import { useAuth } from '@/composables/useAuth';
-import Login from '@/views/Login.vue';
+import { useAuth } from '@common/composables/auth';
+import Login from '@common/components/Login.vue';
 import OrderLookup from '@/views/OrderLookup.vue';
 import OrderLookupDetail from '@/views/OrderLookupDetail.vue';
 import Rejections from '@/views/Rejections.vue';
