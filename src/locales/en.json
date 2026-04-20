@@ -177,6 +177,7 @@
   "Failed to reject order": "Failed to reject order",
   "Failed to reject outstanding orders": "Failed to reject outstanding orders",
   "Failed to remove rejection reason.": "Failed to remove rejection reason.",
+  "Failed to update box.": "Failed to update box.",
   "Failed to update carrier and shipment method association.": "Failed to update carrier and shipment method association.",
   "Failed to update delivery days.": "Failed to update delivery days.",
   "Failed to update sequence for some rejection reasons.": "Failed to update sequence for some rejection reasons.",

@@ -177,6 +177,7 @@
   "Failed to reject order": "Failed to reject order",
   "Failed to reject outstanding orders": "未処理の注文の拒否に失敗しました",
   "Failed to remove rejection reason.": "拒否理由の削除に失敗しました。",
+  "Failed to update box.": "Failed to update box.",
   "Failed to update carrier and shipment method association.": "キャリアと出荷方法の関連付けの更新に失敗しました。",
   "Failed to update delivery days.": "配達日数の更新に失敗しました。",
   "Failed to update sequence for some rejection reasons.": "いくつかの拒否理由の順序の更新に失敗しました。",
