@@ -82,7 +82,7 @@ const actions: ActionTree<UserState, RootState> = {
       }
 
       const authStore = useAuthStore()
-      if(authStore.isEmbedded) {
+      if(authStore.isEmbedded && authStore.posContext?.locationId) {
         const locationId = authStore.posContext.locationId
         const payload = {
           shopifyLocationId: locationId
