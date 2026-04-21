@@ -45,13 +45,12 @@
 <script setup lang="ts">
 import { createAnimation, IonApp, IonContent, IonHeader, IonIcon, IonItem, IonItemDivider, IonLabel, IonList, IonMenu, IonMenuToggle, IonRouterOutlet, IonSplitPane, IonTitle, IonToolbar, loadingController } from "@ionic/vue";
 import { computed, onMounted, onUnmounted, ref } from "vue";
-import { translate, emitter, logger, useNotificationStore } from "@common";
+import { translate, emitter, logger, useNotificationStore, useAuth } from "@common";
 import { Settings } from "luxon";
 import { init } from "@module-federation/runtime";
 import { useUserStore } from "@/store/user";
 import { useProductStore } from "@/store/productStore";
 import router from './router';
-import { useAuth } from "@common/composables/auth";
 import { firebaseUtil } from "@/utils/firebaseUtil";
 
 const { isAuthenticated } = useAuth();
