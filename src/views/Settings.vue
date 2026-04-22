@@ -184,7 +184,7 @@
 import { IonAvatar, IonButton, IonCard, IonCardContent, IonCardHeader, IonCardTitle, IonCardSubtitle, IonChip, IonContent, IonHeader, IonIcon, IonItem, IonLabel, IonList, IonMenuButton, IonPage, IonProgressBar, IonSelect, IonSelectOption, IonTitle, IonText, IonToggle, IonToolbar, alertController, popoverController, onIonViewWillEnter } from "@ionic/vue";
 import { computed, ref } from "vue";
 import { openOutline } from "ionicons/icons";
-import { commonUtil, DxpShopifyImg, emitter, firebaseMessaging,logger, translate, useNotificationStore } from "@common";
+import { commonUtil, DxpShopifyImg, emitter, firebaseMessaging,logger, translate, useNotificationStore, useAuth } from "@common";
 import { useProductStore } from "@/store/productStore";
 import { useUserStore } from "@/store/user";
 
@@ -199,7 +199,6 @@ import DxpProductIdentifier from "@/components/DxpProductIdentifier.vue";
 import DxpTimeZoneSwitcher from "@/components/DxpTimeZoneSwitcher.vue";
 import DxpLanguageSwitcher from "@/components/DxpLanguageSwitcher.vue";
 import { useOrderStore } from "@/store/order";
-import { useAuth } from "@common/composables/auth";
 import router from "@/router";
 import { firebaseUtil } from "@/utils/firebaseUtil"
 

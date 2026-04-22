@@ -12,22 +12,17 @@ import TransferOrders from "@/views/TransferOrders.vue"
 import TransferOrderDetail from "@/views/TransferOrderDetail.vue"
 import CreateCarrier from "@/views/CreateCarrier.vue"
 import CarrierShipmentMethods from "@/views/CarrierShipmentMethods.vue"
-import { commonUtil, translate } from "@common";
-
+import { translate, commonUtil, useAuth, ShopifyLogin, ShopifyAppInstall, Login } from '@common'
 import { useUserStore } from '@/store/user'
-
 import 'vue-router'
 import Notifications from '@/views/Notifications.vue'
 import CreateTransferOrder from '@/views/CreateTransferOrder.vue';
 import ShipTransferOrder from '@/views/ShipTransferOrder.vue';
 
 import { businessOutline, mailUnreadOutline, mailOpenOutline, checkmarkDoneOutline, settingsOutline } from "ionicons/icons";
-import { useAuth } from '@common/composables/auth';
-import Login from '@common/components/Login.vue';
 import OrderLookup from '@/views/OrderLookup.vue';
 import OrderLookupDetail from '@/views/OrderLookupDetail.vue';
 import Rejections from '@/views/Rejections.vue';
-import ShopifyLogin from '@/views/ShopifyLogin.vue';
 
 const authGuard = async (to: any, from: any, next: any) => {
   const { isAuthenticated } = useAuth()
@@ -152,6 +147,7 @@ const routes: Array<RouteRecordRaw> = [
     name: 'Login',
     component: Login
   },
+  {
     path: "/settings",
     name: "Settings",
     component: Settings,
@@ -259,7 +255,7 @@ const routes: Array<RouteRecordRaw> = [
   {
     path: '/shopify-app-install',
     name: 'ShopifyAppInstall',
-    component: () => import('@/views/ShopifyAppInstall.vue')
+    component: ShopifyAppInstall
   },
   {
     path: '/shopify-login',

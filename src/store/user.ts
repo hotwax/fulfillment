@@ -1,7 +1,7 @@
 import { api, commonUtil, cookieHelper, i18n, logger, translate, useNotificationStore, useEmbeddedAppStore } from "@common";
 import { defineStore } from "pinia"
 import { DateTime, Settings } from "luxon"
-import { useAuth } from "@common/composables/auth";
+import { useAuth } from "@common";
 import router from "@/router";
 import { useUtilStore } from "@/store/util";
 import { useProductStore as useAppProductStore } from "@/store/productStore";
