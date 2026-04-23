@@ -271,7 +271,7 @@ export const useUserStore = defineStore("user", {
         return Promise.reject(error);
       }
     },
-    async postLogout() {
+    async preLogout() {
       try {
         const notificationStore = useNotificationStore();
         if (notificationStore.getFirebaseDeviceId) await notificationStore.removeClientRegistrationToken(notificationStore.getFirebaseDeviceId, import.meta.env.VITE_NOTIF_APP_ID as any);
@@ -285,7 +285,8 @@ export const useUserStore = defineStore("user", {
         }, 100);
         useEmbeddedAppStore().$reset();
       }
-
+    },
+    async postLogout() {
       useNotificationStore().clearNotificationState();
       useCarrierStore().$reset();
       useOrderStore().$reset();
