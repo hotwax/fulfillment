@@ -6,13 +6,11 @@
     </div>
     <div class="ion-text-end">
       <p class="overline">{{ translate("Built: ", { builtDateTime: getDateTime(appInfo.builtTime) }) }}</p>
-      <ion-button v-if="pwaState.updateExists" @click="refreshApp()" fill="outline" color="dark" size="small">{{ translate("Update") }}</ion-button>
     </div>
   </div>
 </template>
   
 <script setup lang="ts">
-import { IonButton } from '@ionic/vue';
 import { DateTime } from 'luxon';
 import { translate } from '@common';
 import { computed } from 'vue';
@@ -21,13 +19,6 @@ import { useUserStore } from '@/store/user';
 const userStore = useUserStore();
 
 const userProfile = computed(() => userStore.getUserProfile)
-const pwaState = computed(() => userStore.getPwaState)
-
-const refreshApp = () => {
-  userStore.updatePwaState({ registration: pwaState.value.registration, updateExists: false });
-  if (!pwaState.value.registration || !pwaState.value.registration.waiting) return
-  pwaState.value.registration.waiting.postMessage({ type: 'SKIP_WAITING' })
-}
 
 const appInfo = (import.meta.env.VITE_APP_VERSION_INFO ? JSON.parse(import.meta.env.VITE_APP_VERSION_INFO as string) : {}) as any;
 const appVersion = appInfo.branch ? (appInfo.branch + "-" + appInfo.revision) : appInfo.tag ? appInfo.tag : "";
