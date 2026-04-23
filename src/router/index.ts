@@ -59,7 +59,7 @@ const routes: Array<RouteRecordRaw> = [
     beforeEnter: authGuard,
     meta: {
       permissionId: "",
-      title: "In Progress page is this",
+      title: "In Progress",
       icon: mailOpenOutline,
       menuIndex: 2,
       childRoutes: ["/in-progress/"]
