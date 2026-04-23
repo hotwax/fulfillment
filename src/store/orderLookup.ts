@@ -99,14 +99,16 @@ export const useOrderLookupStore = defineStore("orderLookup", {
       this.list.orderCount = payload.orderCount
       this.list.itemCount = payload.itemCount
     },
-    updateFilters<K extends keyof OrderLookupQuery>(payload: { filterName: K, value: OrderLookupQuery[K] }) {
+    async updateFilters<K extends keyof OrderLookupQuery>(payload: { filterName: K, value: OrderLookupQuery[K] }) {
       this.query[payload.filterName] = payload.value
+      await this.findOrders({ isFilterUpdated: true })
     },
     updateCurrent(order: any) {
       this.current = order
     },
-    updateSort(payload: any) {
+    async updateSort(payload: any) {
       this.query.sort = payload
+      await this.findOrders({ isFilterUpdated: true })
     },
     updateChannelOptions(payload: any) {
       this.channels = payload
@@ -208,6 +210,7 @@ export const useOrderLookupStore = defineStore("orderLookup", {
         }
       } catch (error) {
         logger.error(error)
+        // If the filters are changed, we are on first index and if we got some error clear the orders
         if (params?.isFilterUpdated && (!params?.viewIndex || params.viewIndex == 0)) {
           stateOrders = []
           orderCount = 0
@@ -404,7 +407,7 @@ export const useOrderLookupStore = defineStore("orderLookup", {
       return order
     },
     async updateAppliedFilters(payload: any) {
-      this.updateFilters(payload)
+      await this.updateFilters(payload)
     },
     async findOrderInvoicingInfo(payload: any) {
       return api({
