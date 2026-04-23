@@ -43,8 +43,8 @@
 </template>
 
 <script setup lang="ts">
-import { createAnimation, IonApp, IonContent, IonHeader, IonIcon, IonItem, IonItemDivider, IonLabel, IonList, IonMenu, IonMenuToggle, IonRouterOutlet, IonSplitPane, IonTitle, IonToolbar, loadingController } from "@ionic/vue";
-import { computed, onMounted, onUnmounted, ref } from "vue";
+import { IonApp, IonContent, IonHeader, IonIcon, IonItem, IonItemDivider, IonLabel, IonList, IonMenu, IonMenuToggle, IonRouterOutlet, IonSplitPane, IonTitle, IonToolbar, loadingController, toastController } from "@ionic/vue";
+import { computed, onMounted, onUnmounted, ref, watch } from "vue";
 import { translate, emitter, logger, useNotificationStore, useAuth } from "@common";
 import { Settings } from "luxon";
 import { init } from "@module-federation/runtime";
@@ -52,6 +52,9 @@ import { useUserStore } from "@/store/user";
 import { useProductStore } from "@/store/productStore";
 import router from './router';
 import { firebaseUtil } from "@/utils/firebaseUtil";
+import { useRegisterSW } from 'virtual:pwa-register/vue'
+
+const { needRefresh, updateServiceWorker } = useRegisterSW()
 
 const { isAuthenticated } = useAuth();
 const loader = ref<any>(null);
@@ -135,6 +138,27 @@ onMounted(async () => {
 onUnmounted(() => {
   emitter.off("presentLoader", (options: any) => presentLoader(options));
   emitter.off("dismissLoader", dismissLoader);
+});
+
+const presentToast = async () => {
+  const toast = await toastController.create({
+    message: translate("New version available, click update to get latest version"),
+    position: "bottom",
+    buttons: [{
+      role: "cancel",
+      text: "Dismiss"
+    }, {
+      text: "Update",
+      handler: () => updateServiceWorker()
+    }]
+  });
+  await toast.present();
+};
+
+watch(needRefresh, (newValue) => {
+  if(newValue) {
+    presentToast();
+  }
 });
 </script>
 

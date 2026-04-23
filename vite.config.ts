@@ -29,11 +29,14 @@ export default defineConfig({
       }
     }),
     VitePWA({
-      registerType: 'autoUpdate', // Automatically updates the service worker, check if this correct to aut update or we should go with prompt support
+      registerType: "prompt",
       manifest: manifest as any,
       devOptions: {
         enabled: true
-      }
+      },
+      workbox: {
+        maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
+      },
     })
   ],
   define: {

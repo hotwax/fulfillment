@@ -59,7 +59,7 @@ const routes: Array<RouteRecordRaw> = [
     beforeEnter: authGuard,
     meta: {
       permissionId: "",
-      title: "In Progress",
+      title: "In Progress page is this",
       icon: mailOpenOutline,
       menuIndex: 2,
       childRoutes: ["/in-progress/"]
@@ -178,7 +178,7 @@ const routes: Array<RouteRecordRaw> = [
     component: OrderLookup,
     beforeEnter: authGuard,
     meta: {
-      permissionId: "FF_ORDER_LOOKUP_VIEW",
+      
       title: "Order Lookup",
       menuIndex: 8,
       groupMenuName: "Organization",
@@ -191,9 +191,6 @@ const routes: Array<RouteRecordRaw> = [
     component: OrderLookupDetail,
     beforeEnter: authGuard,
     props: true,
-    meta: {
-      permissionId: "FF_ORDER_LOOKUP_VIEW"
-    }
   },
   {
     path: "/carriers",
