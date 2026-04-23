@@ -6,6 +6,8 @@ import { defineConfig } from 'vite'
 import federation from '@originjs/vite-plugin-federation'
 import { versionInfoUtil } from '../../common/utils/versionInfoUtil'
 import pkg from './package.json'
+import { VitePWA } from 'vite-plugin-pwa'
+import manifest from "./manifest.json"
 
 // https://vitejs.dev/config/
 export default defineConfig({
@@ -24,6 +26,13 @@ export default defineConfig({
         '@ionic/vue': { singleton: true },
         '@ionic/vue-router': { singleton: true },
         'pinia': { singleton: true }
+      }
+    }),
+    VitePWA({
+      registerType: 'autoUpdate', // Automatically updates the service worker, check if this correct to aut update or we should go with prompt support
+      manifest: manifest as any,
+      devOptions: {
+        enabled: true
       }
     })
   ],
