@@ -178,7 +178,7 @@ const routes: Array<RouteRecordRaw> = [
     component: OrderLookup,
     beforeEnter: authGuard,
     meta: {
-      
+      permissionId: "FF_ORDER_LOOKUP_VIEW",
       title: "Order Lookup",
       menuIndex: 8,
       groupMenuName: "Organization",
@@ -191,6 +191,9 @@ const routes: Array<RouteRecordRaw> = [
     component: OrderLookupDetail,
     beforeEnter: authGuard,
     props: true,
+    meta: {
+      permissionId: "FF_ORDER_LOOKUP_VIEW"
+    }
   },
   {
     path: "/carriers",
