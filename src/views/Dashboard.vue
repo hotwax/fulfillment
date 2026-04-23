@@ -464,15 +464,17 @@ const getPendingFulfillmentOrders = async () => {
         pageNoLimit: true,
         orderTypeId: "SALES_ORDER",
         orderStatusId: "ORDER_APPROVED",
-        itemStatusId: "ITEM_CANCELLED",
+        itemStatusId: "ITEM_CANCELLED,ITEM_COMPLETED",
+        itemStatusId_op: "in",
         itemStatusId_not: "Y",
         facilityId: currentFacility.value.facilityId,
         facilityId_op: "in",
         shipmentStatus_op: "in",
         shipmentStatus_not: "Y",
         shipmentStatus: "SHIPMENT_PACKED,SHIPMENT_SHIPPED,SHIPMENT_CANCELLED,SHIPMENT_INPUT",
-        shipmentMethodTypeId: "STOREPICKUP",
+        shipmentMethodTypeId: "STOREPICKUP,POS_COMPLETED",
         shipmentMethodTypeId_not: "Y",
+        shipmentMethodTypeId_op: "in",
         productStoreId: currentEcomStore.value.productStoreId
       }
     });
