@@ -102,28 +102,6 @@ const dismissLoader = () => {
   }
 };
 
-const playAnimation = () => {
-  const aside = document.querySelector("aside") as Element;
-  const main = document.querySelector("main") as Element;
-
-  const revealAnimation = createAnimation()
-    .addElement(aside)
-    .duration(1500)
-    .easing("ease")
-    .keyframes([
-      { offset: 0, flex: "0", opacity: "0" },
-      { offset: 0.5, flex: "1", opacity: "0" },
-      { offset: 1, flex: "1", opacity: "1" }
-    ]);
-
-  const gapAnimation = createAnimation()
-    .addElement(main)
-    .duration(500)
-    .fromTo("gap", "0", "var(--spacer-2xl)");
-
-  createAnimation().addAnimation([gapAnimation, revealAnimation]).play();
-};
-
 onMounted(async () => {
   init({
     name: "fulfillment",
@@ -138,7 +116,6 @@ onMounted(async () => {
 
   emitter.on("presentLoader", (options: any) => presentLoader(options));
   emitter.on("dismissLoader", dismissLoader);
-  emitter.on("playAnimation", playAnimation);
 
   if (userProfile.value && userProfile.value.timeZone) {
     Settings.defaultZone = userProfile.value.timeZone;
@@ -158,7 +135,6 @@ onMounted(async () => {
 onUnmounted(() => {
   emitter.off("presentLoader", (options: any) => presentLoader(options));
   emitter.off("dismissLoader", dismissLoader);
-  emitter.off("playAnimation", playAnimation);
 });
 </script>
 
