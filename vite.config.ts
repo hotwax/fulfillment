@@ -6,6 +6,8 @@ import { defineConfig } from 'vite'
 import federation from '@originjs/vite-plugin-federation'
 import { versionInfoUtil } from '../../common/utils/versionInfoUtil'
 import pkg from './package.json'
+import { VitePWA } from 'vite-plugin-pwa'
+import manifest from "./manifest.json"
 
 // https://vitejs.dev/config/
 export default defineConfig({
@@ -25,6 +27,16 @@ export default defineConfig({
         '@ionic/vue-router': { singleton: true },
         'pinia': { singleton: true }
       }
+    }),
+    VitePWA({
+      registerType: "prompt",
+      manifest: manifest as any,
+      devOptions: {
+        enabled: true
+      },
+      workbox: {
+        maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
+      },
     })
   ],
   define: {

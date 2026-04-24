@@ -101,7 +101,7 @@ const findPickers = async (pickerIds?: Array<any>) => {
 
   const facilityFilter = [];
 
-  if (!userStore.hasPermission('STOREFULFILLMENT_ADMIN')) {
+  if (!userStore.hasPermission('FULFILLMENT_VIEW_ALL_PICKERS')) {
     facilityFilter.push(`facilityIds:${currentFacility.value.facilityId}`);
   }
 

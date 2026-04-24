@@ -19,11 +19,7 @@ interface UserState {
   preference: {
     printShippingLabel: boolean
     printPackingSlip: boolean
-  }
-  pwaState: {
-    updateExists: boolean
-    registration: any
-  }
+  },
   timeZones: any[],
   localeOptions: any,
   locale: string,
@@ -37,10 +33,6 @@ export const useUserStore = defineStore("user", {
     preference: {
       printShippingLabel: false,
       printPackingSlip: false
-    },
-    pwaState: {
-      updateExists: false,
-      registration: null
     },
     timeZones: [],
     localeOptions: import.meta.env.VITE_LOCALES ? JSON.parse(import.meta.env.VITE_LOCALES) : { "en-US": "English" },
@@ -60,9 +52,6 @@ export const useUserStore = defineStore("user", {
     },
     getUserPreferenceState(state: UserState) {
       return state.preference
-    },
-    getPwaState(state: UserState) {
-      return state.pwaState
     },
     hasPermission: (state: UserState) => (permissionId: string): boolean => {
       const permissions = state.permissions;
@@ -91,14 +80,6 @@ export const useUserStore = defineStore("user", {
     },
     setPermissionsState(payload: any) {
       this.permissions = payload
-    },
-    setPwaState(payload: any) {
-      this.pwaState.registration = payload.registration
-      this.pwaState.updateExists = payload.updateExists
-    },
-    updatePwaState(payload: any) {
-      this.pwaState.registration = payload.registration;
-      this.pwaState.updateExists = payload.updateExists;
     },
     async fetchUserProfile() {
       try {

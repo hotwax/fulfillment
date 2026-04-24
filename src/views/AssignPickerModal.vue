@@ -162,7 +162,7 @@ const findPickers = async () => {
   }
 
   const facilityFilter: string[] = [];
-  if (!userStore.hasPermission('STOREFULFILLMENT_ADMIN')) {
+  if (!userStore.hasPermission('FULFILLMENT_VIEW_ALL_PICKERS')) {
     facilityFilter.push(`facilityIds:${currentFacility.value.facilityId}`);
   }
 
