@@ -50,15 +50,15 @@
           <ion-item lines="none" v-if="orderLimitType === 'custom'">
             <ion-text>{{ currentFacilityDetails?.orderCount }}</ion-text>
             <ion-progress-bar class="ion-margin" :value="currentFacilityDetails?.orderCount / (fulfillmentOrderLimit as any)"></ion-progress-bar>
-            <ion-chip :disabled="!userStore.hasPermission('STOREFULFILLMENT_ADMIN')" :outline="true" @click="changeOrderLimitPopover">{{ currentFacilityDetails?.maximumOrderLimit }}</ion-chip>
+            <ion-chip :disabled="!userStore.hasPermission('COMMON_ADMIN')" :outline="true" @click="changeOrderLimitPopover">{{ currentFacilityDetails?.maximumOrderLimit }}</ion-chip>
           </ion-item>
           <ion-item lines="none" v-else-if="orderLimitType === 'unlimited'">
             <ion-label>{{ translate("orders allocated today", { orderCount: currentFacilityDetails?.orderCount }) }}</ion-label>
-            <ion-chip :disabled="!userStore.hasPermission('STOREFULFILLMENT_ADMIN')" :outline="true" @click="changeOrderLimitPopover">{{ translate("Unlimited") }}</ion-chip>
+            <ion-chip :disabled="!userStore.hasPermission('COMMON_ADMIN')" :outline="true" @click="changeOrderLimitPopover">{{ translate("Unlimited") }}</ion-chip>
           </ion-item>
           <ion-item lines="none" v-else>
             <ion-label>{{ translate("orders in fulfillment queue", { orderCount: currentFacilityDetails?.orderCount }) }}</ion-label>
-            <ion-chip :disabled="!userStore.hasPermission('STOREFULFILLMENT_ADMIN')" :outline="true" @click="changeOrderLimitPopover" color="danger" fill="outline">{{ fulfillmentOrderLimit }}</ion-chip>
+            <ion-chip :disabled="!userStore.hasPermission('COMMON_ADMIN')" :outline="true" @click="changeOrderLimitPopover" color="danger" fill="outline">{{ fulfillmentOrderLimit }}</ion-chip>
           </ion-item>
         </ion-card>
 
@@ -71,7 +71,7 @@
           <ion-card-content>
             {{ translate("Control whether the store's inventory should be made available for online sales or not.") }}
           </ion-card-content>
-          <ion-item lines="none" :disabled="!userStore.hasPermission('STOREFULFILLMENT_ADMIN') || !facilityGroupDetails?.facilityGroupId">
+          <ion-item lines="none" :disabled="!userStore.hasPermission('COMMON_ADMIN') || !facilityGroupDetails?.facilityGroupId">
             <ion-toggle label-placement="start" v-model="isEComInvEnabled" @click.prevent="updateEComInvStatus($event)">{{ translate("Sell online") }}</ion-toggle>
           </ion-item>
         </ion-card>
@@ -126,10 +126,10 @@
             </ion-card-title>
           </ion-card-header>
           <ion-card-content v-html="barcodeContentMessage"></ion-card-content>
-          <ion-item lines="none" :disabled="!userStore.hasPermission('STOREFULFILLMENT_ADMIN')">
+          <ion-item lines="none" :disabled="!userStore.hasPermission('COMMON_ADMIN')">
             <ion-toggle label-placement="start" :checked="isProductStoreSettingEnabled('FULFILL_FORCE_SCAN')" @click.prevent="updateForceScanStatus($event)">{{ translate("Require scan") }}</ion-toggle>
           </ion-item>
-          <ion-item lines="none" :disabled="!userStore.hasPermission('STOREFULFILLMENT_ADMIN')">
+          <ion-item lines="none" :disabled="!userStore.hasPermission('COMMON_ADMIN')">
             <ion-select :label="translate('Barcode Identifier')" interface="popover" :placeholder="translate('Select')" :value="barcodeIdentificationPref" @ionChange="setBarcodeIdentificationPref($event.detail.value)">
               <ion-select-option v-for="identification in barcodeIdentificationOptions" :key="identification" :value="identification.goodIdentificationTypeId">{{ identification.description ? identification.description : identification.goodIdentificationTypeId }}</ion-select-option>
             </ion-select>
@@ -145,7 +145,7 @@
           <ion-card-content>
             {{ translate("Individual items within an order will be rejected without affecting the other items in the order.") }}
           </ion-card-content>
-          <ion-item lines="none" :disabled="!userStore.hasPermission('STOREFULFILLMENT_ADMIN')">
+          <ion-item lines="none" :disabled="!userStore.hasPermission('COMMON_ADMIN')">
             <ion-toggle label-placement="start" :checked="isProductStoreSettingEnabled('FULFILL_PART_ODR_REJ')" @click.prevent="confirmPartialOrderRejection($event)">{{ translate("Partial rejections") }}</ion-toggle>
           </ion-item>
         </ion-card>
@@ -158,7 +158,7 @@
           <ion-card-content>
             {{ translate('When rejecting an item, automatically reject all other orders for that item as well.') }}
           </ion-card-content>
-          <ion-item lines="none" :disabled="!userStore.hasPermission('STOREFULFILLMENT_ADMIN')">
+          <ion-item lines="none" :disabled="!userStore.hasPermission('COMMON_ADMIN')">
             <ion-toggle label-placement="start" :checked="isProductStoreSettingEnabled('FF_COLLATERAL_REJ')" @click.prevent="confirmCollateralRejection($event)">{{ translate("Auto reject related items") }}</ion-toggle>
           </ion-item>
         </ion-card>
@@ -171,7 +171,7 @@
           <ion-card-content>
             {{ translate('Adjust the QOH along with ATP on rejection.') }}
           </ion-card-content>
-          <ion-item lines="none" :disabled="!userStore.hasPermission('STOREFULFILLMENT_ADMIN')">
+          <ion-item lines="none" :disabled="!userStore.hasPermission('COMMON_ADMIN')">
             <ion-toggle label-placement="start" :checked="isProductStoreSettingEnabled('AFFECT_QOH_ON_REJ')" @click.prevent="confirmAffectQohConfig($event)">{{ translate("Affect QOH") }}</ion-toggle>
           </ion-item>
         </ion-card>
