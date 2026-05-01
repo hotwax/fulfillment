@@ -327,18 +327,23 @@ const actions: ActionTree<OrderState, RootState> = {
     }
 
     if(giftCardActivations.length) {
+      const activationMap = giftCardActivations.reduce((map: any, card: any) => {
+        map[`${card.orderId}_${card.orderItemSeqId}`] = card;
+        return map;
+      }, {});
+
       if(isDetailsPage) {
-        orders[0].items.map((item: any) => {
-          const activationRecord = giftCardActivations.find((card: any) => card.orderId === item.orderId && card.orderItemSeqId === item.orderItemSeqId)
+        orders[0].items.forEach((item: any) => {
+          const activationRecord = activationMap[`${item.orderId}_${item.orderItemSeqId}`];
           if(activationRecord?.cardNumber) {
             item.isGCActivated = true;
             item.gcInfo = activationRecord
           }
         })
       } else {
-        orders.map((order: any) => {
-          order.items.map((item: any) => {
-            const activationRecord = giftCardActivations.find((card: any) => card.orderId === item.orderId && card.orderItemSeqId === item.orderItemSeqId)
+        orders.forEach((order: any) => {
+          order.items.forEach((item: any) => {
+            const activationRecord = activationMap[`${item.orderId}_${item.orderItemSeqId}`];
             if(activationRecord?.cardNumber) {
               item.isGCActivated = true;
               item.gcInfo = activationRecord
