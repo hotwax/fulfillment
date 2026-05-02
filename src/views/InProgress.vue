@@ -724,8 +724,13 @@ const getUpdatedOrderDetail = (order: any, updateParameter?: string) => {
   const items = JSON.parse(JSON.stringify(order.items));
   const rejectedOrderItems = [] as any;
   const shipmentPackageContents = [] as any;
+  const shipmentPackageMap = (order.shipmentPackages || []).reduce((map: Record<string, any>, shipmentPackage: any) => {
+    map[shipmentPackage.packageName] = shipmentPackage;
+    return map;
+  }, {});
+
   items.map((item: any) => {
-    const shipmentPackage = order.shipmentPackages.find((shipmentPackage: any) => shipmentPackage.packageName === item.selectedBox);
+    const shipmentPackage = shipmentPackageMap[item.selectedBox];
     if (updateParameter === "report" && item.rejectReason) {
       const rejectedItemInfo = {
         orderId: item.orderId,
