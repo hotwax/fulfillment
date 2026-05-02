@@ -80,7 +80,7 @@ export default defineComponent({
     const store = useStore();
     const route = useRoute();
 
-    const title = route.name === 'OpenOrders' ? 'Picklist Size' : 'Result Size'
+    const title = computed(() => route.name === 'OpenOrders' ? 'Picklist Size' : 'Result Size')
 
     const orders = computed(() => {
       if(route.name === 'OpenOrders') {
@@ -93,8 +93,8 @@ export default defineComponent({
       return {}
     })
 
-    const viewSize = computed(() => orders.value.query?.viewSize)
-    const total = computed(() => orders.value.total)
+    const viewSize = computed(() => orders.value.query?.viewSize || 0)
+    const total = computed(() => orders.value.total || 0)
 
     return {
       store,
