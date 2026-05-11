@@ -20,7 +20,8 @@ const actions: ActionTree<TransferOrderState, RootState> = {
     const params: any = {
       originFacilityId: getCurrentFacilityId(),
       limit: transferOrderQuery.viewSize,
-      pageIndex: transferOrderQuery.viewIndex
+      pageIndex: transferOrderQuery.viewIndex,
+      fieldsToSelect: "orderId,orderName,orderExternalId,orderStatusId,orderStatusDesc,facilityId,orderFacilityId,orderDate"
     };
     
     // If searching, add queryString
