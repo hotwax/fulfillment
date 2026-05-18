@@ -232,7 +232,7 @@ const findProductStoreShipmentMethCount = async (query: any): Promise<any> => {
   const baseURL = store.getters['user/getMaargBaseUrl'];
 
   return apiClient({
-    url: `/oms/productStores/shipmentMethods/counts`,
+    url: `/admin/productStores/shipmentMethods/counts`,
     method: "GET",
     baseURL,
     headers: {
@@ -311,7 +311,7 @@ const fetchProductStores = async (payload: any): Promise<any> => {
   const baseURL = store.getters['user/getMaargBaseUrl'];
 
   return apiClient({
-    url: `/oms/productStores`,
+    url: `/admin/productStores`,
     method: "GET",
     baseURL,
     headers: {
@@ -327,7 +327,7 @@ const fetchProductStoreDetails = async (payload: any): Promise<any> => {
   const baseURL = store.getters['user/getMaargBaseUrl'];
 
   return apiClient({
-    url: `/oms/productStores/${payload.productStoreId}`,
+    url: `/admin/productStores/${payload.productStoreId}`,
     method: "GET",
     baseURL,
     headers: {
@@ -377,7 +377,7 @@ const fetchProductStoreFacilities = async (): Promise<any> => {
     };
 
     const resp = await apiClient({
-      url: `/oms/productStores/${productStoreId}/facilities`,
+      url: `/admin/productStores/${productStoreId}/facilities`,
       method: "GET",
       baseURL,
       headers: {
@@ -647,7 +647,7 @@ const updateProductStoreSetting = async (payload: any): Promise<any> => {
   const baseURL = store.getters['user/getMaargBaseUrl'];
 
   return apiClient({
-    url: `/oms/productStores/${payload.productStoreId}/settings`,
+    url: `/admin/productStores/${payload.productStoreId}/settings`,
     method: "POST",
     baseURL,
     headers: {
@@ -663,7 +663,7 @@ const createProductStoreSetting = async (payload: any): Promise<any> => {
   const baseURL = store.getters['user/getMaargBaseUrl'];
 
   return apiClient({
-    url: `/oms/productStores/${payload.productStoreId}/settings`,
+    url: `/admin/productStores/${payload.productStoreId}/settings`,
     method: "POST",
     baseURL,
     headers: {

@@ -144,7 +144,7 @@ const createProductStoreShipmentMethod = async (payload: any): Promise<any> => {
   const baseURL = store.getters['user/getMaargBaseUrl'];
 
   return apiClient({
-    url: `/oms/productStores/${payload.productStoreId}/shipmentMethods`,
+    url: `/admin/productStores/${payload.productStoreId}/shipmentMethods`,
     method: "POST",
     baseURL,
     headers: {
@@ -159,7 +159,7 @@ const updateProductStoreShipmentMethod = async (payload: any): Promise<any> => {
   const baseURL = store.getters['user/getMaargBaseUrl'];
 
   return apiClient({
-    url: `/oms/productStores/${payload.productStoreId}/shipmentMethods`,
+    url: `/admin/productStores/${payload.productStoreId}/shipmentMethods`,
     method: "PUT",
     baseURL,
     headers: {
@@ -174,7 +174,7 @@ const removeProductStoreShipmentMethod = async (payload: any): Promise<any> => {
   const baseURL = store.getters['user/getMaargBaseUrl'];
 
   return apiClient({
-    url: `/oms/productStores/${payload.productStoreId}/shipmentMethods`,
+    url: `/admin/productStores/${payload.productStoreId}/shipmentMethods`,
     method: "PUT",
     baseURL,
     headers: {
