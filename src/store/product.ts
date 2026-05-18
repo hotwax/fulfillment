@@ -242,7 +242,7 @@ export const useProductStore = defineStore("product", {
 
       try {
         await api({
-          url: `oms/productStores/${productStoreId}/settings`,
+          url: `admin/productStores/${productStoreId}/settings`,
           method: "POST",
           data: {
             productStoreId,

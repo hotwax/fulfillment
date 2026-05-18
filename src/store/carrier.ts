@@ -348,7 +348,7 @@ export const useCarrierStore = defineStore("carrier", {
     async updateProductStoreShipmentMethod(productStoreId: string, shipmentMethod: any) {
       try {
         const resp = await api({
-          url: `/oms/productStores/${productStoreId}/shipmentMethods`,
+          url: `/admin/productStores/${productStoreId}/shipmentMethods`,
           method: "PUT",
           data: {
             shipmentGatewayConfigId: shipmentMethod.shipmentGatewayConfigId,
@@ -376,7 +376,7 @@ export const useCarrierStore = defineStore("carrier", {
         let resp;
         if (isChecked) {
           resp = await api({
-            url: `/oms/productStores/${productStoreId}/shipmentMethods`,
+            url: `/admin/productStores/${productStoreId}/shipmentMethods`,
             method: "POST",
             data: {
               productStoreId,
@@ -388,7 +388,7 @@ export const useCarrierStore = defineStore("carrier", {
           })
         } else {
           resp = await api({
-            url: `/oms/productStores/${productStoreId}/shipmentMethods`,
+            url: `/admin/productStores/${productStoreId}/shipmentMethods`,
             method: "PUT",
             data: {
               productStoreShipMethId: shipmentMethod.productStoreShipMethId,
@@ -628,7 +628,7 @@ export const useCarrierStore = defineStore("carrier", {
     },
     async findProductStoreShipmentMethCount(query: any): Promise<any> {
       return api({
-        url: `/oms/productStores/shipmentMethods/counts`,
+        url: `/admin/productStores/shipmentMethods/counts`,
         method: "GET",
         params: query
       });
