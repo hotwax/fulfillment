@@ -153,14 +153,18 @@ const shipTransferOrderShipment = async (payload: any): Promise<any> => {
 const printTransferOrderPicklist = async (orderId: string): Promise<any> => {
   try {
     const omstoken = store.getters['user/getUserToken'];
-    const baseURL = store.getters['user/getMaargBaseUrl'];
+    const baseURL = store.getters['user/getMaargUrl'];
 
     // Get packing slip from the server
     const resp: any = await apiClient({
       method: "get",
-      url: `poorti/transferOrders/${orderId}/printPicklist`,
+      url: `/fop/apps/pdf/PrintTransferOrderPicklist`,
       responseType: "blob",
       baseURL,
+      params: {
+        orderId: orderId,
+        fileName: `order-${orderId}.pdf`
+      },
       headers: {
         "Authorization": "Bearer " + omstoken,
       }
