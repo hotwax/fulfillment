@@ -1,16 +1,9 @@
-import { api, apiClient } from '@/adapter';
+import { apiClient, hasError, searchProducts } from '@/adapter';
 import store from '@/store';
 import logger from '@/logger';
-import { hasError } from '@/adapter';
 
 const fetchProducts = async (query: any): Promise <any>  => {
-  return api({
-   // TODO: We can replace this with any API
-    url: "searchProducts", 
-    method: "post",
-    data: query,
-    cache: true
-  });
+  return searchProducts(query);
 }
 
 const fetchProductComponents = async (payload: any): Promise<any> => {
