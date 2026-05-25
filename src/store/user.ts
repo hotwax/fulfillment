@@ -11,7 +11,7 @@ import { useRejectionStore } from "@/store/rejection";
 import { useStockStore } from "@/store/stock";
 import { useCarrierStore } from "@/store/carrier";
 import { useOrderLookupStore } from "@/store/orderLookup";
-import { useProductStore as useProduct} from "@/store/product";
+import { useProductStore as useProduct } from "@/store/product";
 
 interface UserState {
   permissions: any[]
@@ -94,10 +94,11 @@ export const useUserStore = defineStore("user", {
           Settings.defaultZone = this.current.timeZone;
         }
       } catch (error: any) {
-        commonUtil.showToast(translate("Failed to fetch user profile information"));
+        const errorMessage = translate("Failed to fetch user profile information");
+        commonUtil.showToast(errorMessage);
         console.error("error", error);
         useAuth().clearAuth();
-        return Promise.reject(new Error(error));
+        return Promise.reject(new Error(errorMessage));
       }
     },
     async fetchPermissions() {
