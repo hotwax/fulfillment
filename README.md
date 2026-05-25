@@ -108,3 +108,27 @@ If you have any questions or ideas feel free to join our <a href="https://discor
 # The license
 
 Fulfillment app is completely free and released under the Apache v2.0 License. Check <a href="https://github.com/hotwax/fulfillment-pwa/blob/main/LICENSE" target="_blank">LICENSE</a> for more details.
+
+
+## Playwright Automation – Execution Guidelines
+
+This document explains how to run Playwright tests on local machine. This assumes that you already have project setup locally.
+
+1. Install Playwright browsers:
+
+    `npx playwright install`
+
+2. Commands to run test cases:
+
+    - `npx playwright test`: Runs all tests
+    - `npx playwright test tests/login.spec.js`: Runs specific test file
+    - `npx playwright test --headed`: Runs in headed mode
+    - `npx playwright test --project=chromium`: Runs in specific browser
+    - `npx playwright test --debug`: Runs in debug mode
+
+3. Generate and View Report
+
+    Once a test cases finshed, you can check its report using:
+    `npx playwright show-report`
+
+ 
