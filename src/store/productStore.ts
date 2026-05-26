@@ -419,7 +419,7 @@ export const useProductStore = defineStore('productStore', {
         };
 
         const resp = await api({
-          url: `/oms/productStores/${productStoreId}/facilities`,
+          url: `/admin/productStores/${productStoreId}/facilities`,
           method: "GET",
           params
         });
@@ -495,7 +495,7 @@ export const useProductStore = defineStore('productStore', {
         }
 
         const resp = await api({
-          url: `/oms/productStores`,
+          url: `/admin/productStores`,
           method: "GET",
           params: payload
         });
@@ -554,7 +554,7 @@ export const useProductStore = defineStore('productStore', {
 
       try {
         const resp = await api({
-          url: `/oms/productStores/shipmentMethods/counts`,
+          url: `/admin/productStores/shipmentMethods/counts`,
           method: "GET",
           params
         });

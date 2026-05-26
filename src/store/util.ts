@@ -197,20 +197,20 @@ export const useUtilStore = defineStore("util", {
     },
     async fetchProductStoreDetails(payload: any): Promise<any> {
       return api({
-        url: `/oms/productStores/${payload.productStoreId}`,
+        url: `/admin/productStores/${payload.productStoreId}`,
         method: "GET",
       });
     },
     async updateProductStoreSetting(payload: any): Promise<any> {
       return api({
-        url: `/oms/productStores/${payload.productStoreId}/settings`,
+        url: `/admin/productStores/${payload.productStoreId}/settings`,
         method: "POST",
         data: payload
       });
     },
     async createProductStoreSetting(payload: any): Promise<any> {
       return api({
-        url: `/oms/productStores/${payload.productStoreId}/settings`,
+        url: `/admin/productStores/${payload.productStoreId}/settings`,
         method: "POST",
         data: payload
       });
@@ -883,7 +883,7 @@ export const useUtilStore = defineStore("util", {
         let response
         if (isSettingAlreadyExists) {
           response = await api({
-            url: `/oms/productStores/${useAppProductStore().getCurrentProductStore?.productStoreId}/settings`,
+            url: `/admin/productStores/${useAppProductStore().getCurrentProductStore?.productStoreId}/settings`,
             method: "POST",
             data: {
               productStoreId: useAppProductStore().getCurrentProductStore?.productStoreId,
