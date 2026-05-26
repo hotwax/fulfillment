@@ -278,7 +278,8 @@ export const useTransferOrderStore = defineStore("transferorder", {
       const params: any = {
         originFacilityId: useAppProductStore().getCurrentFacility?.facilityId,
         limit: transferOrderQuery.viewSize,
-        pageIndex: transferOrderQuery.viewIndex
+        pageIndex: transferOrderQuery.viewIndex,
+        fieldsToSelect: "orderId,orderName,orderExternalId,orderStatusId,orderStatusDesc,facilityId,orderFacilityId,orderDate"
       }
 
       if (transferOrderQuery.queryString) {
