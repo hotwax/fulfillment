@@ -59,7 +59,9 @@ export const useProductStore = defineStore('productStore', {
     getCurrentSampleProduct: (state) => state.settings.productIdentifier.currentSampleProduct,
     isProductStoreSettingEnabled: (state) => (settingTypeEnumId: string) => {
       const stateKey = defaultProductStoreSettings[settingTypeEnumId]?.stateKey || settingTypeEnumId
-      return state.settings[stateKey] === "Y"
+      const value = state.settings[stateKey]
+      
+      return value === true || value === "Y" || value === "true"
     },
     isExcludeOrderBrokerDaysEnabled(): boolean {
       return this.isProductStoreSettingEnabled('EXCLUDE_ODR_BKR_DAYS')
@@ -228,7 +230,7 @@ export const useProductStore = defineStore('productStore', {
       this.currentFacility = payload;
     },
     async fetchFacilityPreference() {
-      if (!this.facilities.length) return;
+      if (!this.userFacilities.length) return;
       let facilityId: string | undefined;
       try {
         const locationId = useEmbeddedAppStore().getPosLocationId;
@@ -253,7 +255,7 @@ export const useProductStore = defineStore('productStore', {
           facilityId = preferredFacilityResp.data?.[0]?.preferenceValue;
         }
         if (facilityId) {
-          const facility = this.facilities.find((f: any) => f.facilityId === facilityId);
+          const facility = this.userFacilities.find((f: any) => f.facilityId === facilityId);
           if (!facility && commonUtil.isAppEmbedded() && locationId) {
             throw new Error(
               "User is not associated with this location. Please contact the administrator."
@@ -268,7 +270,7 @@ export const useProductStore = defineStore('productStore', {
         console.error("Failed to resolve facility preference:", error);
       }
       // In case app is not embedded and user has no facility preference on server
-      this.currentFacility = this.facilities[0];
+      this.currentFacility = this.userFacilities[0];
     },
     async fetchProductStores(currentFacilityId?: string) {
       try {
@@ -305,17 +307,13 @@ export const useProductStore = defineStore('productStore', {
           }
         }
 
-        const productStores = [...stores]
-        productStores.push({
-          productStoreId: "",
-          storeName: "None",
-        });
-
         this.currentFacility = {
           ...this.currentFacility,
-          productStores
+          productStores: stores
         }
-        this.setCurrentProductStore(productStores[0])
+        if (stores?.length) {
+          this.setCurrentProductStore(stores[0])
+        }
       } catch (error: any) {
         logger.error("error", error);
         return Promise.reject(new Error(error));
@@ -535,32 +533,32 @@ export const useProductStore = defineStore('productStore', {
       await useProductStore().fetchProductStoreSettings(productStoreId)
         .catch((error) => logger.error(error))
 
-      this.findProductStoreShipmentMethCount()
+      this.findProductStoreShipmentMethCount(productStoreId)
     },
     setProductStoreShipmentMethCount(payload: number) {
       this.productStoreShipmentMethCount = payload
     },
-    async findProductStoreShipmentMethCount() {
+    async findProductStoreShipmentMethCount(productStoreId: string) {
       let productStoreShipmentMethCount = 0
       const params = {
         partyId: "_NA_",
         partyId_op: "equals",
         partyId_not: "Y",
         roleTypeId: "CARRIER",
-        productStoreId: this.getCurrentProductStore?.productStoreId,
+        productStoreId: productStoreId,
         fieldsToSelect: ["roleTypeId", "partyId"],
         pageSize: 1
       }
 
       try {
         const resp = await api({
-          url: `/admin/productStores/shipmentMethods/counts`,
+          url: `/admin/productStores/${productStoreId}/shippingMethods`,
           method: "GET",
           params
         });
 
         if (!commonUtil.hasError(resp)) {
-          productStoreShipmentMethCount = resp.data[0]?.shipmentMethodCount
+          productStoreShipmentMethCount = resp.data?.length
         } else {
           throw resp?.data
         }

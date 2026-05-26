@@ -626,13 +626,6 @@ export const useCarrierStore = defineStore("carrier", {
         params
       });
     },
-    async findProductStoreShipmentMethCount(query: any): Promise<any> {
-      return api({
-        url: `/admin/productStores/shipmentMethods/counts`,
-        method: "GET",
-        params: query
-      });
-    },
     async fetchStoreCarrierAndMethods(payload: any): Promise<any> {
       return api({
         url: `/oms/dataDocumentView`,

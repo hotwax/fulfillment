@@ -3,7 +3,7 @@ import { defineStore } from "pinia"
 import { DateTime, Settings } from "luxon"
 import router from "@/router";
 import { useUtilStore } from "@/store/util";
-import { useProductStore as useAppProductStore } from "@/store/productStore";
+import { useProductStore } from "@/store/productStore";
 import { firebaseUtil } from "@/utils/firebaseUtil";
 import { useOrderStore } from "@/store/order";
 import { useTransferOrderStore } from "@/store/transferorder";
@@ -224,7 +224,7 @@ export const useUserStore = defineStore("user", {
     },
     async postLogin() {
       try {
-        const productStore = useAppProductStore();
+        const productStore = useProductStore();
         await this.fetchPermissions()
         await this.fetchUserProfile()
         await productStore.fetchUserFacilities()
@@ -274,7 +274,7 @@ export const useUserStore = defineStore("user", {
       useOrderStore().$reset();
       useOrderLookupStore().$reset();
       useProduct().$reset();
-      useAppProductStore().$reset();
+      useProductStore().$reset();
       useRejectionStore().$reset();
       useStockStore().$reset();
       useTransferOrderStore().$reset();
