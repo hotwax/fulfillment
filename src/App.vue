@@ -1,7 +1,7 @@
 <template>
   <ion-app>
     <ion-split-pane content-id="main-content" when="lg">
-      <ion-menu side="start" content-id="main-content" type="overlay" :disabled="!isAuthenticated || (router.currentRoute.value.name as string) === 'Login'">
+      <ion-menu side="start" content-id="main-content" type="overlay" :disabled="!useAuth().isAuthenticated || (router.currentRoute.value.name as string) === 'Login'">
         <ion-header>
           <ion-toolbar>
             <ion-title>{{ currentFacility.facilityName }}</ion-title>
@@ -56,7 +56,6 @@ import { useRegisterSW } from 'virtual:pwa-register/vue'
 
 const { needRefresh, updateServiceWorker } = useRegisterSW()
 
-const { isAuthenticated } = useAuth();
 const loader = ref<any>(null);
 
 const userProfile = computed(() => useUserStore().getUserProfile);
@@ -126,7 +125,7 @@ onMounted(async () => {
 
   const currentProductStore: any = useProductStore().getCurrentProductStore;
 
-    if (isAuthenticated.value && currentProductStore?.productStoreId) {
+    if (useAuth().isAuthenticated.value && currentProductStore?.productStoreId) {
       await useProductStore().fetchProductStoreSettings(currentProductStore.productStoreId).catch((error) => logger.error(error));
 
       if (allNotificationPrefs.value?.length) {
