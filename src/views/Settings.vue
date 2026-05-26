@@ -32,7 +32,7 @@
       </div>
 
       <section>
-        <DxpOmsInstanceNavigator :is-embedded="commonUtil.isAppEmbedded()" />
+        <DxpOmsInstanceNavigator :is-embedded="commonUtil.isAppEmbedded()" :has-oms-access="useUserStore().hasPermission('COMMERCEUSER_VIEW')"/>
         <DxpProductStoreSelector @updateProductStore="refreshProductStoreData($event)" />
         <DxpFacilitySwitcher @updateFacility="fetchFacilityDependencies($event)" />
 
