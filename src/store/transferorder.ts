@@ -234,7 +234,7 @@ export const useTransferOrderStore = defineStore("transferorder", {
       return await api({
         url: 'oms/transferOrders',
         method: "post",
-        data: payload
+        data: { payload: payload}
       });
     },
     async approveTransferOrder(orderId: any) {
