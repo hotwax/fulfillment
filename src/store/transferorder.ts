@@ -129,7 +129,9 @@ export const useTransferOrderStore = defineStore("transferorder", {
       try {
         const resp: any = await api({
           method: "get",
-          url: `poorti/transferOrders/${orderId}/printPicklist`,
+          baseURL: commonUtil.getMaargBaseURL(),
+          url: `/fop/apps/pdf/PrintTransferOrderPicklist`,
+          params: { orderId },
           responseType: "blob",
         })
 
