@@ -218,7 +218,7 @@ const unreadNotificationsStatus = computed(() => useNotificationStore().getUnrea
 const notificationPrefs = computed(() => useNotificationStore().getNotificationPrefs);
 const allNotificationPrefs = computed(() => useNotificationStore().getAllNotificationPrefs);
 const firebaseDeviceId = computed(() => useNotificationStore().getFirebaseDeviceId);
-const isProductStoreSettingEnabled = computed(() => (settingTypeEnumId: string) => useProductStore().isProductStoreSettingEnabled(settingTypeEnumId));
+const isProductStoreSettingEnabled = computed(() => useProductStore().isProductStoreSettingEnabled);
 const barcodeIdentificationPref = computed(() => useProductStore().getBarcodeIdentifierPref);
 const currentFacility = computed(() => useProductStore().getCurrentFacility as any);
 const preferredStore = computed(() => useProductStore().getCurrentProductStore);
