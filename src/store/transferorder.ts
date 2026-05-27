@@ -131,7 +131,7 @@ export const useTransferOrderStore = defineStore("transferorder", {
           method: "get",
           baseURL: commonUtil.getMaargBaseURL(),
           url: `/fop/apps/pdf/PrintTransferOrderPicklist`,
-          params: { orderId , fileName: `order-${orderId}.pdf`},
+          params: { orderId },
           responseType: "blob",
         })
 
