@@ -363,7 +363,7 @@ onIonViewWillEnter(async () => {
   await useOrderLookupStore().getOrderDetails(props.orderId);
   await useAppProductStore().fetchAllProductStores();
   await fetchOrderInvoicingFacility();
-  const instance = instanceUrl.value.split("-")[0].replace(new RegExp("^(https|http)://"), "").replace(new RegExp("/api.*"), "").replace(new RegExp(":.*"), "");
+  const instance = commonUtil.getOmsURL().split("-")[0].replace(new RegExp("^(https|http)://"), "").replace(new RegExp("/api.*"), "").replace(new RegExp(":.*"), "");
   additionalDetailItemExt.value = await moduleFederationUtil.useDynamicImport({ scope: "fulfillment_extensions", module: `${instance}_OrderLookupAdditionalDetailItem` });
   isFetchingOrderInfo.value = false;
 });
