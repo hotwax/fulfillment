@@ -16,6 +16,7 @@
     "@ionic/core": "catalog:ionic7",
     "@ionic/vue": "catalog:ionic7",
     "@ionic/vue-router": "catalog:ionic7",
+    "ionicons": "catalog:",
     "@module-federation/enhanced": "^0.7.7",
     "@module-federation/runtime": "catalog:",
     "@types/encoding-japanese": "^2.0.5",
@@ -52,6 +53,7 @@
     "terser": "^5.44.0",
     "typescript": "catalog:",
     "vite": "catalog:",
+    "vite-plugin-pwa": "1.2.0",
     "vitest": "catalog:"
   }
 }
