@@ -34,19 +34,15 @@ const title = computed(() => {
   return "Result Size";
 });
 
-const viewSize = computed(() => {
-  if (route.name === "OpenOrders") return useOrderStore().getOpenOrders.query.viewSize;
-  if (route.name === "InProgress") return useOrderStore().getInProgressOrders.query.viewSize;
-  if (route.name === "Completed") return useOrderStore().getCompletedOrders.query.viewSize;
-  return 0;
+const orderState = computed(() => {
+  if (route.name === "OpenOrders") return useOrderStore().getOpenOrders;
+  if (route.name === "InProgress") return useOrderStore().getInProgressOrders;
+  if (route.name === "Completed") return useOrderStore().getCompletedOrders;
+  return { query: { viewSize: 0 }, total: 0 };
 });
 
-const total = computed(() => {
-  if (route.name === "OpenOrders") return useOrderStore().getOpenOrders.total;
-  if (route.name === "InProgress") return useOrderStore().getInProgressOrders.total;
-  if (route.name === "Completed") return useOrderStore().getCompletedOrders.total;
-  return 0;
-});
+const viewSize = computed(() => orderState.value.query.viewSize);
+const total = computed(() => orderState.value.total);
 
 const prepareViewSizeOptions = () => {
   const maxViewSize = total.value > 100 ? 100 : total.value;
