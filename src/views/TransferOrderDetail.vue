@@ -93,7 +93,7 @@
 
                 <div class="actions">
                   <div class="desktop-only">
-                    <ion-button fill="outline" @click.stop="regenerateShippingLabel(shipment)">
+                    <ion-button fill="outline" :disabled="!canCreateShipment" @click.stop="regenerateShippingLabel(shipment)">
                       {{ translate("Regenerate Shipping Label") }}
                       <ion-spinner color="primary" slot="start" v-if="shipment.isGeneratingShippingLabel" name="crescent" />
                     </ion-button>
@@ -124,11 +124,11 @@
             <ion-icon slot="start" :icon="trashOutline" />
             {{ translate("Reject Items") }}
           </ion-button>
-          <ion-button color="primary" fill="outline" :disabled="!userStore.hasPermission('STOREFULFILLMENT_ADMIN') || isCreatingShipment" @click="printTransferOrderPicklist()">
+          <ion-button color="primary" fill="outline" :disabled="!canPrintPicklist || isCreatingShipment" @click="printTransferOrderPicklist()">
             <ion-icon slot="start" :icon="printOutline" />
             {{ translate('Picklist') }}
           </ion-button>
-          <ion-button color="primary" fill="solid" :disabled="!userStore.hasPermission('STOREFULFILLMENT_ADMIN') || !isEligibleForCreatingShipment() || isCreatingShipment" @click="confirmCreateShipment">
+          <ion-button color="primary" fill="solid" :disabled="!canCreateShipment || !isEligibleForCreatingShipment() || isCreatingShipment" @click="confirmCreateShipment">
             <ion-spinner v-if="isCreatingShipment" slot="start" name="crescent" />
             {{ translate('Create shipment') }}
           </ion-button>
@@ -160,6 +160,8 @@ import router from "@/router";
 const userStore = useUserStore();
 const orderStore = useOrderStore();
 const transferOrderStore = useTransferOrderStore();
+const canPrintPicklist = computed(() => userStore.hasPermission("PICKLIST_PRINT OR FULFILL_PICKLIST_ADMIN"));
+const canCreateShipment = computed(() => userStore.hasPermission("FULFILL_SHIPMENT_CREATE OR FULFILL_SHIPMENT_ADMIN OR SALES_SHIPMENT_ADMIN"));
 
 const getProductIdentificationValue = commonUtil.getProductIdentificationValue;
 

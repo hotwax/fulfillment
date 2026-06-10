@@ -45,7 +45,7 @@ const routes: Array<RouteRecordRaw> = [
     component: OpenOrders,
     beforeEnter: authGuard,
     meta: {
-      permissionId: "",
+      permissionId: "READYTOPACK_ORDERS_VIEW OR STOREFULFILLMENT_VIEW",
       title: "Open",
       icon: mailUnreadOutline,
       menuIndex: 1,
@@ -58,7 +58,7 @@ const routes: Array<RouteRecordRaw> = [
     component: InProgress,
     beforeEnter: authGuard,
     meta: {
-      permissionId: "",
+      permissionId: "READYTOPACK_ORDERS_VIEW OR STOREFULFILLMENT_VIEW",
       title: "In Progress",
       icon: mailOpenOutline,
       menuIndex: 2,
@@ -71,7 +71,7 @@ const routes: Array<RouteRecordRaw> = [
     component: Completed,
     beforeEnter: authGuard,
     meta: {
-      permissionId: "",
+      permissionId: "READYTOSHIP_ORDERS_VIEW OR STOREFULFILLMENT_VIEW",
       title: "Completed",
       icon: checkmarkDoneOutline,
       menuIndex: 3,
@@ -96,14 +96,20 @@ const routes: Array<RouteRecordRaw> = [
     name: 'CreateTransferOrder',
     component: CreateTransferOrder,
     beforeEnter: authGuard,
-    props: true
+    props: true,
+    meta: {
+      permissionId: "ORD_TRANSFER_ORDER_VIEW OR ORD_TRANSFER_ORDER_ADMIN"
+    }
   },
   {
     path: '/ship-transfer-order/:shipmentId',
     name: 'ShipTransferOrder',
     component: ShipTransferOrder,
     beforeEnter: authGuard,
-    props: true
+    props: true,
+    meta: {
+      permissionId: "ORD_TRANSFER_ORDER_VIEW OR ORD_TRANSFER_ORDER_ADMIN"
+    }
   },
   {
     path: '/transfer-order-details/:orderId/:category',
@@ -120,7 +126,10 @@ const routes: Array<RouteRecordRaw> = [
     name: 'ShipTransferOrderFromOrderDetail',
     component: ShipTransferOrder,
     beforeEnter: authGuard,
-    props: true
+    props: true,
+    meta: {
+      permissionId: "ORD_TRANSFER_ORDER_VIEW OR ORD_TRANSFER_ORDER_ADMIN"
+    }
   },
   {
     path: '/:category/order-detail/:orderId/:shipGroupSeqId',
@@ -129,7 +138,7 @@ const routes: Array<RouteRecordRaw> = [
     beforeEnter: authGuard,
     props: true,
     meta: {
-      permissionId: ""
+      permissionId: "READYTOPACK_ORDERS_VIEW OR READYTOSHIP_ORDERS_VIEW OR STOREFULFILLMENT_VIEW"
     }
   },
   {
@@ -139,7 +148,7 @@ const routes: Array<RouteRecordRaw> = [
     beforeEnter: authGuard,
     props: true,
     meta: {
-      permissionId: ""
+      permissionId: "READYTOPACK_ORDERS_VIEW OR READYTOSHIP_ORDERS_VIEW OR STOREFULFILLMENT_VIEW"
     }
   },
   {

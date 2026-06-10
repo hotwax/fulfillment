@@ -184,7 +184,7 @@
           <ion-button data-testid="ship-later-btn-create-transfer-order-page" size="small" fill="outline" :disabled="!currentOrder.items?.length || hasInvalidPickedQuantity() || pendingProductIds.size" @click="shiplater">
             {{ translate("Ship later") }}
           </ion-button>
-          <ion-button data-testid="pack-and-ship-order-btn" size="small" color="primary" fill="solid" :disabled="!currentOrder.items?.length || hasInvalidPickedQuantity() || pendingProductIds.size" @click="packAndShipOrder">
+          <ion-button data-testid="pack-and-ship-order-btn" size="small" color="primary" fill="solid" :disabled="!canCreateShipment || !currentOrder.items?.length || hasInvalidPickedQuantity() || pendingProductIds.size" @click="packAndShipOrder">
             {{ translate("Pack and ship order") }}
           </ion-button>
         </ion-buttons>
@@ -208,6 +208,7 @@ import { useProductQueue } from "@/composables/useProductQueue";
 import { useProductStore as useProduct } from "@/store/product";
 import { useTransferOrderStore } from "@/store/transferorder";
 import { useOrderStore } from "@/store/order";
+import { useUserStore } from "@/store/user";
 
 const route = router.currentRoute.value;
 const productIdentificationPref = computed(() => useProductStore().getProductIdentificationPref);
@@ -234,6 +235,7 @@ const barcodeIdentifier = computed(() => useProductStore().getBarcodeIdentifierP
 const getProduct = (productId: string) => useProduct().getProduct(productId);
 const currentOrder = computed(() => useTransferOrderStore().getCurrent);
 const isProductStoreSettingEnabled = computed(() => (settingTypeEnumId: string) => useProductStore().isProductStoreSettingEnabled(settingTypeEnumId));
+const canCreateShipment = computed(() => useUserStore().hasPermission("FULFILL_SHIPMENT_CREATE OR FULFILL_SHIPMENT_ADMIN OR SALES_SHIPMENT_ADMIN"));
 
 watch(queryString, (value) => {
   if (mode.value === "scan") return;
