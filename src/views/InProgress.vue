@@ -45,7 +45,7 @@
 
       <div v-if="inProgressOrders.total">
         <div class="results">
-          <ion-button expand="block" class="bulk-action desktop-only" fill="outline" size="large" v-if="!isProductStoreSettingEnabled('FULFILL_FORCE_SCAN')" @click="packOrders()">{{ translate("Pack orders") }}</ion-button>
+          <ion-button expand="block" class="bulk-action desktop-only" fill="outline" size="large" v-if="!isProductStoreSettingEnabled('FULFILL_FORCE_SCAN')" :disabled="!canPickOrders" @click="packOrders()">{{ translate("Pack orders") }}</ion-button>
           <ion-card class="order" v-for="(order, index) in getInProgressOrders()" :key="index" :class="isProductStoreSettingEnabled('FULFILL_FORCE_SCAN') ? 'ion-margin-top' : ''">
             <div class="order-header">
               <div class="order-primary-info">
@@ -176,7 +176,7 @@
 
             <div class="mobile-only">
               <ion-item>
-                <ion-button fill="clear" @click.stop="packOrder(order)">{{ translate("Pack using default packaging") }}</ion-button>
+                <ion-button fill="clear" :disabled="!canPickOrders" @click.stop="packOrder(order)">{{ translate("Pack using default packaging") }}</ion-button>
                 <ion-button slot="end" fill="clear" color="medium" @click.stop="packagingPopover">
                   <ion-icon slot="icon-only" :icon="ellipsisVerticalOutline" />
                 </ion-button>
@@ -185,7 +185,7 @@
 
             <div class="actions">
               <div>
-                <ion-button :color="order.hasAllRejectedItem ? 'danger' : ''" @click.stop="packOrder(order)">{{ translate(order.hasAllRejectedItem ? "Reject" : order.hasRejectedItem ? "Save and Pack" : "Pack") }}</ion-button>
+                <ion-button :color="order.hasAllRejectedItem ? 'danger' : ''" :disabled="!canPickOrders" @click.stop="packOrder(order)">{{ translate(order.hasAllRejectedItem ? "Reject" : order.hasRejectedItem ? "Save and Pack" : "Pack") }}</ion-button>
               </div>
 
               <div class="desktop-only">
@@ -203,7 +203,7 @@
       </div>
       <template v-else-if="inProgressOrders.total">
         <ion-fab v-if="!isProductStoreSettingEnabled('FULFILL_FORCE_SCAN')" class="mobile-only" vertical="bottom" horizontal="end" slot="fixed">
-          <ion-fab-button @click="packOrders()">
+          <ion-fab-button :disabled="!canPickOrders" @click="packOrders()">
             <ion-icon :icon="checkmarkDoneOutline" />
           </ion-fab-button>
         </ion-fab>
@@ -215,11 +215,11 @@
     <ion-footer v-if="selectedPicklistId && inProgressOrders.total">
       <ion-toolbar>
         <ion-buttons slot="end">
-          <ion-button fill="outline" color="primary" @click="editPickers(getPicklist(selectedPicklistId))">
+          <ion-button fill="outline" color="primary" :disabled="!canEditPickers" @click="editPickers(getPicklist(selectedPicklistId))">
             <ion-icon slot="start" :icon="pencilOutline" />
             {{ translate("Edit Pickers") }}
           </ion-button>
-          <ion-button fill="solid" color="primary" @click="printPicklist(getPicklist(selectedPicklistId))">
+          <ion-button fill="solid" color="primary" :disabled="!canPrintPicklist" @click="printPicklist(getPicklist(selectedPicklistId))">
             <ion-spinner v-if="getPicklist(selectedPicklistId).isGeneratingPicklist" slot="start" name="crescent" />
             <ion-icon v-else slot="start" :icon="printOutline" />
             {{ translate("Print Picklist") }}
@@ -286,6 +286,9 @@ const carrierShipmentBoxTypes = computed(() => useUtilStore().getCarrierShipment
 const productIdentificationPref = computed(() => useProductStore().getProductIdentificationPref);
 const currentProductStore = computed(() => useProductStore().getCurrentProductStore);
 const currentFacility = computed(() => useProductStore().getCurrentFacility as any);
+const canPickOrders = computed(() => userStore.hasPermission("PICKLIST_PICK OR FULFILL_PICKLIST_ADMIN"));
+const canPrintPicklist = computed(() => userStore.hasPermission("PICKLIST_PRINT OR FULFILL_PICKLIST_ADMIN"));
+const canEditPickers = computed(() => userStore.hasPermission("EDIT_PICKLIST_PICKER OR PICKLIST_ASSIGN OR FULFILL_PICKLIST_ADMIN"));
 
 const getProduct = (productId: string) => useProduct().getProduct(productId);
 const boxTypeDesc = (boxTypeId: string) => useUtilStore().getShipmentBoxDesc(boxTypeId);

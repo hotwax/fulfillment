@@ -46,7 +46,7 @@
   </ion-content>
 
   <ion-fab vertical="bottom" horizontal="end" slot="fixed">
-    <ion-fab-button :disabled="!areAllItemsSelected()" @click="packOrder()">
+    <ion-fab-button :disabled="!areAllItemsSelected() || !canPickOrders" @click="packOrder()">
       <ion-icon :icon="saveOutline" />
     </ion-fab-button>
   </ion-fab>
@@ -70,6 +70,7 @@ const lastScannedId = ref("");
 
 const productIdentificationPref = computed(() => useAppProductStore().getProductIdentificationPref);
 const barcodeIdentifier = computed(() => useAppProductStore().getBarcodeIdentifierPref);
+const canPickOrders = computed(() => useAuthStore().hasPermission("PICKLIST_PICK OR FULFILL_PICKLIST_ADMIN"));
 const getProduct = (productId: string) => useProductStore().getProduct(productId);
 
 onMounted(() => {

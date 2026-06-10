@@ -49,7 +49,7 @@
 
       <div v-if="completedOrders.total">
         <div class="results">
-          <ion-button :disabled="isProductStoreSettingEnabled('DISABLE_SHIPNOW') || hasAnyMissingInfo() || (hasAnyShipmentTrackingInfoMissing() && !userStore.hasPermission('COMMON_ADMIN'))" expand="block" class="bulk-action desktop-only" fill="outline" size="large" @click="bulkShipOrders()">{{ translate("Ship") }}</ion-button>
+          <ion-button :disabled="!canCreateShipment || isProductStoreSettingEnabled('DISABLE_SHIPNOW') || hasAnyMissingInfo() || (hasAnyShipmentTrackingInfoMissing() && !userStore.hasPermission('COMMON_ADMIN'))" expand="block" class="bulk-action desktop-only" fill="outline" size="large" @click="bulkShipOrders()">{{ translate("Ship") }}</ion-button>
           <ion-card class="order" v-for="(order, index) in completedOrdersList" :key="index">
             <div class="order-header">
               <div class="order-primary-info">
@@ -133,7 +133,7 @@
 
             <div class="mobile-only">
               <ion-item>
-                <ion-button :disabled="isProductStoreSettingEnabled('DISABLE_SHIPNOW') || order.hasMissingShipmentInfo || order.hasMissingPackageInfo || ((isTrackingRequiredForAnyShipmentPackage(order) && !order.trackingCode) && !userStore.hasPermission('COMMON_ADMIN'))" fill="clear">{{ translate("Ship Now") }}</ion-button>
+                <ion-button :disabled="!canCreateShipment || isProductStoreSettingEnabled('DISABLE_SHIPNOW') || order.hasMissingShipmentInfo || order.hasMissingPackageInfo || ((isTrackingRequiredForAnyShipmentPackage(order) && !order.trackingCode) && !userStore.hasPermission('COMMON_ADMIN'))" fill="clear">{{ translate("Ship Now") }}</ion-button>
                 <ion-button slot="end" fill="clear" color="medium" @click.stop="shippingPopover">
                   <ion-icon slot="icon-only" :icon="ellipsisVerticalOutline" />
                 </ion-button>
@@ -143,12 +143,12 @@
             <div class="actions">
               <div class="desktop-only">
                 <ion-button v-if="!hasPackedShipments(order)" :disabled="true">{{ translate("Shipped") }}</ion-button>
-                <ion-button v-else :disabled="isProductStoreSettingEnabled('DISABLE_SHIPNOW') || order.hasMissingShipmentInfo || order.hasMissingPackageInfo || ((isTrackingRequiredForAnyShipmentPackage(order) && !order.trackingCode) && !userStore.hasPermission('COMMON_ADMIN'))" @click.stop="shipOrder(order)">{{ translate("Ship Now") }}</ion-button>
-                <ion-button :disabled="order.hasMissingShipmentInfo || order.hasMissingPackageInfo" fill="outline" @click.stop="regenerateShippingLabel(order)">
+                <ion-button v-else :disabled="!canCreateShipment || isProductStoreSettingEnabled('DISABLE_SHIPNOW') || order.hasMissingShipmentInfo || order.hasMissingPackageInfo || ((isTrackingRequiredForAnyShipmentPackage(order) && !order.trackingCode) && !userStore.hasPermission('COMMON_ADMIN'))" @click.stop="shipOrder(order)">{{ translate("Ship Now") }}</ion-button>
+                <ion-button :disabled="!canCreateShipment || order.hasMissingShipmentInfo || order.hasMissingPackageInfo" fill="outline" @click.stop="regenerateShippingLabel(order)">
                   {{ translate(order.missingLabelImage ? "Regenerate Shipping Label" : "Print Shipping Label") }}
                   <ion-spinner color="primary" slot="end" v-if="order.isGeneratingShippingLabel" name="crescent" />
                 </ion-button>
-                <ion-button :disabled="order.hasMissingShipmentInfo || order.hasMissingPackageInfo" fill="outline" @click.stop="localPrintPackingSlip(order)">
+                <ion-button :disabled="!canCreateShipment || order.hasMissingShipmentInfo || order.hasMissingPackageInfo" fill="outline" @click.stop="localPrintPackingSlip(order)">
                   {{ translate("Print Customer Letter") }}
                   <ion-spinner color="primary" slot="end" v-if="order.isGeneratingPackingSlip" name="crescent" />
                 </ion-button>
@@ -169,7 +169,7 @@
         <ion-spinner name="crescent"></ion-spinner>
       </div>
       <ion-fab v-else-if="completedOrders.total" class="mobile-only" vertical="bottom" horizontal="end" slot="fixed">
-        <ion-fab-button :disabled="hasAnyMissingInfo() || (hasAnyShipmentTrackingInfoMissing() && !userStore.hasPermission('COMMON_ADMIN'))" @click="bulkShipOrders()">
+        <ion-fab-button :disabled="!canCreateShipment || hasAnyMissingInfo() || (hasAnyShipmentTrackingInfoMissing() && !userStore.hasPermission('COMMON_ADMIN'))" @click="bulkShipOrders()">
           <ion-icon :icon="checkmarkDoneOutline" />
         </ion-fab-button>
       </ion-fab>
@@ -178,14 +178,14 @@
       </div>
     </ion-content>
 
-    <ion-footer v-if="selectedCarrierPartyId">
+    <ion-footer v-if="selectedCarrierPartyId && canViewManifest">
       <ion-toolbar>
         <ion-buttons slot="end">
           <ion-button fill="outline" color="primary" @click="openHistoricalManifestModal">
             <ion-icon slot="start" :icon="timeOutline" />
             {{ translate("View historical manifests") }}
           </ion-button>
-          <ion-button fill="solid" color="primary" :disabled="!carrierConfiguration[selectedCarrierPartyId]?.['MANIFEST_GEN_REQUEST']" @click="generateCarrierManifest">
+          <ion-button fill="solid" color="primary" :disabled="!carrierConfiguration[selectedCarrierPartyId]?.['MANIFEST_GEN_REQUEST'] || !canViewManifest" @click="generateCarrierManifest">
             <ion-icon slot="start" :icon="printOutline" />
             {{ translate("Generate Manifest") }}
             <ion-spinner name="crescent" slot="end" v-if="isGeneratingManifest" />
@@ -251,6 +251,8 @@ const isProductStoreSettingEnabled = computed(() => (settingTypeEnumId: string) 
 const currentProductStore = computed(() => useProductStore().getCurrentProductStore);
 const currentFacility = computed(() => useProductStore().getCurrentFacility);
 const productIdentificationPref = computed(() => useProductStore().getProductIdentificationPref);
+const canCreateShipment = computed(() => userStore.hasPermission("FULFILL_SHIPMENT_CREATE OR FULFILL_SHIPMENT_ADMIN OR SALES_SHIPMENT_ADMIN"));
+const canViewManifest = computed(() => userStore.hasPermission("GENERATE_MANIFEST_VIEW"));
 
 const getTime = (time: any) => {
   return time ? DateTime.fromMillis(time).toLocaleString(DateTime.DATETIME_MED) : "";

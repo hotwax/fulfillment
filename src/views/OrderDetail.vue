@@ -17,7 +17,7 @@
               <ion-icon :icon="pricetagOutline" />
               <ion-label>{{ order.orderId }}</ion-label>
             </ion-chip>
-            <ion-chip v-if="category !== 'open'" outline @click="printPicklist(order)">
+            <ion-chip v-if="category !== 'open'" outline :disabled="!canPrintPicklist" @click="printPicklist(order)">
               <ion-icon :icon="documentTextOutline" />
               <ion-label>{{ translate('Linked picklist') }}: {{ order.picklistId }}</ion-label>
             </ion-chip>
@@ -155,7 +155,7 @@
 
           <div v-if="category === 'in-progress'" class="mobile-only">
             <ion-item>
-              <ion-button fill="clear" @click="packOrder(order)">{{ translate("Pack using default packaging") }}</ion-button>
+              <ion-button fill="clear" :disabled="!canPickOrders" @click="packOrder(order)">{{ translate("Pack using default packaging") }}</ion-button>
               <ion-button slot="end" fill="clear" color="medium" @click="packagingPopover">
                 <ion-icon slot="icon-only" :icon="ellipsisVerticalOutline" />
               </ion-button>
@@ -164,7 +164,7 @@
 
           <div v-else-if="category === 'completed'" class="mobile-only">
             <ion-item>
-              <ion-button :disabled="isProductStoreSettingEnabled('DISABLE_SHIPNOW') || order.hasMissingShipmentInfo || order.hasMissingPackageInfo || ((isTrackingRequiredForAnyShipmentPackage(order) && !order.trackingCode) && !userStore.hasPermission('COMMON_ADMIN'))" fill="clear">{{ translate("Ship Now") }}</ion-button>
+              <ion-button :disabled="!canCreateShipment || isProductStoreSettingEnabled('DISABLE_SHIPNOW') || order.hasMissingShipmentInfo || order.hasMissingPackageInfo || ((isTrackingRequiredForAnyShipmentPackage(order) && !order.trackingCode) && !userStore.hasPermission('COMMON_ADMIN'))" fill="clear">{{ translate("Ship Now") }}</ion-button>
               <ion-button slot="end" fill="clear" color="medium" @click.stop="shippingPopover">
                 <ion-icon slot="icon-only" :icon="ellipsisVerticalOutline" />
               </ion-button>
@@ -174,13 +174,13 @@
           <div class="actions">
             <div>
               <template v-if="category === 'in-progress'">
-                <ion-button :color="order.hasAllRejectedItem ? 'danger' : ''" @click="packOrder(order)">
+                <ion-button :color="order.hasAllRejectedItem ? 'danger' : ''" :disabled="!canPickOrders" @click="packOrder(order)">
                   <ion-icon slot="start" :icon="archiveOutline" />
                   {{ translate(order.hasAllRejectedItem ? "Reject order" : order.hasRejectedItem ? "Save and Pack Order" : "Pack order") }}
                 </ion-button>
                 <Component :is="printDocumentsExt" :category="category" :order="order" :currentFacility="currentFacility" :hasMissingInfo="order.missingLabelImage" />
               </template>
-              <ion-button v-else-if="category === 'open'" @click="assignPickers">
+              <ion-button v-else-if="category === 'open'" :disabled="!canCreateAndPrintPicklist" @click="assignPickers">
                 <ion-icon slot="start" :icon="personAddOutline" />
                 {{ translate("Pick order") }}
               </ion-button>
@@ -189,11 +189,11 @@
                   <ion-icon slot="start" :icon="bagCheckOutline" />
                   {{ translate("Shipped") }}
                 </ion-button>
-                <ion-button v-else :disabled="isProductStoreSettingEnabled('DISABLE_SHIPNOW') || order.hasMissingShipmentInfo || order.hasMissingPackageInfo || ((isTrackingRequiredForAnyShipmentPackage(order) && !order.trackingCode) && !userStore.hasPermission('COMMON_ADMIN'))" @click.stop="shipOrder(order)">
+                <ion-button v-else :disabled="!canCreateShipment || isProductStoreSettingEnabled('DISABLE_SHIPNOW') || order.hasMissingShipmentInfo || order.hasMissingPackageInfo || ((isTrackingRequiredForAnyShipmentPackage(order) && !order.trackingCode) && !userStore.hasPermission('COMMON_ADMIN'))" @click.stop="shipOrder(order)">
                   <ion-icon slot="start" :icon="bagCheckOutline" />
                   {{ translate("Ship order") }}
                 </ion-button>
-                <ion-button :disabled="order.hasMissingShipmentInfo || order.hasMissingPackageInfo" fill="outline" @click.stop="printPackingSlip(order)">
+                <ion-button :disabled="!canCreateShipment || order.hasMissingShipmentInfo || order.hasMissingPackageInfo" fill="outline" @click.stop="printPackingSlip(order)">
                   {{ translate("Print Customer Letter") }}
                   <ion-spinner data-spinner-size="medium" color="primary" slot="end" v-if="order.isGeneratingPackingSlip" name="crescent" />
                 </ion-button>
@@ -299,11 +299,11 @@
                 </ion-label>
               </ion-item>
               <template v-if="category === 'completed'">
-                <ion-button :disabled="!shipmentMethodTypeId || !hasPackedShipments(order)" fill="outline" expand="block" class="ion-margin" @click.stop="regenerateShippingLabel(order)">
+                <ion-button :disabled="!canCreateShipment || !shipmentMethodTypeId || !hasPackedShipments(order)" fill="outline" expand="block" class="ion-margin" @click.stop="regenerateShippingLabel(order)">
                   {{ shipmentLabelErrorMessage ? translate("Retry Label") : translate("Generate Label") }}
                   <ion-spinner color="primary" slot="end" data-spinner-size="medium" v-if="order.isGeneratingShippingLabel" name="crescent" />
                 </ion-button>
-                <ion-button :disabled="!shipmentMethodTypeId || !carrierPartyId || !hasPackedShipments(order)" fill="clear" expand="block" color="medium" @click="openTrackingCodeModal()">
+                <ion-button :disabled="!canCreateShipment || !shipmentMethodTypeId || !carrierPartyId || !hasPackedShipments(order)" fill="clear" expand="block" color="medium" @click="openTrackingCodeModal()">
                   {{ translate("Add tracking code manually") }}
                 </ion-button>
               </template>
@@ -313,7 +313,7 @@
                 {{ order.trackingCode }}
                 <p>{{ translate("tracking code") }}</p>
               </ion-label>        
-              <ion-button slot="end" fill="clear" color="medium" @click="shippingLabelActionPopover($event, order)">
+              <ion-button slot="end" fill="clear" color="medium" :disabled="!canCreateShipment" @click="shippingLabelActionPopover($event, order)">
                 <ion-icon slot="icon-only" :icon="ellipsisVerticalOutline" />
               </ion-button>
             </ion-item>
@@ -426,6 +426,11 @@ const props = defineProps(["category", "orderId", "shipGroupSeqId", "shipmentId"
 const userStore = useUserStore();
 const orderStore = useOrderStore();
 const carrierStore = useCarrierStore();
+const canCreatePicklist = computed(() => userStore.hasPermission("FULFILL_PICKLIST_CREATE OR PICKLIST_CREATE OR FULFILL_PICKLIST_ADMIN"));
+const canCreateAndPrintPicklist = computed(() => canCreatePicklist.value && userStore.hasPermission("PICKLIST_PRINT OR FULFILL_PICKLIST_ADMIN"));
+const canPrintPicklist = computed(() => userStore.hasPermission("PICKLIST_PRINT OR FULFILL_PICKLIST_ADMIN"));
+const canPickOrders = computed(() => userStore.hasPermission("PICKLIST_PICK OR FULFILL_PICKLIST_ADMIN"));
+const canCreateShipment = computed(() => userStore.hasPermission("FULFILL_SHIPMENT_CREATE OR FULFILL_SHIPMENT_ADMIN OR SALES_SHIPMENT_ADMIN"));
 
 const addingBoxForShipmentIds = ref([] as any);
 const isUpdatingCarrierDetail = ref(false);

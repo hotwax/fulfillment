@@ -19,7 +19,7 @@
           {{ translate("Manifest") }}
           <p>{{ DateTime.fromMillis(manifest.fromDate).toFormat("dd MMMM yyyy hh:mm a ZZZZ") }}</p>
         </ion-label>
-        <ion-button fill="outline" @click="downloadCarrierManifest(manifest)">
+        <ion-button fill="outline" :disabled="!canViewManifest" @click="downloadCarrierManifest(manifest)">
           <ion-icon :icon="printOutline" slot="start"/>
           {{ translate("Print") }}
           <ion-spinner name="crescent" slot="end" v-if="loadingContentId === manifest.contentId" />
@@ -42,9 +42,11 @@ import { commonUtil, logger, useShopify, translate } from "@common";
 import { useProductStore as useAppProductStore } from "@/store/productStore";
 import { DateTime } from "luxon";
 import { useCarrierStore } from "@/store/carrier";
+import { useUserStore } from "@/store/user";
 
 const props = defineProps(["selectedCarrierPartyId", "carrierConfiguration"]);
 const currentFacility = computed(() => useAppProductStore().getCurrentFacility);
+const canViewManifest = computed(() => useUserStore().hasPermission("GENERATE_MANIFEST_VIEW"));
 const loadingContentId = ref(null as any);
 const carrierStore = useCarrierStore();
 

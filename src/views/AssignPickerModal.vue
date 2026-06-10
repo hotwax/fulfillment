@@ -42,7 +42,7 @@
   </ion-content>
 
   <ion-fab vertical="bottom" horizontal="end" slot="fixed">
-    <ion-fab-button :disabled="!selectedPickers.length" @click="printPicklist()">
+    <ion-fab-button :disabled="!selectedPickers.length || !canCreateAndPrintPicklist" @click="printPicklist()">
       <ion-icon :icon="saveOutline" />
     </ion-fab-button>
   </ion-fab>
@@ -65,6 +65,8 @@ const utilStore = useUtilStore();
 const userStore = useDxpUserStore();
 const currentFacility = computed(() => useAppProductStore().getCurrentFacility);
 const openOrders = computed(() => useOrderStore().getOpenOrders);
+const canCreatePicklist = computed(() => userStore.hasPermission("FULFILL_PICKLIST_CREATE OR PICKLIST_CREATE OR FULFILL_PICKLIST_ADMIN"));
+const canCreateAndPrintPicklist = computed(() => canCreatePicklist.value && userStore.hasPermission("PICKLIST_PRINT OR FULFILL_PICKLIST_ADMIN"));
 const selectedPickers = ref([]) as any;
 const queryString = ref("");
 const pickers = ref([]) as any;

@@ -63,7 +63,7 @@
               </ion-button>
             </ion-item>
             <ion-card-content>
-              <ion-button data-testid="reprint-label-btn" fill="outline" color="primary" @click="printShippingLabel">
+              <ion-button data-testid="reprint-label-btn" fill="outline" color="primary" :disabled="!canCreateShipment" @click="printShippingLabel">
                 <ion-icon :icon="printOutline" slot="start" size="small" />
                 {{ translate("Re-print shipping label") }}
               </ion-button>
@@ -135,7 +135,7 @@
       <ion-toolbar>
         <ion-buttons slot="end">
           <ion-button data-testid="ship-later-btn-ship-transfer-order-page" :disabled="shipmentDetails?.carrierServiceStatusId === 'SHRSCS_ACCEPTED' || isProcessingShipment || !!selectedCarrierService" fill="outline" color="primary" @click="shipLater()">{{ translate("Ship later") }}</ion-button>
-          <ion-button data-testid="ship-order-btn" :disabled="isProcessingShipment || !!selectedCarrierService" fill="solid" color="primary" @click="shipOrder">
+          <ion-button data-testid="ship-order-btn" :disabled="!canCreateShipment || isProcessingShipment || !!selectedCarrierService" fill="solid" color="primary" @click="shipOrder">
             <ion-spinner v-if="isProcessingShipment" slot="start" name="crescent" />
             {{ translate("Ship order") }}
           </ion-button>
@@ -168,6 +168,7 @@ const userStore = useUserStore();
 const orderStore = useOrderStore();
 const transferOrderStore = useTransferOrderStore();
 const carrierStore = useCarrierStore();
+const canCreateShipment = computed(() => userStore.hasPermission("FULFILL_SHIPMENT_CREATE OR FULFILL_SHIPMENT_ADMIN OR SALES_SHIPMENT_ADMIN"));
 
 const getProduct = (productId: string) => useProductStore().getProduct(productId);
 const shipmentMethodsByCarrier = computed(() => useUtilStore().getShipmentMethodsByCarrier);

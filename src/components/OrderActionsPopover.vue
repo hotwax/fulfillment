@@ -6,7 +6,7 @@
         <ion-icon slot="end" :icon="copyOutline" />
         {{ translate("Copy ID") }}
       </ion-item>
-      <ion-item v-if="category === 'open'" button @click="assignPickers">
+      <ion-item v-if="category === 'open'" button :disabled="!canCreateAndPrintPicklist" @click="assignPickers">
         <ion-icon slot="end" :icon="bagCheckOutline" />
         {{ translate("Pick order") }}
       </ion-item>
@@ -19,15 +19,19 @@
 </template>
 
 <script setup lang="ts">
-import { defineProps } from "vue";
+import { computed, defineProps } from "vue";
 import { IonContent, IonIcon, IonItem, IonList, IonListHeader, modalController, popoverController } from "@ionic/vue";
 import { arrowForwardOutline, bagCheckOutline, copyOutline } from "ionicons/icons";
 import { commonUtil, emitter, translate } from "@common";
 import AssignPickerModal from "@/views/AssignPickerModal.vue";
 import { useOrderStore } from "@/store/order";
+import { useUserStore } from "@/store/user";
 import router from "@/router";
 
 const props = defineProps(["order", "category"]);
+const userStore = useUserStore();
+const canCreatePicklist = computed(() => userStore.hasPermission("FULFILL_PICKLIST_CREATE OR PICKLIST_CREATE OR FULFILL_PICKLIST_ADMIN"));
+const canCreateAndPrintPicklist = computed(() => canCreatePicklist.value && userStore.hasPermission("PICKLIST_PRINT OR FULFILL_PICKLIST_ADMIN"));
 
 const closePopover = () => {
   popoverController.dismiss();
