@@ -20,8 +20,6 @@ export const useProductStore = defineStore('productStore', {
       downloadPicklist: "",
       excludeOrderBrokerDays: undefined,
       affectQoh: "",
-      disableShipNow: "",
-      disableUnpack: "",
       useReservationFacility: "",
 
       productIdentifier: {
