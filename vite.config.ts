@@ -4,6 +4,7 @@ import vue from '@vitejs/plugin-vue'
 import path from 'path'
 import { defineConfig } from 'vite'
 import federation from '@originjs/vite-plugin-federation'
+import { ideTraceVue } from 'chrome-ide-trace/vite'
 import { versionInfoUtil } from '../accxui/common/utils/versionInfoUtil'
 import pkg from './package.json'
 import { VitePWA } from 'vite-plugin-pwa'
@@ -12,6 +13,7 @@ import manifest from "./manifest.json"
 // https://vitejs.dev/config/
 export default defineConfig({
   plugins: [
+    ideTraceVue(),
     vue(),
     federation({
       name: 'fulfillment',
