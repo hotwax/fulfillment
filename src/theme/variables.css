@@ -327,17 +327,22 @@ img {
   grid-template-columns: repeat(2, 1fr);
   align-items: center;
   padding: var(--spacer-xs) 0;
-  border-bottom: var(--border-medium);
+  /*border-bottom: var(--border-medium);*/
 }
 
-@media (max-width: 991px) {
-  .order-item {
-    border-bottom: none;
-  }
-}
+/*@media (max-width: 991px) {*/
+/*  .order-item {*/
+/*    border-bottom: none;*/
+/*  }*/
+/*}*/
 
-.order-item:last-child {
-  border-bottom: none;
+/*.order-item:last-child {*/
+/*  border-bottom: none;*/
+/*}*/
+
+/* This draws a line between two order items */
+.order-item + .order-item {
+  border-top: var(--border-medium);
 }
 
 .product-metadata {
