@@ -1158,7 +1158,7 @@ export const useOrderStore = defineStore("order", {
     },
     async printPicklist(picklistId: string) {
       try {
-        const isPicklistDownloadEnabled = useProductStore().isProductStoreSettingEnabled("FF_DOWNLOAD_PICKLIST")
+        const isPicklistDownloadEnabled = useAppProductStore().isProductStoreSettingEnabled("FF_DOWNLOAD_PICKLIST")
         if (isPicklistDownloadEnabled) {
           await this.downloadPicklist(picklistId)
           return;
