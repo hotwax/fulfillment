@@ -329,7 +329,6 @@ img {
   padding: var(--spacer-xs) 0;
 }
 
-/* This draws a line between two order items */
 .order-item + .order-item {
   border-top: var(--border-medium);
 }
