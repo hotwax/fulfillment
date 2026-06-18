@@ -494,10 +494,7 @@ const getTime = (time: any) => {
 const fetchShipmentLabelError = async () => {
   const shipmentId = order.value?.shipmentId;
   const labelError = await orderStore.fetchShipmentLabelError(shipmentId) as any;
-
-  if (labelError) {
-    shipmentLabelErrorMessage.value = labelError;
-  }
+  shipmentLabelErrorMessage.value = labelError || "";
 };
 
 const getProductStoreShipmentMethods = async (carrierPartyIdValue: string) => {
@@ -1382,7 +1379,12 @@ const shippingLabelActionPopover = async(ev: Event, currentOrder: any) => {
     showBackdrop: false
   });
 
-  return popover.present()
+   await popover.present();
+
+  const result = await popover.onDidDismiss();
+  if (result.data?.voided) {
+    await fetchShipmentLabelError();
+  }
 }
 
 const openTrackingCodeModal = async() => {
