@@ -494,7 +494,7 @@ const getTime = (time: any) => {
 const fetchShipmentLabelError = async () => {
   const shipmentId = order.value?.shipmentId;
   const labelError = await orderStore.fetchShipmentLabelError(shipmentId) as any;
-  shipmentLabelErrorMessage.value = labelError;
+  shipmentLabelErrorMessage.value = labelError || "";
 };
 
 const getProductStoreShipmentMethods = async (carrierPartyIdValue: string) => {
