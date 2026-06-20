@@ -6,7 +6,7 @@
         {{ getCarriersTrackingInfo(shipGroup.carrierPartyId)?.carrierName ? getCarriersTrackingInfo(shipGroup.carrierPartyId).carrierName : shipGroup.carrierPartyId }}
         <ion-icon slot="end" :icon="openOutline" />
       </ion-item>
-      <ion-item button @click="printShippingLabel()" lines="none">
+      <ion-item button :disabled="!canCreateShipment" @click="printShippingLabel()" lines="none">
         {{ translate("View Label") }}
         <ion-icon slot="end" :icon="documentOutline" />
       </ion-item>
@@ -18,11 +18,13 @@
 import { IonContent, IonIcon, IonItem, IonList, IonListHeader, popoverController } from "@ionic/vue";
 import { documentOutline, openOutline } from "ionicons/icons";
 import { translate } from "@common";
-import { defineProps } from "vue";
+import { computed, defineProps } from "vue";
 import { useOrderLookupStore } from "@/store/orderLookup";
+import { useUserStore } from "@/store/user";
 
 const props = defineProps(["shipGroup"]);
 const getCarriersTrackingInfo = (partyId: string) => useOrderLookupStore().getCarriersTrackingInfo(partyId);
+const canCreateShipment = computed(() => useUserStore().hasPermission("FULFILL_SHIPMENT_CREATE OR FULFILL_SHIPMENT_ADMIN OR SALES_SHIPMENT_ADMIN"));
 
 const printShippingLabel = async () => {
   const shipmentPackageRouteSegDetails = props.shipGroup.shipmentPackageRouteSegDetails;

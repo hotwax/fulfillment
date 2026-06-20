@@ -37,7 +37,7 @@
       <Component :is="productCategoryFilterExt" :orderQuery="openOrders.query" :currentFacility="currentFacility" :currentProductStore="currentProductStore" @updateOpenQuery="updateOpenQuery" />
       <div v-if="openOrders.total">
         <div class="results">
-          <ion-button class="bulk-action desktop-only" size="large" @click="assignPickers">{{ translate("Print Picklist") }}</ion-button>
+          <ion-button class="bulk-action desktop-only" size="large" :disabled="!canCreateAndPrintPicklist" @click="assignPickers">{{ translate("Print Picklist") }}</ion-button>
 
           <ion-card class="order" v-for="(order, index) in getOpenOrders()" :key="index">
             <div class="order-header">
@@ -126,7 +126,7 @@
         <ion-spinner name="crescent"></ion-spinner>
       </div>
       <ion-fab v-else-if="openOrders.total" class="mobile-only" vertical="bottom" horizontal="end" slot="fixed">
-        <ion-fab-button @click="assignPickers">
+        <ion-fab-button :disabled="!canCreateAndPrintPicklist" @click="assignPickers">
           <ion-icon :icon="printOutline" />
         </ion-fab-button>
       </ion-fab>
@@ -180,6 +180,8 @@ const getProductStock = (productId: string) => useStockStore().getProductStock(p
 const currentFacility = computed(() => useAppProductStore().getCurrentFacility);
 const currentProductStore = computed(() => useAppProductStore().getCurrentProductStore);
 const productIdentificationPref = computed(() => useAppProductStore().getProductIdentificationPref);
+const canCreatePicklist = computed(() => userStore.hasPermission("FULFILL_PICKLIST_CREATE OR PICKLIST_CREATE OR FULFILL_PICKLIST_ADMIN"));
+const canCreateAndPrintPicklist = computed(() => canCreatePicklist.value && userStore.hasPermission("PICKLIST_PRINT OR FULFILL_PICKLIST_ADMIN"));
 
 const updateOpenQuery = (payload: any) => {
   useOrderStore().updateOpenQuery(payload);

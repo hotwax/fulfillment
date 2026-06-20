@@ -42,7 +42,7 @@
       </div>
     </ion-list>
     <ion-fab vertical="bottom" horizontal="end" slot="fixed">
-      <ion-fab-button :disabled="arePickersNotSelected()" @click="confirmSave()">
+      <ion-fab-button :disabled="arePickersNotSelected() || !canEditPickers" @click="confirmSave()">
         <ion-icon :icon="saveOutline" />
       </ion-fab-button>
     </ion-fab>
@@ -66,6 +66,7 @@ import { useUserStore } from "@/store/user";
 const props = defineProps(["selectedPicklist"]);
 const userStore = useUserStore();
 const currentFacility = computed(() => useAppProductStore().getCurrentFacility);
+const canEditPickers = computed(() => userStore.hasPermission("EDIT_PICKLIST_PICKER OR PICKLIST_ASSIGN OR FULFILL_PICKLIST_ADMIN"));
 
 const selectedPickers = ref([] as any[]);
 const queryString = ref("");
