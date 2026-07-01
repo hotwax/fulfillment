@@ -107,7 +107,7 @@ const dismissLoader = () => {
 onMounted(async () => {
   init({
     name: "fulfillment",
-    remotes: [{ name: "fulfillment_extensions", entry: import.meta.env.VITE_REMOTE_ENTRY as string }]
+    remotes: [{ name: "fulfillment_extensions", entry: import.meta.env.VITE_REMOTE_ENTRY as string, type: "module" }]
   });
 
   loader.value = await loadingController.create({
