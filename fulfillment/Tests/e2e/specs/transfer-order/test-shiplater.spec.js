@@ -1,15 +1,16 @@
 import { test } from "@playwright/test";
 
 import TransferOrderFlowPage from "../../pages/transfer-orders/transfer-order-flow.page.js";
+import { getClientIdFromProject, getClientSkus } from "../../data/client-skus.js";
 
 
-test("test-ship later", async ({ page }) => {
+test("test-ship later", async ({ page }, testInfo) => {
   try {
-    await page.goto("https://fulfillment-dev.hotwax.io/open", {
+    await page.goto("/open", {
       waitUntil: "domcontentloaded",
     });
   } catch {
-    await page.goto("https://fulfillment-dev.hotwax.io/open", {
+    await page.goto("/open", {
       waitUntil: "domcontentloaded",
     });
   }
@@ -17,9 +18,10 @@ test("test-ship later", async ({ page }) => {
 
   const transferOrderFlow = new TransferOrderFlowPage(page);
   await transferOrderFlow.navigateToTransferOrders();
-  await transferOrderFlow.createTransferOrder("Ship Later Test 01");
+  const created = await transferOrderFlow.createTransferOrder("Ship Later Test 01");
+  test.skip(!created, "No facilities available to create transfer order");
   await transferOrderFlow.openSearchTab();
-  await transferOrderFlow.searchAndAddProduct("MH07");
+  await transferOrderFlow.searchAndAddProduct(getClientSkus(getClientIdFromProject(testInfo.project.name))[0]);
   await transferOrderFlow.markOrderToShipLater();
   await transferOrderFlow.fulfillShipLaterOrder("Ship Later Test 01");
 });

@@ -5,8 +5,7 @@ import TransferOrderDetailsPage from "./transfer-order-details.page.js";
 export default class TransferOrderFlowPage {
   constructor(page) {
     this.page = page;
-    const configuredBase = process.env.PW_BASE_URL_DEV || "https://fulfillment-dev.hotwax.io";
-    this.baseUrl = configuredBase.replace(/\/+$/, "");
+    this.baseUrl = "/fulfillment";
     this.listPage = new TransferOrdersListPage(page, this.baseUrl);
     this.createModal = new CreateTransferOrderModal(page);
     this.detailsPage = new TransferOrderDetailsPage(page);
@@ -17,7 +16,7 @@ export default class TransferOrderFlowPage {
   }
 
   async createTransferOrder(orderName, facility = "") {
-    await this.createModal.createTransferOrder(orderName, facility);
+    return await this.createModal.createTransferOrder(orderName, facility);
   }
 
   async openSearchTab() {

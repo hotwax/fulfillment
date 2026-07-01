@@ -14,11 +14,13 @@ export default class SalesOrderAddBoxPom {
     await this.flow.expectOpenOrdersLoadedByPrintPicklist();
     await this.flow.printPicklistForFirstTwoOrders();
     await this.flow.goToInProgressTab();
-    await this.flow.clickAddBoxForFirstEligibleOrder();
+    return await this.flow.clickAddBoxForFirstEligibleOrder();
   }
 
   async runNegative() {
     await this.flow.expectOpenOrdersLoadedByPrintPicklist();
-    await this.flow.assertPicklistSaveDisabledBeforeSelection();
+    await this.flow.printPicklistForFirstTwoOrders();
+    await this.flow.goToInProgressTab();
+    return await this.flow.assertAddBoxDisabledForIneligibleOrder();
   }
 }

@@ -3,8 +3,7 @@ import { expect } from "@playwright/test";
 export default class LogoutFlowPom {
   constructor(page) {
     this.page = page;
-    const configuredBase = process.env.PW_BASE_URL_DEV || "https://fulfillment-dev.hotwax.io";
-    this.baseUrl = configuredBase.replace(/\/+$/, "");
+    this.baseUrl = "/fulfillment";
   }
 
   async runWithNetworkRetry(action, attempts = 2) {

@@ -5,14 +5,15 @@ test.describe("transfer order - edit details negative", () => {
   test("should not show transfer name editor before edit mode", async ({
     page,
   }) => {
-    await page.goto("https://fulfillment-dev.hotwax.io/open", {
+    await page.goto("/open", {
       waitUntil: "domcontentloaded",
     });
     await page.waitForLoadState("networkidle").catch(() => {});
 
     const flow = new TransferOrderFlowPage(page);
     await flow.navigateToTransferOrders();
-    await flow.createTransferOrder("NEG-Edit-01");
+    const created1 = await flow.createTransferOrder("NEG-Edit-01");
+    test.skip(!created1, "No facilities available");
 
     await expect(page.getByRole("textbox", { name: "Transfer name" })).toHaveCount(0);
   });
@@ -20,14 +21,15 @@ test.describe("transfer order - edit details negative", () => {
   test("should not show store/facility combobox before edit mode", async ({
     page,
   }) => {
-    await page.goto("https://fulfillment-dev.hotwax.io/open", {
+    await page.goto("/open", {
       waitUntil: "domcontentloaded",
     });
     await page.waitForLoadState("networkidle").catch(() => {});
 
     const flow = new TransferOrderFlowPage(page);
     await flow.navigateToTransferOrders();
-    await flow.createTransferOrder("NEG-Edit-02");
+    const created2 = await flow.createTransferOrder("NEG-Edit-02");
+    test.skip(!created2, "No facilities available");
 
     await expect(page.getByRole("combobox")).toHaveCount(0);
   });

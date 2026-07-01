@@ -3,14 +3,15 @@ import TransferOrderFlowPage from "../../pages/transfer-orders/transfer-order-fl
 
 test.describe("transfer order - create negative", () => {
   test("should keep Ship later disabled before adding items", async ({ page }) => {
-    await page.goto("https://fulfillment-dev.hotwax.io/open", {
+    await page.goto("/open", {
       waitUntil: "domcontentloaded",
     });
     await page.waitForLoadState("networkidle").catch(() => {});
 
     const flow = new TransferOrderFlowPage(page);
     await flow.navigateToTransferOrders();
-    await flow.createTransferOrder("NEG-Create-01");
+    const created1 = await flow.createTransferOrder("NEG-Create-01");
+    test.skip(!created1, "No facilities available");
 
     await expect(page.getByRole("button", { name: "Ship later" })).toBeDisabled();
   });
@@ -18,14 +19,15 @@ test.describe("transfer order - create negative", () => {
   test("should keep Pack and ship order disabled before adding items", async ({
     page,
   }) => {
-    await page.goto("https://fulfillment-dev.hotwax.io/open", {
+    await page.goto("/open", {
       waitUntil: "domcontentloaded",
     });
     await page.waitForLoadState("networkidle").catch(() => {});
 
     const flow = new TransferOrderFlowPage(page);
     await flow.navigateToTransferOrders();
-    await flow.createTransferOrder("NEG-Create-02");
+    const created2 = await flow.createTransferOrder("NEG-Create-02");
+    test.skip(!created2, "No facilities available");
 
     await expect(
       page.getByRole("button", { name: "Pack and ship order" }),
