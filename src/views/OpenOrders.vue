@@ -139,7 +139,7 @@
 
 <script setup lang="ts">
 import { IonBadge, IonButton, IonButtons, IonCard, IonChip, IonCheckbox, IonContent, IonFab, IonFabButton, IonHeader, IonIcon, IonInfiniteScroll, IonInfiniteScrollContent, IonItem, IonLabel, IonMenuButton, IonNote, IonPage, IonSearchbar, IonSkeletonText, IonSpinner, IonThumbnail, IonTitle, IonToolbar, alertController, modalController, onIonViewWillEnter, popoverController } from "@ionic/vue";
-import { computed, ref } from "vue";
+import { computed, ref, shallowRef } from "vue";
 import { onBeforeRouteLeave } from "vue-router";
 import { caretDownOutline, chevronUpOutline, cubeOutline, listOutline, notificationsOutline, optionsOutline, pricetagOutline, printOutline } from "ionicons/icons";
 import AssignPickerModal from "@/views/AssignPickerModal.vue";
@@ -164,7 +164,7 @@ const shipmentMethods = ref([] as Array<any>);
 const searchedQuery = ref("");
 const isScrollingEnabled = ref(false);
 const isRejecting = ref(false);
-const productCategoryFilterExt = ref("" as any);
+const productCategoryFilterExt = shallowRef(null as any);
 const selectedShipmentMethods = ref([] as any);
 const isLoadingOrders = ref(false);
 

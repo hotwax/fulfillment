@@ -542,19 +542,15 @@ export const useOrderStore = defineStore("order", {
 
       try {
         const resp = await api({
-          url: "oms/entity-query",
-          method: "post",
-          data: {
-            "entityName": "OrderItemAndShipGroupAssoc",
-            "inputFields": {
-              orderId: currentOrder.orderId,
-              shipGroupSeqId: shipGroupSeqId,
-              shipGroupSeqId_op: "equals",
-              shipGroupSeqId_not: "Y",
-            },
+          url: `oms/orders/${currentOrder.orderId}/items`,
+          method: "get",
+          params: {
+            orderId: currentOrder.orderId,
+            shipGroupSeqId: shipGroupSeqId,
+            shipGroupSeqId_op: "equals",
+            shipGroupSeqId_not: "Y",
             "fieldToSelect": ["orderId", "orderItemseqId", "shipGroupSeqId", "productId"],
-            "viewSize": 50,
-            "noConditionFind": "Y"
+            "pageSize": 50
           }
         }) as any;
 
