@@ -260,7 +260,7 @@
 
 <script setup lang="ts">
 import { IonBackButton, IonBadge, IonButton, IonCard, IonCardHeader, IonCardTitle, IonContent, IonHeader, IonIcon, IonItem, IonLabel, IonList, IonNote, IonPage, IonSpinner, IonThumbnail, IonTitle, IonToolbar, onIonViewWillEnter, popoverController } from "@ionic/vue";
-import { computed, defineProps, ref } from "vue";
+import { computed, defineProps, ref, shallowRef } from "vue";
 import { commonUtil, logger, moduleFederationUtil, translate } from "@common";
 import { callOutline, cashOutline, checkmarkDoneOutline, cubeOutline, ellipsisVerticalOutline, golfOutline, mailOutline, pulseOutline, storefrontOutline, sunnyOutline, ticketOutline, timeOutline, downloadOutline } from "ionicons/icons";
 import { DateTime } from "luxon";
@@ -279,7 +279,7 @@ const itemStatuses = JSON.parse(import.meta.env.VITE_ITEM_STATUS as any);
 const isFetchingStock = ref(false);
 const isFetchingOrderInfo = ref(false);
 const invoicingFacility = ref({} as any);
-const additionalDetailItemExt = ref("" as any);
+const additionalDetailItemExt = shallowRef(null as any);
 
 const order = computed(() => useOrderLookupStore().getCurrentOrder);
 const getProduct = (productId: string) => useProductStore().getProduct(productId);
@@ -363,7 +363,7 @@ onIonViewWillEnter(async () => {
   await useOrderLookupStore().getOrderDetails(props.orderId);
   await useAppProductStore().fetchAllProductStores();
   await fetchOrderInvoicingFacility();
-  const instance = instanceUrl.value.split("-")[0].replace(new RegExp("^(https|http)://"), "").replace(new RegExp("/api.*"), "").replace(new RegExp(":.*"), "");
+  const instance = commonUtil.getOmsURL().split("-")[0].replace(new RegExp("^(https|http)://"), "").replace(new RegExp("/api.*"), "").replace(new RegExp(":.*"), "");
   additionalDetailItemExt.value = await moduleFederationUtil.useDynamicImport({ scope: "fulfillment_extensions", module: `${instance}_OrderLookupAdditionalDetailItem` });
   isFetchingOrderInfo.value = false;
 });

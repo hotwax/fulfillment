@@ -2,15 +2,17 @@ name: Verify build
 
 on:
   push:
-    branches: [main, fulfillment-legacy]
+    branches: [ main ]
   pull_request:
     # The branches below must be a subset of the branches above
-    branches: [main, fulfillment-legacy]
+    branches: [ main ]
 
 jobs:
   call-workflow-in-another-repo:
-    uses: hotwax/dxp-components/.github/workflows/common-pull-request.yml@main
+    uses: hotwax/accxui/.github/workflows/common-pull-request.yml@main
     with:
       config-path: .github/labeler.yml
+      app: hotwax/fulfillment
+      appDir: fulfillment
     secrets:
       envPAT: ${{ secrets.envPAT }}

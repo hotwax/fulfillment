@@ -3,7 +3,7 @@
 import vue from '@vitejs/plugin-vue'
 import path from 'path'
 import { defineConfig } from 'vite'
-import federation from '@originjs/vite-plugin-federation'
+import { federation } from '@module-federation/vite'
 import { versionInfoUtil } from '../../common/utils/versionInfoUtil'
 import pkg from './package.json'
 import { VitePWA } from 'vite-plugin-pwa'

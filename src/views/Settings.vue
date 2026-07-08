@@ -32,7 +32,7 @@
       </div>
 
       <section>
-        <DxpOmsInstanceNavigator :is-embedded="commonUtil.isAppEmbedded()" />
+        <DxpOmsInstanceNavigator :is-embedded="commonUtil.isAppEmbedded()" :has-oms-access="useUserStore().hasPermission('COMMERCEUSER_VIEW')"/>
         <DxpProductStoreSelector @updateProductStore="refreshProductStoreData($event)" />
         <DxpFacilitySwitcher @updateFacility="fetchFacilityDependencies($event)" />
 
@@ -218,7 +218,7 @@ const unreadNotificationsStatus = computed(() => useNotificationStore().getUnrea
 const notificationPrefs = computed(() => useNotificationStore().getNotificationPrefs);
 const allNotificationPrefs = computed(() => useNotificationStore().getAllNotificationPrefs);
 const firebaseDeviceId = computed(() => useNotificationStore().getFirebaseDeviceId);
-const isProductStoreSettingEnabled = computed(() => (settingTypeEnumId: string) => useProductStore().isProductStoreSettingEnabled(settingTypeEnumId));
+const isProductStoreSettingEnabled = computed(() => useProductStore().isProductStoreSettingEnabled);
 const barcodeIdentificationPref = computed(() => useProductStore().getBarcodeIdentifierPref);
 const currentFacility = computed(() => useProductStore().getCurrentFacility as any);
 const preferredStore = computed(() => useProductStore().getCurrentProductStore);
@@ -491,7 +491,7 @@ const updateNotificationPref = async (enumId: string) => {
     if (!allNotificationPrefs.value.length && isToggledOn) {
       await firebaseUtil.initialiseFirebaseMessaging();
     } else if (allNotificationPrefs.value.length == 1 && !isToggledOn) {
-      await notificationStore.unsubscribeTopic(firebaseDeviceId.value, import.meta.env.VITE_NOTIF_APP_ID)
+      await notificationStore.removeClientRegistrationToken(firebaseDeviceId.value, import.meta.env.VITE_NOTIF_APP_ID)
     }
     await notificationStore.fetchAllNotificationPrefs(import.meta.env.VITE_NOTIF_APP_ID, userProfile.value?.userId);
   } catch (error) {

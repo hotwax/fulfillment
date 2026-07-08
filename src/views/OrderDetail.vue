@@ -179,7 +179,6 @@
                   <ion-icon slot="start" :icon="archiveOutline" />
                   {{ translate(order.hasAllRejectedItem ? "Reject order" : order.hasRejectedItem ? "Save and Pack Order" : "Pack order") }}
                 </ion-button>
-                <Component :is="printDocumentsExt" :category="category" :order="order" :currentFacility="currentFacility" :hasMissingInfo="order.missingLabelImage" />
               </template>
               <ion-button v-else-if="category === 'open'" @click="assignPickers">
                 <ion-icon slot="start" :icon="personAddOutline" />
@@ -320,7 +319,7 @@
             </ion-item>
           </ion-card>
 
-          <Component v-if="useUserStore().hasPermission('FF_INVOICING_STATUS_VIEW')" :is="orderInvoiceExt" :category="category" :order="order" :userProfile="userProfile" :maargBaseUrl="commonUtil.getMaargBaseURL()" :userToken="commonUtil.getToken()" />
+          <Component v-if="useUserStore().hasPermission('FF_INVOICING_STATUS_VIEW')" :is="orderInvoiceExt" :category="category" :order="order" :userProfile="userProfileWithFacilities" />
         </div>
         
         <h4 class="ion-padding-top ion-padding-start" v-if="order.otherShipGroups?.length">{{ translate('Other shipments in this order') }}</h4>
@@ -395,7 +394,7 @@
 
 <script setup lang="ts">
 import { IonBackButton, IonBadge, IonButton, IonCard, IonCheckbox, IonChip, IonContent, IonHeader, IonIcon, IonItem, IonLabel, IonNote, IonPage, IonRow, IonSkeletonText, IonTitle, IonToolbar, IonThumbnail, alertController, popoverController, modalController, onIonViewDidEnter } from "@ionic/vue";
-import { computed, defineProps, onMounted, ref } from "vue";
+import { computed, defineProps, onMounted, ref, shallowRef } from "vue";
 import { addOutline, archiveOutline, bagCheckOutline, cashOutline, caretDownOutline, checkmarkCircleOutline, chevronUpOutline, closeCircleOutline, cubeOutline, documentTextOutline, ellipsisVerticalOutline, fileTrayOutline, gift, giftOutline, informationCircleOutline, listOutline, locateOutline, personAddOutline, pricetagOutline, ribbonOutline, trashBinOutline } from "ionicons/icons";
 import { cookieHelper, commonUtil, DxpShopifyImg, emitter, logger, moduleFederationUtil, translate } from "@common";
 import { useProductStore } from "@/store/productStore";
@@ -448,17 +447,14 @@ const initialShipmentMethodTypeId = ref("");
 const carrierPartyId = ref("");
 const carrierMethods = ref([] as any);
 const orderInvoicingInfo = ref({} as any);
-const orderInvoiceExt = ref("" as any);
+const orderInvoiceExt = shallowRef(null as any);
 const isCODPaymentPending = ref(false);
 const isOrderAdjustmentPending = ref(false);
 const orderAdjustments = ref([] as any);
 const orderHeaderAdjustmentTotal = ref(0);
 const adjustmentsByGroup = ref({} as any);
 const orderAdjustmentShipmentId = ref("");
-const printDocumentsExt = ref("" as any);
 const isFetchingStock = ref([] as string[]);
-const productCategoryFilter = ref("" as any);
-const shippingManifest = ref("" as any);
 
 const boxTypeDesc = (id: string) => useUtilStore().getShipmentBoxDesc(id);
 const getProduct = (productId: string) => useProduct().getProduct(productId);
@@ -484,6 +480,7 @@ const filteredFacilityCarriers = computed(() => {
   return facilityCarriers.value;
 })
 const userProfile = computed(() => useUserStore().getUserProfile);
+const userProfileWithFacilities = computed(() => ({ ...userProfile.value, facilities: useProductStore().getFacilities }));
 const carrierShipmentBoxTypes = computed(() => useUtilStore().getCarrierShipmentBoxTypes);
 const getShipmentMethodDesc = (shipmentMethodId: string) => useUtilStore().getShipmentMethodDesc(shipmentMethodId);
 const productIdentificationPref = computed(() => useProductStore().getProductIdentificationPref);
@@ -1445,12 +1442,7 @@ onIonViewDidEnter(async () => {
 
 onMounted(async () => {
   const instance = commonUtil.getOmsURL().split("-")[0].replace(new RegExp("^(https|http)://"), "").replace(new RegExp("/api.*"), "").replace(new RegExp(":.*"), "");
-  printDocumentsExt.value = await moduleFederationUtil.useDynamicImport({ scope: "fulfillment_extensions", module: `${instance}_PrintDocument` });
   orderInvoiceExt.value = await moduleFederationUtil.useDynamicImport({ scope: "fulfillment_extensions", module: `${instance}_OrderInvoice` });
-  if (instance) {
-    productCategoryFilter.value = await moduleFederationUtil.useDynamicImport({ scope: "fulfillment_extensions", module: `${instance}_ProductCategoryFilter` })
-    shippingManifest.value = await moduleFederationUtil.useDynamicImport({ scope: "fulfillment_extensions", module: `${instance}_ShippingManifest` })
-  }
 });
 </script>
 

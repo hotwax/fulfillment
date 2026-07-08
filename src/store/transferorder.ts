@@ -129,7 +129,9 @@ export const useTransferOrderStore = defineStore("transferorder", {
       try {
         const resp: any = await api({
           method: "get",
-          url: `poorti/transferOrders/${orderId}/printPicklist`,
+          baseURL: commonUtil.getMaargBaseURL(),
+          url: `/fop/apps/pdf/PrintTransferOrderPicklist`,
+          params: { orderId },
           responseType: "blob",
         })
 
@@ -234,7 +236,7 @@ export const useTransferOrderStore = defineStore("transferorder", {
       return await api({
         url: 'oms/transferOrders',
         method: "post",
-        data: payload
+        data: { payload: payload}
       });
     },
     async approveTransferOrder(orderId: any) {
@@ -278,7 +280,8 @@ export const useTransferOrderStore = defineStore("transferorder", {
       const params: any = {
         originFacilityId: useAppProductStore().getCurrentFacility?.facilityId,
         limit: transferOrderQuery.viewSize,
-        pageIndex: transferOrderQuery.viewIndex
+        pageIndex: transferOrderQuery.viewIndex,
+        fieldsToSelect: "orderId,orderName,orderExternalId,orderStatusId,orderStatusDesc,facilityId,orderFacilityId,orderDate"
       }
 
       if (transferOrderQuery.queryString) {

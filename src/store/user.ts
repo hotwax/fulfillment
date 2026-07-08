@@ -3,7 +3,7 @@ import { defineStore } from "pinia"
 import { DateTime, Settings } from "luxon"
 import router from "@/router";
 import { useUtilStore } from "@/store/util";
-import { useProductStore as useAppProductStore } from "@/store/productStore";
+import { useProductStore } from "@/store/productStore";
 import { firebaseUtil } from "@/utils/firebaseUtil";
 import { useOrderStore } from "@/store/order";
 import { useTransferOrderStore } from "@/store/transferorder";
@@ -11,7 +11,7 @@ import { useRejectionStore } from "@/store/rejection";
 import { useStockStore } from "@/store/stock";
 import { useCarrierStore } from "@/store/carrier";
 import { useOrderLookupStore } from "@/store/orderLookup";
-import { useProductStore as useProduct} from "@/store/product";
+import { useProductStore as useProduct } from "@/store/product";
 
 interface UserState {
   permissions: any[]
@@ -94,10 +94,11 @@ export const useUserStore = defineStore("user", {
           Settings.defaultZone = this.current.timeZone;
         }
       } catch (error: any) {
-        commonUtil.showToast(translate("Failed to fetch user profile information"));
+        const errorMessage = translate("Failed to fetch user profile information");
+        commonUtil.showToast(errorMessage);
         console.error("error", error);
         useAuth().clearAuth();
-        return Promise.reject(new Error(error));
+        return Promise.reject(new Error(errorMessage));
       }
     },
     async fetchPermissions() {
@@ -223,7 +224,7 @@ export const useUserStore = defineStore("user", {
     },
     async postLogin() {
       try {
-        const productStore = useAppProductStore();
+        const productStore = useProductStore();
         await this.fetchPermissions()
         await this.fetchUserProfile()
         await productStore.fetchUserFacilities()
@@ -273,7 +274,7 @@ export const useUserStore = defineStore("user", {
       useOrderStore().$reset();
       useOrderLookupStore().$reset();
       useProduct().$reset();
-      useAppProductStore().$reset();
+      useProductStore().$reset();
       useRejectionStore().$reset();
       useStockStore().$reset();
       useTransferOrderStore().$reset();

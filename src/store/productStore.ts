@@ -59,7 +59,9 @@ export const useProductStore = defineStore('productStore', {
     getCurrentSampleProduct: (state) => state.settings.productIdentifier.currentSampleProduct,
     isProductStoreSettingEnabled: (state) => (settingTypeEnumId: string) => {
       const stateKey = defaultProductStoreSettings[settingTypeEnumId]?.stateKey || settingTypeEnumId
-      return state.settings[stateKey] === "Y"
+      const value = state.settings[stateKey]
+      
+      return value === true || value === "Y" || value === "true"
     },
     isExcludeOrderBrokerDaysEnabled(): boolean {
       return this.isProductStoreSettingEnabled('EXCLUDE_ODR_BKR_DAYS')
@@ -79,139 +81,135 @@ export const useProductStore = defineStore('productStore', {
     },
     async fetchUserFacilities() {
       const userStore = useUserStore();
-      let facilityIds: Array<string> = [];
-      let filters: any = {};
-      let resp = {} as any
-
       const partyId = userStore.getUserProfile?.partyId;
       const isAdminUser = userStore.hasPermission("STOREFULFILLMENT_ADMIN");
       const facilityGroupId = "OMS_FULFILLMENT";
 
-      try {
-        this.currentFacility = {
-          ...this.currentFacility,
-          productStores: []
-        }
+      this.currentFacility = {
+        ...this.currentFacility,
+        productStores: []
+      };
 
-        // Fetch the facilities associated with party
+      let facilityIds: Array<string> = [];
+
+      try {
+        // 1. Fetch party-associated facilities for regular users
         if (partyId && !isAdminUser) {
+          let partyResp: any;
           try {
-            resp = await api({
+            partyResp = await api({
               url: `admin/user/${partyId}/facilities`,
               method: "GET",
-              params: {
-                pageSize: 500
-              }
+              params: { pageSize: 500 }
             } as any);
-
-            // Filtering facilities on which thruDate is set, as we are unable to pass thruDate check in the api payload
-            // Considering that the facilities will always have a thruDate of the past.
-            const facilities = resp.data.filter((facility: any) => !facility.thruDate)
-
-            facilityIds = facilities.map((facility: any) => facility.facilityId);
-            if (!facilityIds.length) {
-              return Promise.reject({
-                code: 'error',
-                message: 'Failed to fetch user facilities',
-                serverResponse: resp.data
-              })
-            }
           } catch (error) {
-            return Promise.reject({
-              code: 'error',
-              message: 'Failed to fetch user associated facilities',
-              serverResponse: error
-            })
+            logger.error(error);
+            throw new Error(translate("Failed to fetch user facilities."));
+          }
+
+          // Filter out expired associations
+          const activePartyFacilities = partyResp.data.filter((facility: any) => !facility.thruDate);
+          facilityIds = activePartyFacilities.map((facility: any) => facility.facilityId);
+
+          if (!facilityIds.length) {
+            throw new Error(translate("User is not associated with any facility."));
           }
         }
 
-        if (facilityIds.length) {
-          filters = {
-            facilityId: facilityIds.join(","),
-            facilityId_op: "in",
-            pageSize: facilityIds.length
-          }
-        }
-
-        // Fetch the facilities associated with group
+        // 2. Filter or Fetch Group-associated facilities (Fulfillment Group)
         if (facilityGroupId) {
+          let groupFilters: any = {};
+          if (facilityIds.length) {
+            groupFilters = {
+              facilityId: facilityIds.join(","),
+              facilityId_op: "in",
+              pageSize: facilityIds.length
+            };
+          }
+
+          let groupResp: any;
           try {
-            resp = await api({
+            groupResp = await api({
               url: "oms/groupFacilities",
               method: "GET",
               params: {
                 facilityGroupId,
                 pageSize: 500,
-                ...filters
+                ...groupFilters
               }
             } as any);
-
-            // Filtering facilities on which thruDate is set, as we are unable to pass thruDate check in the api payload
-            // Considering that the facilities will always have a thruDate of the past.
-            const facilities = resp.data.filter((facility: any) => !facility.thruDate)
-
-            facilityIds = facilities.map((facility: any) => facility.facilityId);
-            if (!facilityIds.length) {
-              return Promise.reject({
-                code: 'error',
-                message: 'Failed to fetch user facilities',
-                serverResponse: resp.data
-              })
-            }
           } catch (error) {
-            return Promise.reject({
-              code: 'error',
-              message: 'Failed to fetch facilities for group',
-              serverResponse: error
-            })
+            logger.error(error);
+            throw new Error(translate("Failed to fetch fulfillment group facilities."));
           }
-        }
 
-        // Only Location's facility for Shopify POS Users.
-        const shopifyLocationId = useEmbeddedAppStore().getPosLocationId
-        if (commonUtil.isAppEmbedded() && shopifyLocationId) {
-          const locationFacilityId = await this.fetchShopifyShopLocation({
-            shopifyLocationId,
-            pageSize: 1
-          })
-          if (locationFacilityId) facilityIds = facilityIds.filter((id: any) => id === locationFacilityId)
-          else facilityIds = [];
+          const activeGroupFacilities = groupResp.data.filter((facility: any) => !facility.thruDate);
+          facilityIds = activeGroupFacilities.map((facility: any) => facility.facilityId);
+
           if (!facilityIds.length) {
-            return Promise.reject({
-              code: 'error',
-              message: 'Failed to fetch user facilities for Shopify POS location',
-              serverResponse: resp.data
-            })
+            throw new Error(translate("No active facilities found in the fulfillment group."));
           }
         }
 
+        // 3. Shopify POS Location filtering (if embedded in POS)
+        const shopifyLocationId = useEmbeddedAppStore().getPosLocationId;
+        if (commonUtil.isAppEmbedded() && shopifyLocationId) {
+          let locationFacilityId: string | null = null;
+          try {
+            locationFacilityId = await this.fetchShopifyShopLocation({
+              shopifyLocationId,
+              pageSize: 1
+            });
+          } catch (error) {
+            logger.error(error);
+            throw new Error(translate("Failed to fetch user facilities for Shopify POS location."));
+          }
+
+          if (locationFacilityId) {
+            facilityIds = facilityIds.filter((id: any) => id === locationFacilityId);
+          } else {
+            facilityIds = [];
+          }
+
+          if (!facilityIds.length) {
+            throw new Error(translate("Failed to fetch user facilities for Shopify POS location."));
+          }
+        }
+
+        // 4. Fetch the final details for resolved facilities
+        let finalFilters: any = {};
         if (facilityIds.length) {
-          filters = {
+          finalFilters = {
             facilityId: facilityIds.join(","),
             facilityId_op: "in",
             pageSize: facilityIds.length
-          }
+          };
         }
 
-        const params = {
-          url: "oms/facilities",
-          method: "GET",
-          params: {
-            pageSize: 500,
-            facilityTypeId: "VIRTUAL_FACILITY",
-            facilityTypeId_not: "Y",
-            parentTypeId: "VIRTUAL_FACILITY",
-            parentTypeId_not: "Y",
-            ...filters
-          }
+        let finalResp: any;
+        try {
+          finalResp = await api({
+            url: "oms/facilities",
+            method: "GET",
+            params: {
+              pageSize: 500,
+              facilityTypeId: "VIRTUAL_FACILITY",
+              facilityTypeId_not: "Y",
+              parentTypeId: "VIRTUAL_FACILITY",
+              parentTypeId_not: "Y",
+              ...finalFilters
+            }
+          });
+        } catch (error) {
+          logger.error(error);
+          throw new Error(translate("Failed to fetch user facilities."));
         }
 
-        resp = await api(params);
-        this.userFacilities = resp.data
-        this.setCurrentFacility(resp.data[0])
+        this.userFacilities = finalResp.data;
+        this.setCurrentFacility(finalResp.data[0]);
+
       } catch (error: any) {
-        logger.error("error", error);
-        return Promise.reject(new Error(error));
+        return Promise.reject(error);
       }
     },
     async setFacilityPreference(payload: any) {
@@ -232,7 +230,7 @@ export const useProductStore = defineStore('productStore', {
       this.currentFacility = payload;
     },
     async fetchFacilityPreference() {
-      if (!this.facilities.length) return;
+      if (!this.userFacilities.length) return;
       let facilityId: string | undefined;
       try {
         const locationId = useEmbeddedAppStore().getPosLocationId;
@@ -254,10 +252,10 @@ export const useProductStore = defineStore('productStore', {
               preferenceKey: "SELECTED_FACILITY"
             },
           }) as any;
-        facilityId = preferredFacilityResp.data?.[0]?.preferenceValue;
+          facilityId = preferredFacilityResp.data?.[0]?.preferenceValue;
         }
         if (facilityId) {
-          const facility = this.facilities.find((f: any) => f.facilityId === facilityId);
+          const facility = this.userFacilities.find((f: any) => f.facilityId === facilityId);
           if (!facility && commonUtil.isAppEmbedded() && locationId) {
             throw new Error(
               "User is not associated with this location. Please contact the administrator."
@@ -272,7 +270,7 @@ export const useProductStore = defineStore('productStore', {
         console.error("Failed to resolve facility preference:", error);
       }
       // In case app is not embedded and user has no facility preference on server
-      this.currentFacility = this.facilities[0];
+      this.currentFacility = this.userFacilities[0];
     },
     async fetchProductStores(currentFacilityId?: string) {
       try {
@@ -309,17 +307,13 @@ export const useProductStore = defineStore('productStore', {
           }
         }
 
-        const productStores = [...stores]
-        productStores.push({
-          productStoreId: "",
-          storeName: "None",
-        });
-
         this.currentFacility = {
           ...this.currentFacility,
-          productStores
+          productStores: stores
         }
-        this.setCurrentProductStore(productStores[0])
+        if (stores?.length) {
+          this.setCurrentProductStore(stores[0])
+        }
       } catch (error: any) {
         logger.error("error", error);
         return Promise.reject(new Error(error));
@@ -423,7 +417,7 @@ export const useProductStore = defineStore('productStore', {
         };
 
         const resp = await api({
-          url: `/oms/productStores/${productStoreId}/facilities`,
+          url: `/admin/productStores/${productStoreId}/facilities`,
           method: "GET",
           params
         });
@@ -499,7 +493,7 @@ export const useProductStore = defineStore('productStore', {
         }
 
         const resp = await api({
-          url: `/oms/productStores`,
+          url: `/admin/productStores`,
           method: "GET",
           params: payload
         });
@@ -539,32 +533,32 @@ export const useProductStore = defineStore('productStore', {
       await useProductStore().fetchProductStoreSettings(productStoreId)
         .catch((error) => logger.error(error))
 
-      this.findProductStoreShipmentMethCount()
+      this.findProductStoreShipmentMethCount(productStoreId)
     },
     setProductStoreShipmentMethCount(payload: number) {
       this.productStoreShipmentMethCount = payload
     },
-    async findProductStoreShipmentMethCount() {
+    async findProductStoreShipmentMethCount(productStoreId: string) {
       let productStoreShipmentMethCount = 0
       const params = {
         partyId: "_NA_",
         partyId_op: "equals",
         partyId_not: "Y",
         roleTypeId: "CARRIER",
-        productStoreId: this.getCurrentProductStore?.productStoreId,
+        productStoreId: productStoreId,
         fieldsToSelect: ["roleTypeId", "partyId"],
         pageSize: 1
       }
 
       try {
         const resp = await api({
-          url: `/oms/productStores/shipmentMethods/counts`,
+          url: `/admin/productStores/${productStoreId}/shippingMethods`,
           method: "GET",
           params
         });
 
         if (!commonUtil.hasError(resp)) {
-          productStoreShipmentMethCount = resp.data[0]?.shipmentMethodCount
+          productStoreShipmentMethCount = resp.data?.length
         } else {
           throw resp?.data
         }
@@ -822,7 +816,7 @@ export const useProductStore = defineStore('productStore', {
       try {
         const resp = await api({ url: "oms/shopifyShops/locations", method: "GET", params: payload }) as any;
         return Promise.resolve(resp.data[0]?.facilityId)
-      } catch(error) {
+      } catch (error) {
         return Promise.reject({ code: "error", message: "Failed to fetch location information", serverResponse: error })
       }
     },
