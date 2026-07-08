@@ -115,7 +115,7 @@
 
               <div class="product-metadata">
                 <ion-note v-if="getProductStock(item.productId).qoh >= 0" class="ion-padding-end">{{ getProductStock(item.productId).qoh }} {{ translate('pieces in stock') }}</ion-note>
-                <ion-button color="medium" fill="clear" v-else-if="!isFetchingStock.includes(`${item.productId}_${currentFacility.facilityId}`)" size="small" @click="fetchProductStock(item.productId)">
+                <ion-button color="medium" fill="clear" v-else-if="!isFetchingStock.includes(`${item.productId}_${currentFacility?.facilityId}`)" size="small" @click="fetchProductStock(item.productId)">
                   {{ translate('Check stock') }}
                   <ion-icon slot="end" :icon="cubeOutline" />
                 </ion-button>
@@ -456,7 +456,7 @@ const orderHeaderAdjustmentTotal = ref(0);
 const adjustmentsByGroup = ref({} as any);
 const orderAdjustmentShipmentId = ref("");
 const printDocumentsExt = ref("" as any);
-const isFetchingStock = ref([] as any);
+const isFetchingStock = ref([] as string[]);
 const productCategoryFilter = ref("" as any);
 const shippingManifest = ref("" as any);
 
@@ -565,12 +565,13 @@ const openShipmentBoxPopover = async (ev: Event, item: any, currentOrder: any) =
 };
 
 const fetchProductStock = async (productId: string, facilityId = "") => {
-  const facility = facilityId ? facilityId : currentFacility.value.facilityId;
-  isFetchingStock.value.push(`${productId}_${facility}`);
+  const facility = facilityId ? facilityId : currentFacility.value?.facilityId;
+  const key = `${productId}_${facility}`;
+  isFetchingStock.value.push(key);
   try {
     await useStockStore().fetchStock({ productId, facilityId });
   } finally {
-    isFetchingStock.value.splice(isFetchingStock.value.indexOf(`${productId}_${facility}`), 1);
+    isFetchingStock.value = isFetchingStock.value.filter((k) => k !== key);
   }
 };
 
