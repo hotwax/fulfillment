@@ -101,10 +101,11 @@
                   <ion-button color="medium" fill="clear" size="small" v-if="item.productTypeId === 'GIFT_CARD'" @click="openGiftCardActivationModal(item)">
                     <ion-icon slot="icon-only" :icon="item.isGCActivated ? gift : giftOutline" />
                   </ion-button>
-                  <ion-note v-if="getProductStock(item.productId).qoh">{{ getProductStock(item.productId).qoh }} {{ translate('pieces in stock') }}</ion-note>
-                  <ion-button fill="clear" v-else size="small" @click.stop="fetchProductStock(item.productId)">
+                  <ion-note v-if="getProductStock(item.productId).qoh >= 0">{{ getProductStock(item.productId).qoh }} {{ translate('pieces in stock') }}</ion-note>
+                  <ion-button fill="clear" v-else-if="!isFetchingStock.includes(`${item.productId}_${currentFacility?.facilityId}`)" size="small" @click.stop="fetchProductStock(item.productId)">
                     <ion-icon color="medium" slot="icon-only" :icon="cubeOutline" />
                   </ion-button>
+                  <ion-spinner v-else name="crescent" />
                 </div>
               </div>
               <div v-if="item.showKitComponents && !getProduct(item.productId)?.productComponents" class="kit-components">
@@ -246,6 +247,7 @@ const getProduct = (productId: string) => useProduct().getProduct(productId);
 const getPartyName = (partyId: string) => useUtilStore().getPartyName(partyId);
 const getShipmentMethodDesc = (shipmentMethodId: string) => useUtilStore().getShipmentMethodDesc(shipmentMethodId);
 const getProductStock = (productId: string) => useStockStore().getProductStock(productId);
+const isFetchingStock = ref([] as string[]);
 const productStoreShipmentMethCount = computed(() => useProductStore().getProductStoreShipmentMethCount);
 const isProductStoreSettingEnabled = computed(() => (settingTypeEnumId: string) => useProductStore().isProductStoreSettingEnabled(settingTypeEnumId));
 const currentProductStore = computed(() => useProductStore().getCurrentProductStore);
@@ -569,8 +571,14 @@ const showShippingLabelErrorModal = async (order: any) => {
   return shippingLabelErrorModal.present();
 };
 
-const fetchProductStock = (productId: string) => {
-  useStockStore().fetchStock({ productId });
+const fetchProductStock = async (productId: string) => {
+  const key = `${productId}_${currentFacility.value?.facilityId}`;
+  isFetchingStock.value.push(key);
+  try {
+    await useStockStore().fetchStock({ productId });
+  } finally {
+    isFetchingStock.value = isFetchingStock.value.filter((k) => k !== key);
+  }
 };
 
 const isTrackingRequiredForAnyShipmentPackage = (order: any) => {
