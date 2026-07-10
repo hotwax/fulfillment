@@ -161,10 +161,6 @@ const findPickers = async () => {
     query = `*:*`;
   }
 
-  const facilityFilter: string[] = [];
-  if (!userStore.hasPermission('FULFILLMENT_VIEW_ALL_PICKERS')) {
-    facilityFilter.push(`facilityIds:${currentFacility.value.facilityId}`);
-  }
 
   const payload = {
     json: {
@@ -175,7 +171,7 @@ const findPickers = async () => {
         qf: "firstName lastName groupName partyId externalId",
         sort: "firstName asc"
       },
-      filter: ["docType:EMPLOYEE", "statusId:PARTY_ENABLED", "WAREHOUSE_PICKER_role:true", ...facilityFilter]
+      filter: ["docType:EMPLOYEE", "statusId:PARTY_ENABLED", "WAREHOUSE_PICKER_role:true"]
     }
   };
 
