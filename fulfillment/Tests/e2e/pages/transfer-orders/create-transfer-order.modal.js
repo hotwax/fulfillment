@@ -57,15 +57,22 @@ export default class CreateTransferOrderModal {
     }
 
     const facilityRows = this.page.locator("ion-item", { has: facilityOptions });
-    const selectedOption = preferredFacility
-      ? facilityRows.filter({ hasText: new RegExp(preferredFacility, "i") }).first()
-      : facilityRows.nth(optionCount > 1 ? 1 : 0);
-      
-    if (await selectedOption.isVisible({ timeout: 3000 }).catch(() => false)) {
-      await selectedOption.click();
-    } else {
-      await facilityRows.nth(optionCount > 1 ? 1 : 0).click();
+    let selectedOption = null;
+
+    if (preferredFacility) {
+      const match = facilityRows.filter({ hasText: new RegExp(preferredFacility, "i") }).first();
+      if (await match.isVisible({ timeout: 2000 }).catch(() => false)) {
+        selectedOption = match;
+      }
     }
+
+    if (!selectedOption) {
+      // Select the last facility in the list to avoid picking the current origin facility
+      // which might be at the top of the list.
+      selectedOption = facilityRows.nth(optionCount > 1 ? optionCount - 1 : 0);
+    }
+      
+    await selectedOption.click();
     await this.wait2s();
 
     // Step 5: Save and create the transfer order

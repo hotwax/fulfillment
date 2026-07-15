@@ -135,6 +135,8 @@ export default class SalesOrderFlowPage {
     }
   }
 
+  
+  
   async printPicklistForFirstTwoOrders() {
     // Click Print Picklist and wait for the modal to open
     const printBtn = this.page.locator("ion-button", { hasText: /Print\s*Picklist/i }).first();
@@ -211,74 +213,114 @@ export default class SalesOrderFlowPage {
   }
 
   async clickAddBoxForFirstEligibleOrder() {
-    const orders = this.page.locator("ion-card, .order-card, .order-row, [data-testid='order-card'], [role='listitem']");
-    await orders.first().waitFor({ state: "visible", timeout: 10000 }).catch(() => {});
-    const orderCount = await orders.count();
+    let checkedCount = 0;
+    let scrolls = 0;
+    const MAX_SCROLLS = 10;
+    
+    while (scrolls < MAX_SCROLLS) {
+      const orders = this.page.locator("ion-card, .order-card, .order-row, [data-testid='order-card'], [role='listitem']");
+      await orders.first().waitFor({ state: "visible", timeout: 5000 }).catch(() => {});
+      const currentOrderCount = await orders.count();
 
-    for (let i = 0; i < orderCount; i++) {
-      const order = orders.nth(i);
-      if (!(await order.isVisible({ timeout: 2000 }).catch(() => false))) continue;
+      if (currentOrderCount === 0) return false;
 
-      const addBoxBtn = order.locator("ion-button, button", { hasText: /Add\s*Box/i }).first();
-      const isDisabled = await addBoxBtn.evaluate((el) => {
-        if (!el) return true;
-        return el.hasAttribute("disabled") || el.getAttribute("aria-disabled") === "true" || el.className.toString().includes("disabled");
-      }).catch(() => true);
-      if (isDisabled) continue;
+      for (let i = checkedCount; i < currentOrderCount; i++) {
+        const order = orders.nth(i);
+        if (!(await order.isVisible())) continue;
 
-      const lineItems = order.locator("ion-item, .order-line-item, .line-item, [data-testid='line-item']");
-      const itemCount = await lineItems.count().catch(() => 0);
-      if (itemCount <= 1) continue;
+        const addBoxBtn = order.locator("ion-button, button", { hasText: /Add\s*Box/i }).first();
+        if (!(await addBoxBtn.isVisible().catch(() => false))) {
+           checkedCount = i + 1;
+           continue;
+        }
 
-      await expect(addBoxBtn).toBeVisible({ timeout: 10000 });
-      await expect(addBoxBtn).toBeEnabled();
-      await addBoxBtn.scrollIntoViewIfNeeded();
+        const isDisabled = await addBoxBtn.evaluate((el) => {
+          return el.hasAttribute("disabled") || el.getAttribute("aria-disabled") === "true" || el.className.toString().includes("disabled");
+        }).catch(() => true);
+        
+        if (isDisabled) {
+           checkedCount = i + 1;
+           continue;
+        }
 
-      const boxChips = order.locator(".box-type ion-chip");
-      let currentBoxCount = await boxChips.count();
+        const lineItems = order.locator("ion-item, .order-line-item, .line-item, [data-testid='line-item']");
+        const itemCount = await lineItems.count().catch(() => 0);
+        
+        if (itemCount <= 1) {
+           checkedCount = i + 1;
+           continue;
+        }
 
-      // Add boxes until the number of boxes equals the number of items
-      while (currentBoxCount < itemCount) {
-        await addBoxBtn.evaluate((el) => el.click());
-        await expect(boxChips).toHaveCount(currentBoxCount + 1, { timeout: 10000 });
-        currentBoxCount++;
+        await expect(addBoxBtn).toBeVisible({ timeout: 5000 });
+        await expect(addBoxBtn).toBeEnabled();
+        await addBoxBtn.scrollIntoViewIfNeeded();
+
+        const boxChips = order.locator(".box-type ion-chip");
+        let currentBoxCount = await boxChips.count();
+
+        // Add boxes until the number of boxes equals the number of items
+        while (currentBoxCount < itemCount) {
+          await addBoxBtn.evaluate((el) => el.click());
+          await expect(boxChips).toHaveCount(currentBoxCount + 1, { timeout: 10000 });
+          currentBoxCount++;
+        }
+
+        const isNowDisabled = await addBoxBtn.evaluate((el) => {
+          return el.hasAttribute("disabled") || el.getAttribute("aria-disabled") === "true" || el.className.toString().includes("disabled");
+        });
+        expect(isNowDisabled).toBeTruthy();
+
+        return true;
       }
-
-      // Verify that after reaching the item count, the "Add Box" button becomes disabled
-      const isNowDisabled = await addBoxBtn.evaluate((el) => {
-        return el.hasAttribute("disabled") || el.getAttribute("aria-disabled") === "true" || el.className.toString().includes("disabled");
-      });
-      expect(isNowDisabled).toBeTruthy();
-
-      return true;
+      
+      await orders.nth(currentOrderCount - 1).scrollIntoViewIfNeeded().catch(() => {});
+      await this.page.waitForTimeout(1000);
+      scrolls++;
     }
-
     return false;
   }
 
-  async assertAddBoxDisabledForIneligibleOrder() {
-    const orders = this.page.locator("ion-card, .order-card, .order-row, [data-testid='order-card'], [role='listitem']");
-    await orders.first().waitFor({ state: "visible", timeout: 10000 }).catch(() => {});
-    const orderCount = await orders.count();
+    async assertAddBoxDisabledForIneligibleOrder() {
+    console.log("Searching for single-item order in In Progress tab...");
+    let checkedCount = 0;
+    let scrolls = 0;
+    const MAX_SCROLLS = 10;
+    
+    while (scrolls < MAX_SCROLLS) {
+      const orders = this.page.locator("ion-card, .order-card, .order-row, [data-testid='order-card'], [role='listitem']");
+      await orders.first().waitFor({ state: "visible", timeout: 5000 }).catch(() => {});
+      const currentOrderCount = await orders.count();
+      console.log(`Scroll ${scrolls}: Found ${currentOrderCount} total orders in DOM. checkedCount: ${checkedCount}`);
 
-    for (let i = 0; i < orderCount; i++) {
-      const order = orders.nth(i);
-      if (!(await order.isVisible({ timeout: 2000 }).catch(() => false))) continue;
+      if (currentOrderCount === 0) return false;
 
-      const lineItems = order.locator("ion-item, .order-line-item, .line-item, [data-testid='line-item']");
-      const itemCount = await lineItems.count().catch(() => 0);
-      
-      // An order is ineligible for "Add Box" if it has 1 or fewer items.
-      if (itemCount <= 1) {
-        const addBoxBtn = order.locator("ion-button, button", { hasText: /Add\s*Box/i }).first();
-        if (await addBoxBtn.isVisible().catch(() => false)) {
-          const isDisabled = await addBoxBtn.evaluate((el) => {
-            return el.hasAttribute("disabled") || el.getAttribute("aria-disabled") === "true" || el.className.toString().includes("disabled");
-          });
-          expect(isDisabled).toBeTruthy();
-          return true; // found and asserted
+      for (let i = checkedCount; i < currentOrderCount; i++) {
+        const order = orders.nth(i);
+        if (!(await order.isVisible())) continue;
+
+        const lineItems = order.locator("ion-item, .order-line-item, .line-item, [data-testid='line-item']");
+        const itemCount = await lineItems.count().catch(() => 0);
+        
+        if (itemCount === 1) {
+          console.log(`Found single item order (index ${i})!`);
+          const addBoxBtn = order.locator("ion-button, button", { hasText: /Add\s*Box/i }).first();
+          if (await addBoxBtn.isVisible().catch(() => false)) {
+            await order.scrollIntoViewIfNeeded();
+            const isDisabled = await addBoxBtn.evaluate((el) => {
+              return el.hasAttribute("disabled") || el.getAttribute("aria-disabled") === "true" || el.className.toString().includes("disabled");
+            });
+            console.log(`Is disabled? ${isDisabled}`);
+            expect(isDisabled).toBeTruthy();
+            return true;
+          }
         }
+        checkedCount = i + 1;
       }
+      
+      console.log(`Scrolling to load more... (scroll ${scrolls})`);
+      await orders.nth(currentOrderCount - 1).scrollIntoViewIfNeeded().catch(() => {});
+      await this.page.waitForTimeout(1000);
+      scrolls++;
     }
     return false;
   }

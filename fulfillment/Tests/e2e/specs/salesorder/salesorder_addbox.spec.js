@@ -5,18 +5,37 @@ if (process.env.CI) {
   test.describe.configure({ retries: 1 });
 }
 
-test("Sanity | Sales Order - add Box logic", async ({ page }) => {
-  // 1. Initialize the Sales Order POM which manages the Add Box flow
+/**
+ * Acceptance Criteria
+ * 
+ * - The **Add Box** button should be **disabled** when an order contains **only one item**, as only one box is required.
+ * - The **Add Box** button should be **enabled** when an order contains **multiple items**.
+ * - The **maximum number of boxes** that can be added must be equal to the **total number of items** in the order.
+ * - Users are allowed to create **fewer boxes than the total number of items**.
+ * - Users **must not** be allowed to create **more boxes than the total number of items**, but will be disabled when maximum boxes are added.
+ */
+
+test("Sanity | Sales Order - add Box logic for multiple items", async ({ page }) => {
   const salesOrderAddBox = new SalesOrderAddBoxPom(page);
   
-  // 2. Prepare the environment by navigating to Sales Orders and finding an eligible order.
-  // We use test.skip() here because test environments frequently lack open sales orders,
-  // and we want to skip gracefully rather than failing the test run on an environmental issue.
+  // Prepare the environment by navigating to Sales Orders and finding an eligible order.
   test.skip(!(await salesOrderAddBox.prepare()), "No open sales orders available for this facility.");
   
-  // 3. Execute the packing logic (adding a box and packing items into it)
+  // Execute the packing logic (adding a box and packing items into it)
+  // This verifies that we can add boxes up to the item count, and then the button becomes disabled.
   const addBoxSuccess = await salesOrderAddBox.run();
   
-  // 4. Validate that the packing flow found a suitable multi-item order to test with.
   test.skip(!addBoxSuccess, "No multi-item order found to test Add Box logic");
+});
+
+test("Negative | Sales Order - add Box logic for single item", async ({ page }) => {
+  const salesOrderAddBox = new SalesOrderAddBoxPom(page);
+  
+  // Prepare the environment by navigating to Sales Orders and finding an eligible order.
+  test.skip(!(await salesOrderAddBox.prepare()), "No open sales orders available for this facility.");
+  
+  // This verifies that the Add Box button is disabled for orders with only 1 item.
+  const addBoxSuccess = await salesOrderAddBox.runNegative();
+  
+  test.skip(!addBoxSuccess, "No single-item order found to test Add Box negative logic");
 });
