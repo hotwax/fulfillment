@@ -1,0 +1,6 @@
+---
+title: 'Improved: the overflow property for filters to only scroll it in x-axis'
+ticket_id: "#1x0efxp"
+merge_request: 33
+author: Yash Maheshwari
+type: added
