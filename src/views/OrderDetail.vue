@@ -846,7 +846,7 @@ const shippingPopover = async (ev: Event) => {
           if (result.data) {
             const { action } = result.data;
             if (action === "printShippingLabel") regenerateShippingLabel(order);
-            else if (action === "printPackingSlip") localPrintPackingSlip(order);
+      else if (action === "printPackingSlip") printPackingSlip(order);
             else if (action === "unpack") unpackOrder(order);
           }
         });
