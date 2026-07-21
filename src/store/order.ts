@@ -399,7 +399,7 @@ export const useOrderStore = defineStore("order", {
       orders = await this.fetchGiftCardActivationDetails({ isDetailsPage: false, currentOrders: orders })
 
 
-      this.setInProgressQuery({ ...inProgressQuery })
+      this.setInProgressQuery({ ...inProgressQuery, viewSize: orders?.length })
       this.setInProgressOrders({ orders, total: inProgressTotal })
 
       emitter.emit("dismissLoader")
@@ -427,7 +427,7 @@ export const useOrderStore = defineStore("order", {
       orders = await this.fetchGiftCardActivationDetails({ isDetailsPage: false, currentOrders: orders })
 
 
-      this.setCompletedQuery({ ...completedOrderQuery })
+      this.setCompletedQuery({ ...completedOrderQuery, viewSize: orders?.length })
       this.setCompletedOrders({ list: orders, total: completedTotal })
 
       emitter.emit("dismissLoader")
