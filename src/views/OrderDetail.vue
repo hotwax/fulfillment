@@ -160,8 +160,8 @@
 
           <div v-else-if="category === 'completed'" class="mobile-only">
             <ion-item>
-              <ion-button :disabled="isProductStoreSettingEnabled('DISABLE_SHIPNOW') || order.hasMissingShipmentInfo || order.hasMissingPackageInfo || ((isTrackingRequiredForAnyShipmentPackage(order) && !order.trackingCode) && !userStore.hasPermission('COMMON_ADMIN'))" fill="clear">{{ translate("Ship Now") }}</ion-button>
-              <ion-button slot="end" fill="clear" color="medium" @click.stop="shippingPopover">
+              <ion-button :disabled="!canShipNow || order.hasMissingShipmentInfo || order.hasMissingPackageInfo || ((isTrackingRequiredForAnyShipmentPackage(order) && !order.trackingCode) && !userStore.hasPermission('COMMON_ADMIN'))" fill="clear" @click.stop="shipOrder(order)">{{ translate("Ship Now") }}</ion-button>
+              <ion-button slot="end" fill="clear" color="medium" @click.stop="shippingPopover(order, $event)">
                 <ion-icon slot="icon-only" :icon="ellipsisVerticalOutline" />
               </ion-button>
             </ion-item>
@@ -184,7 +184,7 @@
                   <ion-icon slot="start" :icon="bagCheckOutline" />
                   {{ translate("Shipped") }}
                 </ion-button>
-                <ion-button v-else :disabled="isProductStoreSettingEnabled('DISABLE_SHIPNOW') || order.hasMissingShipmentInfo || order.hasMissingPackageInfo || ((isTrackingRequiredForAnyShipmentPackage(order) && !order.trackingCode) && !userStore.hasPermission('COMMON_ADMIN'))" @click.stop="shipOrder(order)">
+                <ion-button v-else :disabled="!canShipNow || order.hasMissingShipmentInfo || order.hasMissingPackageInfo || ((isTrackingRequiredForAnyShipmentPackage(order) && !order.trackingCode) && !userStore.hasPermission('COMMON_ADMIN'))" @click.stop="shipOrder(order)">
                   <ion-icon slot="start" :icon="bagCheckOutline" />
                   {{ translate("Ship order") }}
                 </ion-button>
@@ -195,7 +195,7 @@
               </div>
             </div>
             <div class="desktop-only" v-if="category === 'completed'">
-              <ion-button :disabled="isProductStoreSettingEnabled('DISABLE_UNPACK') || !useUserStore().hasPermission('COMMON_ADMIN OR SF_UNLOCK_ORDER') || order.hasMissingShipmentInfo || order.hasMissingPackageInfo || !hasPackedShipments(order)" fill="outline" color="danger" @click.stop="unpackOrder(order)">{{ translate("Unpack") }}</ion-button>
+              <ion-button :disabled="!canUnpack || order.hasMissingShipmentInfo || order.hasMissingPackageInfo || !hasPackedShipments(order)" fill="outline" color="danger" @click.stop="unpackOrder(order)">{{ translate("Unpack") }}</ion-button>
             </div>
           </div>
         </ion-card>
@@ -464,6 +464,8 @@ const excludeOrderBrokerDays = computed(() => useProductStore().getSettings.excl
 const productStoreShipmentMethods = computed(() => useCarrierStore().getProductStoreShipmentMethods);
 const facilityCarriers = computed(() => useCarrierStore().getFacilityCarriers);
 const productStoreShipmentMethCount = computed(() => useProductStore().getProductStoreShipmentMethCount);
+const canShipNow = computed(() => userStore.hasPermission("COMMON_ADMIN OR FF_SHIP_NOW"));
+const canUnpack = computed(() => userStore.hasPermission("COMMON_ADMIN OR SF_UNLOCK_ORDER"));
 const filteredFacilityCarriers = computed(() => {
   if (initialShipmentMethodTypeId.value === 'SHIP_TO_STORE') {
     const allowedPartyIds = new Set(productStoreShipmentMethods.value
@@ -826,7 +828,20 @@ const shippingPopover = async (ev: Event) => {
     component: Popover,
     event: ev,
     translucent: true,
-    showBackdrop: false
+    showBackdrop: false,
+    componentProps: {
+      disablePrint: order.hasMissingShipmentInfo || order.hasMissingPackageInfo,
+      disableUnpack: !canUnpack.value || order.hasMissingShipmentInfo || order.hasMissingPackageInfo || !hasPackedShipments(order)
+    }
+  });
+
+  popover.onDidDismiss().then((result) => {
+    if (result.data) {
+      const { action } = result.data;
+      if (action === "printShippingLabel") regenerateShippingLabel(order);
+      else if (action === "printPackingSlip") printPackingSlip(order);
+      else if (action === "unpack") unpackOrder(order);
+    }
   });
   return popover.present();
 };
