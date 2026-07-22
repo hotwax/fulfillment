@@ -836,21 +836,21 @@ const shippingPopover = async (ev: Event) => {
     event: ev,
     translucent: true,
     showBackdrop: false,
-     componentProps: {
-              disablePrint: order.hasMissingShipmentInfo || order.hasMissingPackageInfo,
-              disableUnpack: !canUnpack.value || order.hasMissingShipmentInfo || order.hasMissingPackageInfo || !hasPackedShipments(order)
-            }
-      });
+    componentProps: {
+      disablePrint: order.hasMissingShipmentInfo || order.hasMissingPackageInfo,
+      disableUnpack: !canUnpack.value || order.hasMissingShipmentInfo || order.hasMissingPackageInfo || !hasPackedShipments(order)
+    }
+  });
 
-       popover.onDidDismiss().then((result) => {
-          if (result.data) {
-            const { action } = result.data;
-            if (action === "printShippingLabel") regenerateShippingLabel(order);
+  popover.onDidDismiss().then((result) => {
+    if (result.data) {
+      const { action } = result.data;
+      if (action === "printShippingLabel") regenerateShippingLabel(order);
       else if (action === "printPackingSlip") printPackingSlip(order);
-            else if (action === "unpack") unpackOrder(order);
-          }
-        });
-      return popover.present();
+      else if (action === "unpack") unpackOrder(order);
+    }
+  });
+  return popover.present();
 };
 
 const addShipmentBox = async (currentOrder: any) => {
