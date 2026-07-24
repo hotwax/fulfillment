@@ -666,28 +666,28 @@ export const useOrderStore = defineStore("order", {
 
       if (giftCardActivations.length) {
         const activationMap = giftCardActivations.reduce((map: any, card: any) => {
-          map[`${card.orderId}_${card.orderItemSeqId}`] = card;
-          return map;
-        }, {});
+          map[`${card.orderId}_${card.orderItemSeqId}`] = card
+          return map
+        }, {})
 
         if (isDetailsPage) {
           orders[0].items.forEach((item: any) => {
-            const activationRecord = activationMap[`${item.orderId}_${item.orderItemSeqId}`];
+            const activationRecord = activationMap[`${item.orderId}_${item.orderItemSeqId}`]
             if (activationRecord?.cardNumber) {
-              item.isGCActivated = true;
-              item.gcInfo = activationRecord;
+              item.isGCActivated = true
+              item.gcInfo = activationRecord
             }
-          });
+          })
         } else {
           orders.forEach((order: any) => {
             order.items.forEach((item: any) => {
-              const activationRecord = activationMap[`${item.orderId}_${item.orderItemSeqId}`];
+              const activationRecord = activationMap[`${item.orderId}_${item.orderItemSeqId}`]
               if (activationRecord?.cardNumber) {
-                item.isGCActivated = true;
-                item.gcInfo = activationRecord;
+                item.isGCActivated = true
+                item.gcInfo = activationRecord
               }
-            });
-          });
+            })
+          })
         }
       }
 
