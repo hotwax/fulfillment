@@ -327,19 +327,10 @@ img {
   grid-template-columns: repeat(2, 1fr);
   align-items: center;
   padding: var(--spacer-xs) 0;
-  /*border-bottom: var(--border-medium);*/
 }
 
-/*.order-item:last-child {
-  border-bottom: none;
-}*/
-
-.order-line-item {
-  border-bottom: var(--border-medium);
-}
-
-.order-line-item:last-child {
-  border-bottom: none;
+.order-item + .order-item {
+  border-top: var(--border-medium);
 }
 
 .product-metadata {
@@ -388,6 +379,10 @@ img {
 .product-count {
   grid-area: count;
   min-width: 9ch;
+}
+
+.kit-components {
+  grid-column: 1 / -1;
 }
 
 div:has(> .kit-badge) {
@@ -445,8 +440,8 @@ div:has(> .kit-badge) {
   }
 
   .kit-components {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    display: flex;
+    gap: var(--spacer-xs);
   }
 
   .actions {

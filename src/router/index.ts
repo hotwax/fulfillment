@@ -7,62 +7,31 @@ import Settings from "@/views/Settings.vue"
 import RejectionReasons from '@/views/RejectionReasons.vue';
 import Carriers from '@/views/Carriers.vue'
 import CarrierDetail from '@/views/CarrierDetail.vue'
-import store from '@/store'
 import OrderDetail from "@/views/OrderDetail.vue"
 import TransferOrders from "@/views/TransferOrders.vue"
 import TransferOrderDetail from "@/views/TransferOrderDetail.vue"
-import TransferShipmentReview from "@/views/TransferShipmentReview.vue"
 import CreateCarrier from "@/views/CreateCarrier.vue"
 import CarrierShipmentMethods from "@/views/CarrierShipmentMethods.vue"
-import { hasPermission } from '@/authorization';
-import { showToast } from '@/utils'
-import { translate, useUserStore } from '@hotwax/dxp-components'
+import { translate, commonUtil, useAuth, ShopifyLogin, ShopifyAppInstall, Login } from '@common'
+import { useUserStore } from '@/store/user'
 import 'vue-router'
 import Notifications from '@/views/Notifications.vue'
 import CreateTransferOrder from '@/views/CreateTransferOrder.vue';
 import ShipTransferOrder from '@/views/ShipTransferOrder.vue';
 
-// Defining types for the meta values
-declare module 'vue-router' {
-  interface RouteMeta {
-    permissionId?: string;
-  }
-}
-import { useAuthStore, DxpLogin } from '@hotwax/dxp-components'
-import { loader } from '@/utils/user';
+import { businessOutline, mailUnreadOutline, mailOpenOutline, checkmarkDoneOutline, settingsOutline } from "ionicons/icons";
 import OrderLookup from '@/views/OrderLookup.vue';
 import OrderLookupDetail from '@/views/OrderLookupDetail.vue';
 import Rejections from '@/views/Rejections.vue';
-import Shopify from '@/views/Shopify.vue';
 
 const authGuard = async (to: any, from: any, next: any) => {
-  const authStore = useAuthStore()
-  if (!authStore.isAuthenticated || !store.getters['user/isAuthenticated']) {
-    await loader.present('Authenticating')
-    if (authStore.isEmbedded) {
-      loader.dismiss();
-      next('/login');
-      return;
-    }
-    // TODO use authenticate() when support is there
-    const redirectUrl = window.location.origin + '/login'
-    window.location.href = `${process.env.VUE_APP_LOGIN_URL}?redirectUrl=${redirectUrl}`
-    loader.dismiss()
+  const { isAuthenticated } = useAuth()
+  if (!isAuthenticated.value) {
+    if (!commonUtil.isAppEmbedded()) next('/login')
+    else next('/shopify-login')
+  } else {
+    next()
   }
-  next()
-};
-
-const loginGuard = (to: any, from: any, next: any) => {
-  const authStore = useAuthStore()
-  const userStore = useUserStore();
-  if (to.query?.embedded === '1') {
-    authStore.$reset();
-    userStore.$reset();
-  }
-  if (authStore.isAuthenticated && !to.query?.token && !to.query?.oms) {
-    next('/')
-  }
-  next();
 };
 
 const routes: Array<RouteRecordRaw> = [
@@ -76,7 +45,11 @@ const routes: Array<RouteRecordRaw> = [
     component: OpenOrders,
     beforeEnter: authGuard,
     meta: {
-      permissionId: "APP_OPEN_ORDERS_VIEW"
+      permissionId: "",
+      title: "Open",
+      icon: mailUnreadOutline,
+      menuIndex: 1,
+      childRoutes: ["/open/"]
     }
   },
   {
@@ -85,7 +58,11 @@ const routes: Array<RouteRecordRaw> = [
     component: InProgress,
     beforeEnter: authGuard,
     meta: {
-      permissionId: "APP_IN_PROGRESS_ORDERS_VIEW"
+      permissionId: "",
+      title: "In Progress",
+      icon: mailOpenOutline,
+      menuIndex: 2,
+      childRoutes: ["/in-progress/"]
     }
   },
   {
@@ -94,7 +71,11 @@ const routes: Array<RouteRecordRaw> = [
     component: Completed,
     beforeEnter: authGuard,
     meta: {
-      permissionId: "APP_COMPLETED_ORDERS_VIEW"
+      permissionId: "",
+      title: "Completed",
+      icon: checkmarkDoneOutline,
+      menuIndex: 3,
+      childRoutes: ["/completed/"]
     }
   },
   {
@@ -103,7 +84,11 @@ const routes: Array<RouteRecordRaw> = [
     component: TransferOrders,
     beforeEnter: authGuard,
     meta: {
-      permissionId: "APP_TRANSFER_ORDERS_VIEW"
+      permissionId: "ORD_TRANSFER_ORDER_VIEW OR ORD_TRANSFER_ORDER_ADMIN",
+      title: "Transfer Orders",
+      icon: businessOutline,
+      menuIndex: 4,
+      childRoutes: ["/transfer-order-details", "/create-transfer-order", "/ship-transfer-order"]
     }
   },
   {
@@ -127,7 +112,7 @@ const routes: Array<RouteRecordRaw> = [
     beforeEnter: authGuard,
     props: true,
     meta: {
-      permissionId: "APP_TRANSFER_ORDER_DETAIL_VIEW"
+      permissionId: "ORD_TRANSFER_ORDER_VIEW OR ORD_TRANSFER_ORDER_ADMIN"
     }
   },
   {
@@ -144,7 +129,7 @@ const routes: Array<RouteRecordRaw> = [
     beforeEnter: authGuard,
     props: true,
     meta: {
-      permissionId: "APP_ORDER_DETAIL_VIEW"
+      permissionId: ""
     }
   },
   {
@@ -154,28 +139,37 @@ const routes: Array<RouteRecordRaw> = [
     beforeEnter: authGuard,
     props: true,
     meta: {
-      permissionId: "APP_ORDER_DETAIL_VIEW"
+      permissionId: ""
     }
   },
   {
     path: '/login',
     name: 'Login',
-    component: DxpLogin,
-    beforeEnter: loginGuard
+    component: Login
   },
   {
     path: "/settings",
     name: "Settings",
     component: Settings,
-    beforeEnter: authGuard
+    beforeEnter: authGuard,
+    meta: {
+      title: "Settings",
+      icon: settingsOutline,
+      menuIndex: 5
+    }
   },
+
   {
     path: "/rejection-reasons",
     name: "RejectionReasons",
     component: RejectionReasons,
     beforeEnter: authGuard,
     meta: {
-      permissionId: "APP_REJECTION_REASONS_VIEW"
+      permissionId: "STOREFULFILLMENT_ADMIN",
+      title: "Rejection reasons",
+      menuIndex: 6,
+      groupMenuName: "Organization",
+      childRoutes: ["/rejection-reasons/"]
     }
   },
   {
@@ -184,7 +178,11 @@ const routes: Array<RouteRecordRaw> = [
     component: OrderLookup,
     beforeEnter: authGuard,
     meta: {
-      permissionId: "APP_ORDER_LOOKUP_VIEW"
+      permissionId: "FF_ORDER_LOOKUP_VIEW",
+      title: "Order Lookup",
+      menuIndex: 8,
+      groupMenuName: "Organization",
+      childRoutes: ["/order-lookup/"]
     }
   },
   {
@@ -194,7 +192,7 @@ const routes: Array<RouteRecordRaw> = [
     beforeEnter: authGuard,
     props: true,
     meta: {
-      permissionId: "APP_ORDER_LOOKUP_VIEW"
+      permissionId: "FF_ORDER_LOOKUP_VIEW"
     }
   },
   {
@@ -203,7 +201,11 @@ const routes: Array<RouteRecordRaw> = [
     component: Carriers,
     beforeEnter: authGuard,
     meta: {
-      permissionId: "APP_CARRIERS_VIEW"
+      permissionId: "CARRIER_SETUP_VIEW",
+      title: "Carriers & Shipment Methods",
+      menuIndex: 7,
+      groupMenuName: "Organization",
+      childRoutes: ["/carrier-details"]
     }
   },
   {
@@ -212,7 +214,7 @@ const routes: Array<RouteRecordRaw> = [
     component: CreateCarrier,
     beforeEnter: authGuard,
     meta: {
-      permissionId: "APP_CARRIERS_CREATE"
+      permissionId: "CARRIER_SETUP_VIEW"
     }
   },
   {
@@ -222,7 +224,7 @@ const routes: Array<RouteRecordRaw> = [
     beforeEnter: authGuard,
     props: true,
     meta: {
-      permissionId: "APP_CARRIERS_VIEW"
+      permissionId: "CARRIER_SETUP_VIEW"
     }
   },
   {
@@ -232,7 +234,7 @@ const routes: Array<RouteRecordRaw> = [
     beforeEnter: authGuard,
     props: true,
     meta: {
-      permissionId: "APP_CARRIERS_CREATE"
+      permissionId: "CARRIER_SETUP_VIEW"
     }
   },
   {
@@ -247,27 +249,32 @@ const routes: Array<RouteRecordRaw> = [
     component: Rejections,
     beforeEnter: authGuard,
     meta: {
-      permissionId: "APP_REJECTIONS_VIEW"
+      permissionId: "STOREFULFILLMENT_ADMIN"
     }
   },
   {
-    path: '/shopify',
-    name: 'Shopify',
-    component: Shopify
+    path: '/shopify-app-install',
+    name: 'ShopifyAppInstall',
+    component: ShopifyAppInstall
+  },
+  {
+    path: '/shopify-login',
+    name: 'ShopifyLogin',
+    component: ShopifyLogin
   }
 ]
 
 const router = createRouter({
-  history: createWebHistory(process.env.BASE_URL),
-  routes
+  history: createWebHistory(import.meta.env.BASE_URL),
+  routes: routes as any
 })
 
 router.beforeEach((to, from) => {
-  if (to.meta.permissionId && !hasPermission(to.meta.permissionId)) {
+  if (to.meta.permissionId && !useUserStore().hasPermission(to.meta.permissionId as any)) {
     let redirectToPath = from.path;
     // If the user has navigated from Login page or if it is page load, redirect user to settings page without showing any toast
     if (redirectToPath == "/login" || redirectToPath == "/") redirectToPath = "/settings";
-    else showToast(translate('You do not have permission to access this page'));
+    else commonUtil.showToast(translate('You do not have permission to access this page'));
     return {
       path: redirectToPath,
     }

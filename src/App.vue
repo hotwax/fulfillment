@@ -1,186 +1,176 @@
 <template>
   <ion-app>
     <ion-split-pane content-id="main-content" when="lg">
-      <Menu />
+      <ion-menu side="start" content-id="main-content" type="overlay" :disabled="!useAuth().isAuthenticated || (router.currentRoute.value.name as string) === 'Login'">
+        <ion-header>
+          <ion-toolbar>
+            <ion-title>{{ currentFacility.facilityName }}</ion-title>
+          </ion-toolbar>
+        </ion-header>
+
+        <ion-content>
+          <ion-list>
+            <template v-for="(page, index) in menuItems" :key="index">
+              <ion-item-divider color="light" v-if="page.groupMenuName && (index === 0 || menuItems[index - 1].groupMenuName !== page.groupMenuName)">
+                <ion-label>
+                  {{ translate(page.groupMenuName) }}
+                </ion-label>
+              </ion-item-divider>
+              <ion-menu-toggle :auto-hide="false">
+                <ion-item-divider color="light" v-if="page.isDivider">
+                  <ion-label>
+                    {{ translate(page.title) }}
+                  </ion-label>
+                </ion-item-divider>
+                <ion-item
+                  v-else
+                  button
+                  router-direction="root"
+                  :router-link="page.url"
+                  class="hydrated"
+                  :class="{ selected: selectedIndex === index }">
+                  <ion-icon v-if="page.icon" slot="start" :ios="page.icon" :md="page.icon" />
+                  <ion-label>{{ translate(page.title) }}</ion-label>
+                </ion-item>
+              </ion-menu-toggle>
+            </template>
+          </ion-list>
+        </ion-content>
+      </ion-menu>
       <ion-router-outlet id="main-content" />
     </ion-split-pane>
   </ion-app>
 </template>
 
-<script lang="ts">
-import { createAnimation, IonApp, IonRouterOutlet, IonSplitPane } from '@ionic/vue';
-import { defineComponent } from 'vue';
-import Menu from '@/components/Menu.vue';
-import { loadingController } from '@ionic/vue';
-import emitter from "@/event-bus";
-import { mapGetters, useStore } from 'vuex';
-import { initialise, resetConfig } from '@/adapter'
-import { useRouter } from 'vue-router';
-import { Settings } from 'luxon'
-import { useAuthStore, initialiseFirebaseApp, translate, useProductIdentificationStore, useUserStore } from '@hotwax/dxp-components';
-import logger from '@/logger'
-import { init, loadRemote } from '@module-federation/runtime';
-import { addNotification, storeClientRegistrationToken } from '@/utils/firebase';
+<script setup lang="ts">
+import { IonApp, IonContent, IonHeader, IonIcon, IonItem, IonItemDivider, IonLabel, IonList, IonMenu, IonMenuToggle, IonRouterOutlet, IonSplitPane, IonTitle, IonToolbar, loadingController, toastController } from "@ionic/vue";
+import { computed, onMounted, onUnmounted, ref, watch } from "vue";
+import { translate, emitter, logger, useNotificationStore, useAuth } from "@common";
+import { Settings } from "luxon";
+import { init } from "@module-federation/runtime";
+import { useUserStore } from "@/store/user";
+import { useProductStore } from "@/store/productStore";
+import router from './router';
+import { firebaseUtil } from "@/utils/firebaseUtil";
+import { useRegisterSW } from 'virtual:pwa-register/vue'
 
-export default defineComponent({
-  name: 'App',
-  components: {
-    IonApp,
-    IonRouterOutlet,
-    IonSplitPane,
-    Menu
-  },
-  data() {
-    return {
-      loader: null as any,
-      maxAge: process.env.VUE_APP_CACHE_MAX_AGE ? parseInt(process.env.VUE_APP_CACHE_MAX_AGE) : 0,
-      appFirebaseConfig: JSON.parse(process.env.VUE_APP_FIREBASE_CONFIG as any),
-      appFirebaseVapidKey: process.env.VUE_APP_FIREBASE_VAPID_KEY,
-    }
-  },
-  computed: {
-    ...mapGetters({
-      userToken: 'user/getUserToken',
-      instanceUrl: 'user/getInstanceUrl',
-      userProfile: 'user/getUserProfile',
-      locale: 'user/getLocale',
-      currentEComStore: 'user/getCurrentEComStore',
-      allNotificationPrefs: 'user/getAllNotificationPrefs',
-    })
-  },
-  methods: {
-    async presentLoader(options = { message: '', backdropDismiss: false }) {
-      // When having a custom message remove already existing loader
-      if(options.message && this.loader) this.dismissLoader();
+const { needRefresh, updateServiceWorker } = useRegisterSW()
 
-      if (!this.loader) {
-        this.loader = await loadingController
-          .create({
-            message: options.message ? translate(options.message) : (options.backdropDismiss ? translate("Click the backdrop to dismiss.") : translate("Loading...")),
-            translucent: true,
-            backdropDismiss: options.backdropDismiss || false
-          });
-      }
-      this.loader.present();
-    },
-    dismissLoader() {
-      if (this.loader) {
-        this.loader.dismiss();
-        this.loader = null as any;
-      }
-    },
-    async unauthorised() {
-      const authStore = useAuthStore();
-      const isEmbedded = authStore.isEmbedded;
-      const shop = authStore.shop;
-      const host = authStore.host;
-      // Mark the user as unauthorised, this will help in not making the logout api call in actions
-      this.store.dispatch("user/logout", { isUserUnauthorised: true });
-      const redirectUrl = window.location.origin + '/login';
-      window.location.href = isEmbedded ? `${redirectUrl}?embedded=1&shop=${shop}&host=${host}` :`${process.env.VUE_APP_LOGIN_URL}?redirectUrl=${redirectUrl}`;
-    },
-    playAnimation() {
-      const aside = document.querySelector('aside') as Element
-      const main = document.querySelector('main') as Element
+const loader = ref<any>(null);
 
-      const revealAnimation = createAnimation()
-        .addElement(aside)
-        .duration(1500)
-        .easing('ease')
-        .keyframes([
-          { offset: 0, flex: '0', opacity: '0' },
-          { offset: 0.5, flex: '1', opacity: '0' },
-          { offset: 1, flex: '1', opacity: '1' }
-        ])
+const userProfile = computed(() => useUserStore().getUserProfile);
+const allNotificationPrefs = computed(() => useNotificationStore().getAllNotificationPrefs);
 
-      const gapAnimation = createAnimation()
-        .addElement(main)
-        .duration(500)
-        .fromTo('gap', '0', 'var(--spacer-2xl)');
+const currentFacility = computed(() => useProductStore().currentFacility);
 
-      createAnimation()
-        .addAnimation([gapAnimation, revealAnimation])
-        .play();
-    }
-  },
-  created() {
-    initialise({
-      token: this.userToken,
-      instanceUrl: this.instanceUrl,
-      cacheMaxAge: this.maxAge,
-      events: {
-        unauthorised: this.unauthorised,
-        responseError: () => {
-          setTimeout(() => this.dismissLoader(), 100);
-        },
-        queueTask: (payload: any) => {
-          emitter.emit("queueTask", payload);
-        }
-      }
-    })
-  },
-  async mounted() {
-    init({
-      name: "fulfillment",
-      remotes: [
-        {
-          name: "fulfillment_extensions",
-          entry: process.env.VUE_APP_REMOTE_ENTRY as string,
-        }
-      ],
+const menuItems = computed(() => {
+  return router.getRoutes()
+    .filter(route => route.meta && route.meta.menuIndex)
+    .filter(route => !route.meta.permissionId || (useUserStore() as any).hasPermission(route.meta.permissionId as string))
+    .sort((a, b) => (a.meta!.menuIndex as number) - (b.meta!.menuIndex as number))
+    .map(route => ({
+      title: route.meta!.title as string,
+      url: route.path,
+      icon: route.meta!.icon as string,
+      isDivider: route.meta!.isDivider as boolean,
+      groupMenuName: route.meta!.groupMenuName as string,
+      childRoutes: route.meta!.childRoutes as string[],
+      menuIndex: route.meta!.menuIndex as number
+    }));
+});
+
+const selectedIndex = computed(() => {
+  const path = router.currentRoute.value.path;
+  return menuItems.value.findIndex((item) => item.url === path || item.childRoutes?.includes(path) || item.childRoutes?.some((route: any) => path.includes(route)));
+});
+
+const presentLoader = async (options = { message: "", backdropDismiss: false }) => {
+  if (options.message && loader.value) dismissLoader();
+
+  if (!loader.value) {
+    loader.value = await loadingController.create({
+      message: options.message ? translate(options.message) : (options.backdropDismiss ? translate("Click the backdrop to dismiss.") : translate("Loading...")),
+      translucent: true,
+      backdropDismiss: options.backdropDismiss || false
     });
+  }
+  loader.value.present();
+};
 
-    this.loader = await loadingController
-      .create({
-        message: translate("Loading..."),
-        translucent: true,
-        backdropDismiss: false
-      });
-    emitter.on('presentLoader', this.presentLoader);
-    emitter.on('dismissLoader', this.dismissLoader);
-    emitter.on('playAnimation', this.playAnimation);
+const dismissLoader = () => {
+  if (loader.value) {
+    loader.value.dismiss();
+    loader.value = null;
+  }
+};
 
-    // Handles case when user resumes or reloads the app
-    // Luxon timezzone should be set with the user's selected timezone
-    if (this.userProfile && this.userProfile.userTimeZone) {
-      Settings.defaultZone = this.userProfile.userTimeZone;
-    }
+onMounted(async () => {
+  init({
+    name: "fulfillment",
+    remotes: [{ name: "fulfillment_extensions", entry: import.meta.env.VITE_REMOTE_ENTRY as string, type: "module" }]
+  });
 
-    const currentEComStore: any = useUserStore().getCurrentEComStore;
-    // If fetching identifier without checking token then on login the app stucks in a loop, as the mounted hook runs before
-    // token is available which results in api failure as unauthenticated, thus making logout call and then login call again and so on.
-    if(this.userToken && currentEComStore?.productStoreId) {
-      // Get product identification from api using dxp-component
-      await useProductIdentificationStore().getIdentificationPref(currentEComStore.productStoreId)
-        .catch((error) => logger.error(error));
+  loader.value = await loadingController.create({
+    message: translate("Loading..."),
+    translucent: true,
+    backdropDismiss: false
+  });
 
-      // check if firebase configurations are there.
-      if (this.appFirebaseConfig && this.appFirebaseConfig.apiKey && this.allNotificationPrefs?.length) {
-        // initialising and connecting firebase app for notification support
-        await initialiseFirebaseApp(
-          this.appFirebaseConfig,
-          this.appFirebaseVapidKey,
-          storeClientRegistrationToken,
-          addNotification,
-        )
+  emitter.on("presentLoader", (options: any) => presentLoader(options));
+  emitter.on("dismissLoader", dismissLoader);
+
+  if (userProfile.value && userProfile.value.timeZone) {
+    Settings.defaultZone = userProfile.value.timeZone;
+  }
+
+  const currentProductStore: any = useProductStore().getCurrentProductStore;
+
+    if (useAuth().isAuthenticated.value && currentProductStore?.productStoreId) {
+      await useProductStore().fetchProductStoreSettings(currentProductStore.productStoreId).catch((error) => logger.error(error));
+
+      if (allNotificationPrefs.value?.length) {
+        await firebaseUtil.initialiseFirebaseMessaging();
       }
     }
-  },
-  unmounted() {
-    emitter.off('presentLoader', this.presentLoader);
-    emitter.off('dismissLoader', this.dismissLoader);
-    emitter.off('playAnimation', this.playAnimation);
-    resetConfig()
-  },
-  setup() {
-    const store = useStore();
-    const router = useRouter();
-    return {
-      router,
-      store,
-      translate
-    }
+});
+
+onUnmounted(() => {
+  emitter.off("presentLoader", (options: any) => presentLoader(options));
+  emitter.off("dismissLoader", dismissLoader);
+});
+
+const presentToast = async () => {
+  const toast = await toastController.create({
+    message: translate("New version available, click update to get latest version"),
+    position: "bottom",
+    buttons: [{
+      role: "cancel",
+      text: "Dismiss"
+    }, {
+      text: "Update",
+      handler: () => updateServiceWorker()
+    }]
+  });
+  await toast.present();
+};
+
+watch(needRefresh, (newValue) => {
+  if(newValue) {
+    presentToast();
   }
 });
 </script>
 
+<style scoped>
+ion-menu.md ion-item.selected ion-icon {
+  color: var(--ion-color-secondary);
+}
+
+ion-menu.ios ion-item.selected ion-icon {
+  color: var(--ion-color-secondary);
+}
+
+ion-item.selected {
+  --color: var(--ion-color-secondary);
+}
+</style>
