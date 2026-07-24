@@ -113,11 +113,12 @@
             <div v-else></div>
 
             <div class="product-metadata">
-              <ion-note v-if="getProductStock(item.productId).qoh" class="ion-padding-end">{{ getProductStock(item.productId).qoh }} {{ translate('pieces in stock') }}</ion-note>
-              <ion-button color="medium" fill="clear" v-else size="small" @click="fetchProductStock(item.productId)">
+              <ion-note v-if="getProductStock(item.productId).qoh >= 0" class="ion-padding-end">{{ getProductStock(item.productId).qoh }} {{ translate('pieces in stock') }}</ion-note>
+              <ion-button color="medium" fill="clear" v-else-if="!isFetchingStock.includes(`${item.productId}_${currentFacility?.facilityId}`)" size="small" @click="fetchProductStock(item.productId)">
                 {{ translate('Check stock') }}
                 <ion-icon slot="end" :icon="cubeOutline" />
               </ion-button>
+              <ion-spinner v-else name="crescent" />
               <ion-button v-if="category === 'in-progress'" @click="openRejectReasonPopover($event, item, order)" class="desktop-only" color="danger" fill="clear" size="small">
                 {{ translate('Report an issue') }}
                 <ion-icon slot="end" :icon="trashBinOutline" />
@@ -367,10 +368,11 @@
               
               <div class="other-shipment-actions">
                 <!-- TODO: add a spinner if the api takes too long to fetch the stock -->
-                <ion-note slot="end" v-if="getProductStock(item.productId, item.facilityId).qoh">{{ getProductStock(item.productId, item.facilityId).qoh }} {{ translate('pieces in stock') }}</ion-note>
-                <ion-button slot="end" fill="clear" v-else-if="['open', 'in-progress', 'completed'].includes(shipGroup.category)" size="small" @click.stop="fetchProductStock(item.productId, item.facilityId)">
+                <ion-note slot="end" v-if="getProductStock(item.productId, item.facilityId).qoh >= 0">{{ getProductStock(item.productId, item.facilityId).qoh }} {{ translate('pieces in stock') }}</ion-note>
+                <ion-button slot="end" fill="clear" v-else-if="['open', 'in-progress', 'completed'].includes(shipGroup.category) && !isFetchingStock.includes(`${item.productId}_${item.facilityId}`)" size="small" @click.stop="fetchProductStock(item.productId, item.facilityId)">
                   <ion-icon color="medium" slot="icon-only" :icon="cubeOutline"/>
                 </ion-button>
+                <ion-spinner slot="end" v-else-if="isFetchingStock.includes(`${item.productId}_${item.facilityId}`)" name="crescent" />
               </div>
             </ion-item>
           </ion-card>
@@ -453,6 +455,7 @@ const orderAdjustmentShipmentId = ref("");
 const boxTypeDesc = (id: string) => useUtilStore().getShipmentBoxDesc(id);
 const getProduct = (productId: string) => useProduct().getProduct(productId);
 const getProductStock = (productId: string, facilityId = "") => useStockStore().getProductStock(productId, facilityId);
+const isFetchingStock = ref([] as string[]);
 const inProgressOrders = computed(() => useOrderStore().getInProgressOrders);
 const order = computed(() => useOrderStore().getCurrent);
 const rejectReasonOptions = computed(() => useUtilStore().getRejectReasonOptions);
@@ -557,8 +560,15 @@ const openShipmentBoxPopover = async (ev: Event, item: any, currentOrder: any) =
   return result.data;
 };
 
-const fetchProductStock = (productId: string, facilityId = "") => {
-  useStockStore().fetchStock({ productId, facilityId });
+const fetchProductStock = async (productId: string, facilityId = "") => {
+  const facility = facilityId ? facilityId : currentFacility.value?.facilityId;
+  const key = `${productId}_${facility}`;
+  isFetchingStock.value.push(key);
+  try {
+    await useStockStore().fetchStock({ productId, facilityId });
+  } finally {
+    isFetchingStock.value = isFetchingStock.value.filter((k) => k !== key);
+  }
 };
 
 const packOrder = async (currentOrder: any) => {
