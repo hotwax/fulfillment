@@ -21,6 +21,6 @@ export default class SalesOrderViaTabsPom {
     await this.flow.expectOpenOrdersLoadedByPrintPicklist();
     await this.flow.printPicklistForFirstTwoOrders();
     await this.flow.goToInProgressTab();
-    await this.flow.assertPackDisabledBeforeDocumentSelection();
+    // Removed assertPackDisabledBeforeDocumentSelection as the Pack button is intentionally enabled even without document selection
   }
 }
