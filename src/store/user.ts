@@ -23,7 +23,8 @@ interface UserState {
   timeZones: any[],
   localeOptions: any,
   locale: string,
-  oms: any
+  oms: any,
+  appVersion: string | undefined
 }
 
 export const useUserStore = defineStore("user", {
@@ -37,7 +38,10 @@ export const useUserStore = defineStore("user", {
     timeZones: [],
     localeOptions: import.meta.env.VITE_LOCALES ? JSON.parse(import.meta.env.VITE_LOCALES) : { "en-US": "English" },
     locale: 'en-US',
-    oms: ""
+    oms: "",
+    // The app version this deployment is pinned to. undefined = not resolved yet, "" = no version
+    // configured, "vX.Y.Z" = pinned. Resolved from the OMS by useAuth().fetchAppVersion() on Login.
+    appVersion: undefined as string | undefined
   }),
   getters: {
     getTimeZones: (state) => state.timeZones,
@@ -49,6 +53,9 @@ export const useUserStore = defineStore("user", {
     },
     getUserProfile(state: UserState) {
       return state.current
+    },
+    getAppVersion(state: UserState) {
+      return state.appVersion
     },
     getUserPreferenceState(state: UserState) {
       return state.preference
@@ -269,6 +276,8 @@ export const useUserStore = defineStore("user", {
       useRejectionStore().$reset();
       useStockStore().$reset();
       useTransferOrderStore().$reset();
+      // appVersion is preserved across this reset by useAuth().logout() (it's deployment config, not
+      // session state), so a plain $reset() is fine here.
       this.$reset();
       useUtilStore().$reset();
     }
