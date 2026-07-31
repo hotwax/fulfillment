@@ -1,0 +1,62 @@
+name: Verify build
+
+on:
+  push:
+    branches: [main, fulfillment-legacy]
+  pull_request:
+    # The branches below must be a subset of the branches above
+    branches: [main, fulfillment-legacy]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pr-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  call-workflow-in-another-repo:
+    uses: hotwax/dxp-components/.github/workflows/common-pull-request.yml@main
+    with:
+      config-path: .github/labeler.yml
+    secrets:
+      envPAT: ${{ secrets.envPAT }}
+
+  playwright-salesorder:
+    name: Playwright Sales Order
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    if: ${{ secrets.PW_OMS != '' && secrets.PW_USERNAME != '' && secrets.PW_PASSWORD != '' }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright browser
+        run: npx playwright install --with-deps chromium
+
+      - name: Run Sales Order tests
+        env:
+          CI: true
+          PW_OMS: ${{ secrets.PW_OMS }}
+          PW_USERNAME: ${{ secrets.PW_USERNAME }}
+          PW_PASSWORD: ${{ secrets.PW_PASSWORD }}
+        run: npx playwright test "Tests/e2e/specs/salesorder" --project=chromium-dev --workers=1 --reporter=html,line
+
+      - name: Upload Playwright report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: |
+            playwright-report
+            test-results
+          if-no-files-found: ignore
