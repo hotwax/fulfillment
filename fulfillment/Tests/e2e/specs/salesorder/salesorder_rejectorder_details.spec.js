@@ -13,7 +13,7 @@ test("Sanity | Fulfillment | Reject single order via details page", async ({
   await salesOrderRejectDetails.run();
 });
 
-test("Negative | Sales Order | Reject order is disabled before issue selection", async ({
+test("Negative | Sales Order | Pack order button is enabled before issue selection", async ({
   page,
 }) => {
   const salesOrderRejectDetails = new SalesOrderRejectOrderDetailsPom(page);

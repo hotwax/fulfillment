@@ -210,7 +210,25 @@ export default class TransferOrderDetailsPage {
    */
   async discardOrder() {
     await this.page.getByRole("button", { name: "Discard order" }).click();
+    
+    // Set up the listener for the cancel API response BEFORE clicking the final Discard button
+    const responsePromise = this.page.waitForResponse(response => 
+      response.url().endsWith('/cancel') && response.request().method() === 'POST'
+    );
+
     await this.page.getByRole("button", { name: "Discard", exact: true }).click();
+    
+    // Wait for the API to respond
+    const response = await responsePromise;
+    
+    // If the API fails (like the 400 Bad Request in the screenshot), this will fail the test
+    if (!response.ok()) {
+      const errorBody = await response.text().catch(() => 'No body');
+      throw new Error(`Discard API failed with status ${response.status()}: ${errorBody}`);
+    }
+    
+    // Wait for a short time to allow the UI to process and any toast to appear
+    await this.wait2s();
   }
 
   /**
@@ -275,6 +293,28 @@ export default class TransferOrderDetailsPage {
       (await shipLater.isEnabled().catch(() => false))
     ) {
       await shipLater.click();
+      
+      // Wait for the confirmation modal and click Continue
+      const continueBtn = this.page.getByTestId("shiplater-continue-btn");
+      if (await continueBtn.isVisible({ timeout: 3000 }).catch(() => false)) {
+        // Set up the listener for the approve API response
+        const responsePromise = this.page.waitForResponse(response => 
+          response.url().endsWith('/approve') && response.request().method() === 'POST'
+        );
+
+        await continueBtn.click();
+        
+        // Wait for the API to respond
+        const response = await responsePromise;
+        
+        if (!response.ok()) {
+          const errorBody = await response.text().catch(() => 'No body');
+          throw new Error(`Ship Later API failed with status ${response.status()}: ${errorBody}`);
+        }
+      }
+      
+      // Wait for a short time to allow UI processing
+      await this.wait2s();
     }
   }
 

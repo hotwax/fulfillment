@@ -8,6 +8,7 @@ if (process.env.CI) {
 test("Sanity | Fulfillment- sales order bulk order flow - Rejectall", async ({
   page,
 }) => {
+  test.setTimeout(180000); // 3 minutes total timeout since bulk rejection on UAT is slow
   const salesOrderRejectAll = new SalesOrderRejectAllPom(page);
   test.skip(!(await salesOrderRejectAll.prepare()), "No open sales orders available for this facility.");
   await salesOrderRejectAll.run();

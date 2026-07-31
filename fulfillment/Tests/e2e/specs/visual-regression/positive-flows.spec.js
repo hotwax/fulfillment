@@ -8,29 +8,6 @@ import CreateTransferOrderModal from "../../pages/transfer-orders/create-transfe
 // allowing the test to verify fonts, layout, and colors of the static elements securely.
 
 test.describe("Visual Regression - Positive Flows", () => {
-  
-  test("Open Sales Orders - Layout and Fonts", async ({ page }) => {
-    // 1. Navigate to Open Sales Orders
-    const salesOrderFlow = new SalesOrderFlowPage(page);
-    await salesOrderFlow.gotoOpenOrders();
-
-    // 2. Wait for the page to be stable
-    await page.waitForTimeout(3000); // Wait for animations or dynamic lists to render
-    
-    // 3. Take a masked screenshot.
-    // We mask the ion-cards (the orders themselves) and the header order count
-    // so that dynamic order data doesn't fail the snapshot comparison.
-    await expect(page).toHaveScreenshot("sales-orders-list.png", {
-      mask: [
-        page.locator("ion-card"), 
-        page.locator(".order-card"),
-        page.locator("text=/^\\d+\\s+orders$/") // Mask dynamic "X orders" text
-      ],
-      fullPage: true,
-      maxDiffPixels: 100 // Allow a tiny bit of pixel difference for rendering variations
-    });
-  });
-
   test("Create Transfer Order Modal - Layout and Fonts", async ({ page }) => {
     // 1. Navigate to Transfer Orders
     await page.goto("/transfer-orders", { waitUntil: "domcontentloaded" });

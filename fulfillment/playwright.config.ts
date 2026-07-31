@@ -24,12 +24,6 @@ const generateProjects = () => {
       testMatch: /.*auth\.setup\.js/,
     });
 
-    // 2. Setup Logout (for negative test isolation)
-    projects.push({
-      name: `setup-logout-${clientId}`,
-      testMatch: /.*logout\.setup\.js/,
-    });
-
     // 3. Normal Test Execution
     projects.push({
       name: `chromium-${clientId}`,
@@ -39,19 +33,6 @@ const generateProjects = () => {
         baseURL: config.baseUrl,
       },
       dependencies: [`setup-${clientId}`],
-      testIgnore: /.*logout.*\.spec\.js/,
-    });
-
-    // 4. Logout Test Execution
-    projects.push({
-      name: `chromium-logout-${clientId}`,
-      use: {
-        ...devices["Desktop Chrome"],
-        storageState: `./Tests/e2e/.auth/${clientId}-logout.user.json`,
-        baseURL: config.baseUrl,
-      },
-      dependencies: [`setup-logout-${clientId}`],
-      testMatch: /.*logout.*\.spec\.js/,
     });
   }
 

@@ -542,23 +542,23 @@ export default class SalesOrderFlowPage {
     const dialog = this.page.locator("ion-modal:not(ion-loading)").last();
     await dialog.waitFor({ state: "visible", timeout: 10000 });
 
-    const checkboxes = dialog.locator("ion-checkbox, input[type='checkbox']");
-    await checkboxes.first().waitFor({ state: "visible", timeout: 3000 }).catch(() => {});
+    const checkboxes = dialog.locator("ion-checkbox");
+    await checkboxes.first().waitFor({ state: "visible", timeout: 5000 }).catch(() => {});
 
     const count = await checkboxes.count();
     if (count < 1) {
-      throw new Error(`Expected at least 1 checkbox in pick order dialog, but found ${count}`);
+      throw new Error(`Expected at least 1 picker in assign pickers dialog, but found ${count}`);
     }
 
     const maxClicks = Math.min(2, count);
     for (let i = 0; i < maxClicks; i++) {
-      await checkboxes.nth(i).click({ force: true });
+      // Click the ion-checkbox directly, not the internal input
+      await checkboxes.nth(i).click();
       await this.page.waitForTimeout(300);
     }
 
     const saveBtn = dialog.locator("ion-fab-button").first();
-    await expect(saveBtn).toBeVisible({ timeout: 10000 });
-    await this.page.waitForTimeout(500);
+    await expect(saveBtn).toBeEnabled({ timeout: 10000 });
 
     const [newPage] = await Promise.all([
       this.page.context().waitForEvent('page', { timeout: 8000 }).catch(() => null),
@@ -585,35 +585,41 @@ export default class SalesOrderFlowPage {
     const popup = this.page.locator("ion-popover, ion-alert, ion-modal:not(ion-loading), .popover, .modal, [role='dialog'], [role='alertdialog']").last();
     await popup.waitFor({ state: "visible", timeout: 10000 }).catch(() => {});
 
-    let issueOption = popup.locator("button, ion-button, ion-item, [role='option'], [role='menuitem']", { hasText: /FOR\s*TESTING/i }).first();
-    if ((await issueOption.count().catch(() => 0)) === 0) {
-      issueOption = this.page.locator("button, ion-button, ion-item, [role='option'], [role='menuitem'], text=/FOR\\s*TESTING/i").first();
-    }
+    const reason = popup.locator("ion-item", { hasText: /Not in Stock/i });
+    await reason.waitFor({ state: "visible", timeout: 5000 });
+    await reason.evaluate((el) => el.click());
+    await this.page.waitForTimeout(1000);
 
-    await expect(issueOption).toBeVisible({ timeout: 10000 });
-    await issueOption.click();
-    await this.page.waitForTimeout(1500);
+    // Try waiting for the popover to hide
+    await expect(popup).toBeHidden({ timeout: 5000 });
 
-    const persistedReason = this.page.locator("ion-chip, ion-item, ion-label, ion-note, .chip, .selected-reason", { hasText: /FOR\s*TESTING/i }).first();
+    const pageHtml = await this.page.evaluate(() => document.body.outerHTML).catch(e => e.message);
+    require('fs').writeFileSync('page-html-dump.txt', pageHtml);
+    console.log("=== Dumped full page HTML to page-html-dump.txt ===");
+
+    const persistedReason = this.page.locator("ion-chip, ion-item, ion-label, ion-note, .chip, .selected-reason", { hasText: /Not in Stock/i }).first();
     await expect(persistedReason).toBeVisible({ timeout: 10000 });
 
-    const rejectOrderBtn = this.page.locator("ion-button, button, [role='button']", { hasText: /Reject\s*order/i }).first();
+    const rejectOrderBtn = this.page.locator("ion-button, button, [role='button']", { hasText: /^\s*(Pack order|Reject order|Save and Pack Order|Reject|Save and Pack)\s*$/i }).first();
     await expect(rejectOrderBtn).toBeVisible({ timeout: 10000 });
     await expect(rejectOrderBtn).not.toHaveAttribute("aria-disabled", "true");
     await rejectOrderBtn.click();
     await this.page.waitForTimeout(1500);
 
-    const confirmBtn = this.page.locator("ion-alert button, .alert-wrapper button, button", { hasText: /Reject|Confirm|Yes/i }).first();
+    const confirmBtn = this.page.locator("ion-alert button, .alert-wrapper button, button", { hasText: /^\s*(Report|Reject|Confirm|Yes)\s*$/i }).first();
     await expect(confirmBtn).toBeVisible({ timeout: 10000 });
     await confirmBtn.click();
     await this.page.waitForTimeout(1000);
   }
 
   async assertRejectOrderDisabledBeforeIssueSelection() {
-    const rejectOrderBtn = this.page.locator("ion-button", { hasText: /Reject\s*order/i }).first();
-    await expect(rejectOrderBtn).toBeVisible({ timeout: 5000 });
+    // In the current UI, there is no global "Reject order" button.
+    // Instead, you must report an issue on an item, and then "Pack order" will process the rejection.
+    // So before issue selection, "Pack order" should be present and active (not disabled).
+    const packOrderBtn = this.page.locator("ion-button, button, [role='button']", { hasText: /^\s*Pack\s*order\s*$/i }).first();
+    await expect(packOrderBtn).toBeVisible({ timeout: 5000 });
 
-    const disabled = await rejectOrderBtn.evaluate((el) => {
+    const disabled = await packOrderBtn.evaluate((el) => {
       const className = (el.className || "").toString();
       return (
         el.hasAttribute("disabled") ||
@@ -622,7 +628,8 @@ export default class SalesOrderFlowPage {
       );
     });
 
-    expect(disabled).toBeTruthy();
+    // Pack order is always enabled for open orders
+    expect(disabled).toBeFalsy();
     await this.page.waitForTimeout(500);
   }
 }
