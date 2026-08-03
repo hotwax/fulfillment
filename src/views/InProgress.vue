@@ -657,18 +657,6 @@ const packOrders = async () => {
             emitter.emit("dismissLoader");
           }
         }
-      }, {
-        text: translate("Recycle all"),
-        handler: async () => {
-          try {
-            await orderStore.recycleInProgressOrders({});
-
-            commonUtil.showToast(translate("All orders recycled successfully."));
-          } catch (err) {
-            commonUtil.showToast(translate("Failed to recycle all orders."));
-            console.error(err);
-          }
-        }
       }]
     });
   return alert.present();
