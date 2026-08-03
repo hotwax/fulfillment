@@ -176,7 +176,7 @@ const findPickers = async () => {
         sort: "firstName asc"
       },
       filter: ["docType:EMPLOYEE", "statusId:PARTY_ENABLED", "WAREHOUSE_PICKER_role:true", ...facilityFilter],
-      query: "*:*"
+      query
     }
   };
 
