@@ -23,6 +23,7 @@ import { businessOutline, mailUnreadOutline, mailOpenOutline, checkmarkDoneOutli
 import OrderLookup from '@/views/OrderLookup.vue';
 import OrderLookupDetail from '@/views/OrderLookupDetail.vue';
 import Rejections from '@/views/Rejections.vue';
+import Actions from "@/authorization/actions";
 
 const authGuard = async (to: any, from: any, next: any) => {
   const { isAuthenticated } = useAuth()
@@ -45,7 +46,7 @@ const routes: Array<RouteRecordRaw> = [
     component: OpenOrders,
     beforeEnter: authGuard,
     meta: {
-      permissionId: "",
+      permissionId: Actions.APP_OPEN_ORDERS_VIEW,
       title: "Open",
       icon: mailUnreadOutline,
       menuIndex: 1,
@@ -58,7 +59,7 @@ const routes: Array<RouteRecordRaw> = [
     component: InProgress,
     beforeEnter: authGuard,
     meta: {
-      permissionId: "",
+      permissionId: Actions.APP_IN_PROGRESS_ORDERS_VIEW,
       title: "In Progress",
       icon: mailOpenOutline,
       menuIndex: 2,
@@ -71,7 +72,7 @@ const routes: Array<RouteRecordRaw> = [
     component: Completed,
     beforeEnter: authGuard,
     meta: {
-      permissionId: "",
+      permissionId: Actions.APP_COMPLETED_ORDERS_VIEW,
       title: "Completed",
       icon: checkmarkDoneOutline,
       menuIndex: 3,
@@ -84,7 +85,7 @@ const routes: Array<RouteRecordRaw> = [
     component: TransferOrders,
     beforeEnter: authGuard,
     meta: {
-      permissionId: "ORD_TRANSFER_ORDER_VIEW OR ORD_TRANSFER_ORDER_ADMIN",
+      permissionId: Actions.APP_TRANSFER_ORDERS_VIEW,
       title: "Transfer Orders",
       icon: businessOutline,
       menuIndex: 4,
@@ -112,7 +113,7 @@ const routes: Array<RouteRecordRaw> = [
     beforeEnter: authGuard,
     props: true,
     meta: {
-      permissionId: "ORD_TRANSFER_ORDER_VIEW OR ORD_TRANSFER_ORDER_ADMIN"
+      permissionId: Actions.APP_TRANSFER_ORDER_DETAIL_VIEW
     }
   },
   {
@@ -129,7 +130,7 @@ const routes: Array<RouteRecordRaw> = [
     beforeEnter: authGuard,
     props: true,
     meta: {
-      permissionId: ""
+      permissionId: Actions.APP_ORDER_DETAIL_VIEW
     }
   },
   {
@@ -139,7 +140,7 @@ const routes: Array<RouteRecordRaw> = [
     beforeEnter: authGuard,
     props: true,
     meta: {
-      permissionId: ""
+      permissionId: Actions.APP_SHIPMENT_DETAIL_VIEW
     }
   },
   {
@@ -165,7 +166,7 @@ const routes: Array<RouteRecordRaw> = [
     component: RejectionReasons,
     beforeEnter: authGuard,
     meta: {
-      permissionId: "STOREFULFILLMENT_ADMIN",
+      permissionId: Actions.APP_REJECTION_REASONS_VIEW,
       title: "Rejection reasons",
       menuIndex: 6,
       groupMenuName: "Organization",
@@ -178,7 +179,7 @@ const routes: Array<RouteRecordRaw> = [
     component: OrderLookup,
     beforeEnter: authGuard,
     meta: {
-      permissionId: "FF_ORDER_LOOKUP_VIEW",
+      permissionId: Actions.APP_ORDER_LOOKUP_VIEW,
       title: "Order Lookup",
       menuIndex: 8,
       groupMenuName: "Organization",
@@ -192,7 +193,7 @@ const routes: Array<RouteRecordRaw> = [
     beforeEnter: authGuard,
     props: true,
     meta: {
-      permissionId: "FF_ORDER_LOOKUP_VIEW"
+      permissionId: Actions.APP_ORDER_LOOKUP_VIEW
     }
   },
   {
@@ -201,7 +202,7 @@ const routes: Array<RouteRecordRaw> = [
     component: Carriers,
     beforeEnter: authGuard,
     meta: {
-      permissionId: "CARRIER_SETUP_VIEW",
+      permissionId: Actions.APP_CARRIERS_VIEW,
       title: "Carriers & Shipment Methods",
       menuIndex: 7,
       groupMenuName: "Organization",
@@ -214,7 +215,7 @@ const routes: Array<RouteRecordRaw> = [
     component: CreateCarrier,
     beforeEnter: authGuard,
     meta: {
-      permissionId: "CARRIER_SETUP_VIEW"
+      permissionId: Actions.APP_CARRIERS_CREATE
     }
   },
   {
@@ -224,7 +225,7 @@ const routes: Array<RouteRecordRaw> = [
     beforeEnter: authGuard,
     props: true,
     meta: {
-      permissionId: "CARRIER_SETUP_VIEW"
+      permissionId: Actions.APP_CARRIERS_VIEW
     }
   },
   {
@@ -234,7 +235,7 @@ const routes: Array<RouteRecordRaw> = [
     beforeEnter: authGuard,
     props: true,
     meta: {
-      permissionId: "CARRIER_SETUP_VIEW"
+      permissionId: Actions.APP_CARRIERS_VIEW
     }
   },
   {
@@ -249,7 +250,7 @@ const routes: Array<RouteRecordRaw> = [
     component: Rejections,
     beforeEnter: authGuard,
     meta: {
-      permissionId: "STOREFULFILLMENT_ADMIN"
+      permissionId: Actions.APP_REJECTIONS_VIEW
     }
   },
   {

@@ -49,7 +49,7 @@
 
       <div v-if="completedOrders.total">
         <div class="results">
-          <ion-button :disabled="!canShipNow || hasAnyMissingInfo() || (hasAnyShipmentTrackingInfoMissing() && !userStore.hasPermission('COMMON_ADMIN'))" expand="block" class="bulk-action desktop-only" fill="outline" size="large" @click="bulkShipOrders()">{{ translate("Ship") }}</ion-button>
+          <ion-button :disabled="!canShipNow || hasAnyMissingInfo() || (hasAnyShipmentTrackingInfoMissing() && !userStore.hasPermission(Actions.APP_FORCE_SHIP_ORDER))" expand="block" class="bulk-action desktop-only" fill="outline" size="large" @click="bulkShipOrders()">{{ translate("Ship") }}</ion-button>
           <ion-card class="order" v-for="(order, index) in completedOrdersList" :key="index">
             <div class="order-header">
               <div class="order-primary-info">
@@ -131,7 +131,7 @@
 
             <div class="mobile-only">
               <ion-item>
-                <ion-button :disabled="!canShipNow || order.hasMissingShipmentInfo || order.hasMissingPackageInfo || ((isTrackingRequiredForAnyShipmentPackage(order) && !order.trackingCode) && !userStore.hasPermission('COMMON_ADMIN'))" fill="clear" @click.stop="shipOrder(order)">{{ translate("Ship Now") }}</ion-button>
+                <ion-button :disabled="!canShipNow || order.hasMissingShipmentInfo || order.hasMissingPackageInfo || ((isTrackingRequiredForAnyShipmentPackage(order) && !order.trackingCode) && !userStore.hasPermission(Actions.APP_FORCE_SHIP_ORDER))" fill="clear" @click.stop="shipOrder(order)">{{ translate("Ship Now") }}</ion-button>
                 <ion-button slot="end" fill="clear" color="medium" @click.stop="shippingPopover(order, $event)">
                   <ion-icon slot="icon-only" :icon="ellipsisVerticalOutline" />
                 </ion-button>
@@ -141,7 +141,7 @@
             <div class="actions">
               <div class="desktop-only">
                 <ion-button v-if="!hasPackedShipments(order)" :disabled="true">{{ translate("Shipped") }}</ion-button>
-                <ion-button v-else :disabled="!canShipNow || order.hasMissingShipmentInfo || order.hasMissingPackageInfo || ((isTrackingRequiredForAnyShipmentPackage(order) && !order.trackingCode) && !userStore.hasPermission('COMMON_ADMIN'))" @click.stop="shipOrder(order)">{{ translate("Ship Now") }}</ion-button>
+                <ion-button v-else :disabled="!canShipNow || order.hasMissingShipmentInfo || order.hasMissingPackageInfo || ((isTrackingRequiredForAnyShipmentPackage(order) && !order.trackingCode) && !userStore.hasPermission(Actions.APP_FORCE_SHIP_ORDER))" @click.stop="shipOrder(order)">{{ translate("Ship Now") }}</ion-button>
                 <ion-button :disabled="order.hasMissingShipmentInfo || order.hasMissingPackageInfo" fill="outline" @click.stop="regenerateShippingLabel(order)">
                   {{ translate(order.missingLabelImage ? "Regenerate Shipping Label" : "Print Shipping Label") }}
                   <ion-spinner color="primary" slot="end" v-if="order.isGeneratingShippingLabel" name="crescent" />
@@ -167,7 +167,7 @@
         <ion-spinner name="crescent"></ion-spinner>
       </div>
       <ion-fab v-else-if="completedOrders.total" class="mobile-only" vertical="bottom" horizontal="end" slot="fixed">
-        <ion-fab-button :disabled="!canShipNow || hasAnyMissingInfo() || (hasAnyShipmentTrackingInfoMissing() && !userStore.hasPermission('COMMON_ADMIN'))" @click="bulkShipOrders()">
+        <ion-fab-button :disabled="!canShipNow || hasAnyMissingInfo() || (hasAnyShipmentTrackingInfoMissing() && !userStore.hasPermission(Actions.APP_FORCE_SHIP_ORDER))" @click="bulkShipOrders()">
           <ion-icon :icon="checkmarkDoneOutline" />
         </ion-fab-button>
       </ion-fab>
@@ -221,6 +221,7 @@ import { useProductStore as useProduct } from "@/store/product";
 import { useStockStore } from "@/store/stock";
 import { useUtilStore } from "@/store/util";
 import router from "@/router";
+import Actions from "@/authorization/actions";
 
 const orderStore = useOrderStore();
 const carrierStore = useCarrierStore();
@@ -249,8 +250,8 @@ const isProductStoreSettingEnabled = computed(() => (settingTypeEnumId: string) 
 const currentProductStore = computed(() => useProductStore().getCurrentProductStore);
 const currentFacility = computed(() => useProductStore().getCurrentFacility);
 const productIdentificationPref = computed(() => useProductStore().getProductIdentificationPref);
-const canShipNow = computed(() => userStore.hasPermission("COMMON_ADMIN OR FF_SHIP_NOW"));
-const canUnpack = computed(() => userStore.hasPermission("COMMON_ADMIN OR SF_UNLOCK_ORDER"));
+const canShipNow = computed(() => userStore.hasPermission(Actions.APP_SHIP_ORDER));
+const canUnpack = computed(() => userStore.hasPermission(Actions.APP_UNPACK_ORDER));
 
 const getTime = (time: any) => {
   return time ? DateTime.fromMillis(time).toLocaleString(DateTime.DATETIME_MED) : "";
