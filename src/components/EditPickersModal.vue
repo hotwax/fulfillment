@@ -62,6 +62,7 @@ const orderStore = useOrderStore();
 const utilStore = useUtilStore();
 import { DateTime } from "luxon";
 import { useUserStore } from "@/store/user";
+import Actions from "@/authorization/actions";
 
 const props = defineProps(["selectedPicklist"]);
 const userStore = useUserStore();
@@ -101,7 +102,7 @@ const findPickers = async (pickerIds?: Array<any>) => {
 
   const facilityFilter = [];
 
-  if (!userStore.hasPermission('FULFILLMENT_VIEW_ALL_PICKERS')) {
+  if (!userStore.hasPermission(Actions.APP_SHOW_ALL_PICKERS)) {
     facilityFilter.push(`facilityIds:${currentFacility.value.facilityId}`);
   }
 
