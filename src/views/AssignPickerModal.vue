@@ -133,12 +133,6 @@ const printPicklist = async () => {
       }
 
       await useOrderStore().findOpenOrders();
-      if (orderIdsToPick.length) {
-        const updatedOpenOrders = openOrders.value?.list.filter((openOrder: any) => !orderIdsToPick.includes(openOrder.orderId));
-        const outdatedOpenOrderCount = openOrders.value.list.reduce((count: number, openOrder: any) => orderIdsToPick.includes(openOrder.orderId) ? count + 1 : count, 0);
-        await useOrderStore().updateOpenOrderQuery({ ...openOrders.value.query, viewSize: updatedOpenOrders.length });
-        await useOrderStore().updateOpenOrders({ orders: updatedOpenOrders, total: openOrders.value.total - outdatedOpenOrderCount });
-      }
     } else {
       throw resp.data;
     }
