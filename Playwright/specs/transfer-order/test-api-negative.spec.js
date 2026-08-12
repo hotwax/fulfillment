@@ -7,9 +7,12 @@ test.describe("API Negative Tests - Transfer Orders", () => {
   let token;
   let maargBaseUrl;
 
-  test.beforeEach(async () => {
+  test.beforeEach(async ({}, testInfo) => {
+    const storageStatePath = testInfo.project.use.storageState;
+    if (!storageStatePath) throw new Error("No storageState configured for this project");
+    
     // Read the storage state file directly
-    const authFilePath = path.resolve(__dirname, "../../.auth/krewe-uat.user.json");
+    const authFilePath = path.resolve(process.cwd(), storageStatePath);
     if (!fs.existsSync(authFilePath)) {
       throw new Error(`Auth file not found at ${authFilePath}`);
     }
@@ -36,7 +39,7 @@ test.describe("API Negative Tests - Transfer Orders", () => {
     if (!token) throw new Error("Authentication token not found in auth file");
   });
 
-  test.only("Verify endpoints without /api/", async ({ request }) => {
+  test("Verify endpoints without /api/", async ({ request }) => {
     const orderId = "KREWE37831";
     
     // 1. Test poorti reject without /api/
