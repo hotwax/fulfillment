@@ -1,0 +1,13 @@
+{
+  "name": "fulfillment-e2e",
+  "version": "1.0.0",
+  "description": "Playwright E2E Tests",
+  "type": "commonjs",
+  "scripts": {
+    "test": "npx playwright test"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.58.2",
+    "dotenv": "^16.4.5"
+  }
+}
