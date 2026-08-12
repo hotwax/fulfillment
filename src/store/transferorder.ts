@@ -7,6 +7,7 @@ import { useProductStore as useAppProductStore } from "@/store/productStore";
 import { useUtilStore } from "@/store/util"
 import { useUserStore } from "@/store/user";
 import { useZebraPrinter } from "@/composables/useZebraPrinter";
+import Actions from "@/authorization/actions";
 
 interface TransferOrderState {
   transferOrder: {
@@ -474,7 +475,7 @@ export const useTransferOrderStore = defineStore("transferorder", {
     async fetchRejectReasons() {
       let rejectReasons: any[] = []
 
-      const isAdminUser =  useUserStore().hasPermission("STOREFULFILLMENT_ADMIN")
+      const isAdminUser =  useUserStore().hasPermission(Actions.APP_STOREFULFILLMENT_ADMIN)
 
       if (isAdminUser) {
         try {

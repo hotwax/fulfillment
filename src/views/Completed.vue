@@ -49,7 +49,7 @@
 
       <div v-if="completedOrders.total">
         <div class="results">
-          <ion-button :disabled="isProductStoreSettingEnabled('DISABLE_SHIPNOW') || hasAnyMissingInfo() || (hasAnyShipmentTrackingInfoMissing() && !userStore.hasPermission('COMMON_ADMIN'))" expand="block" class="bulk-action desktop-only" fill="outline" size="large" @click="bulkShipOrders()">{{ translate("Ship") }}</ion-button>
+          <ion-button :disabled="!canShipNow || hasAnyMissingInfo() || (hasAnyShipmentTrackingInfoMissing() && !userStore.hasPermission(Actions.APP_FORCE_SHIP_ORDER))" expand="block" class="bulk-action desktop-only" fill="outline" size="large" @click="bulkShipOrders()">{{ translate("Ship") }}</ion-button>
           <ion-card class="order" v-for="(order, index) in completedOrdersList" :key="index">
             <div class="order-header">
               <div class="order-primary-info">
@@ -76,48 +76,46 @@
               </div>
             </div>
 
-            <div v-for="item in order.items" :key="order.shipmentId + item.shipmentItemSeqId" class="order-line-item">
-              <div class="order-item">
-                <div class="product-info">
+            <div v-for="item in order.items" :key="order.shipmentId + item.shipmentItemSeqId" class="order-item">
+              <div class="product-info">
+                <ion-item lines="none">
+                  <ion-thumbnail slot="start" v-image-preview="getProduct(item.productId)" :key="getProduct(item.productId)?.mainImageUrl">
+                    <DxpShopifyImg :src="getProduct(item.productId).mainImageUrl" :key="getProduct(item.productId).mainImageUrl" size="small" />
+                  </ion-thumbnail>
+                  <ion-label>
+                    <p class="overline">{{ commonUtil.getProductIdentificationValue(productIdentificationPref.secondaryId, getProduct(item.productId)) }}</p>
+                    <div>
+                      {{ commonUtil.getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(item.productId)) ? commonUtil.getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(item.productId)) : getProduct(item.productId).productName }}
+                      <ion-badge class="kit-badge" color="dark" v-if="orderUtil.isKit(item)">{{ translate("Kit") }}</ion-badge>
+                    </div>
+                    <p>{{ commonUtil.getFeatures(getProduct(item.productId).productFeatures) }}</p>
+                  </ion-label>
+                </ion-item>
+              </div>
+              <div class="product-metadata">
+                <ion-button v-if="orderUtil.isKit(item)" fill="clear" size="small" @click.stop="fetchKitComponents(item)">
+                  <ion-icon v-if="item.showKitComponents" color="medium" slot="icon-only" :icon="chevronUpOutline" />
+                  <ion-icon v-else color="medium" slot="icon-only" :icon="listOutline" />
+                </ion-button>
+                <ion-button color="medium" fill="clear" size="small" v-if="item.productTypeId === 'GIFT_CARD'" @click="openGiftCardActivationModal(item)">
+                  <ion-icon slot="icon-only" :icon="item.isGCActivated ? gift : giftOutline" />
+                </ion-button>
+                <ion-note v-if="getProductStock(item.productId).qoh">{{ getProductStock(item.productId).qoh }} {{ translate('pieces in stock') }}</ion-note>
+                <ion-button fill="clear" v-else size="small" @click.stop="fetchProductStock(item.productId)">
+                  <ion-icon color="medium" slot="icon-only" :icon="cubeOutline" />
+                </ion-button>
+              </div>
+              <div v-if="item.showKitComponents" class="kit-components">
+                <template v-if="!getProduct(item.productId)?.productComponents">
                   <ion-item lines="none">
-                    <ion-thumbnail slot="start" v-image-preview="getProduct(item.productId)" :key="getProduct(item.productId)?.mainImageUrl">
-                      <DxpShopifyImg :src="getProduct(item.productId).mainImageUrl" :key="getProduct(item.productId).mainImageUrl" size="small" />
-                    </ion-thumbnail>
-                    <ion-label>
-                      <p class="overline">{{ commonUtil.getProductIdentificationValue(productIdentificationPref.secondaryId, getProduct(item.productId)) }}</p>
-                      <div>
-                        {{ commonUtil.getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(item.productId)) ? commonUtil.getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(item.productId)) : getProduct(item.productId).productName }}
-                        <ion-badge class="kit-badge" color="dark" v-if="orderUtil.isKit(item)">{{ translate("Kit") }}</ion-badge>
-                      </div>
-                      <p>{{ commonUtil.getFeatures(getProduct(item.productId).productFeatures) }}</p>
-                    </ion-label>
+                    <ion-skeleton-text animated style="height: 80%;" />
                   </ion-item>
-                </div>
-                <div class="product-metadata">
-                  <ion-button v-if="orderUtil.isKit(item)" fill="clear" size="small" @click.stop="fetchKitComponents(item)">
-                    <ion-icon v-if="item.showKitComponents" color="medium" slot="icon-only" :icon="chevronUpOutline" />
-                    <ion-icon v-else color="medium" slot="icon-only" :icon="listOutline" />
-                  </ion-button>
-                  <ion-button color="medium" fill="clear" size="small" v-if="item.productTypeId === 'GIFT_CARD'" @click="openGiftCardActivationModal(item)">
-                    <ion-icon slot="icon-only" :icon="item.isGCActivated ? gift : giftOutline" />
-                  </ion-button>
-                  <ion-note v-if="getProductStock(item.productId).qoh">{{ getProductStock(item.productId).qoh }} {{ translate('pieces in stock') }}</ion-note>
-                  <ion-button fill="clear" v-else size="small" @click.stop="fetchProductStock(item.productId)">
-                    <ion-icon color="medium" slot="icon-only" :icon="cubeOutline" />
-                  </ion-button>
-                </div>
-              </div>
-              <div v-if="item.showKitComponents && !getProduct(item.productId)?.productComponents" class="kit-components">
-                <ion-item lines="none">
-                  <ion-skeleton-text animated style="height: 80%;" />
-                </ion-item>
-                <ion-item lines="none">
-                  <ion-skeleton-text animated style="height: 80%;" />
-                </ion-item>
-              </div>
-              <div v-else-if="item.showKitComponents && getProduct(item.productId)?.productComponents" class="kit-components">
-                <ion-card v-for="(productComponent, index) in getProduct(item.productId).productComponents" :key="index">
                   <ion-item lines="none">
+                    <ion-skeleton-text animated style="height: 80%;" />
+                  </ion-item>
+                </template>
+                <template v-else>
+                  <ion-item v-for="(productComponent, index) in getProduct(item.productId).productComponents" :key="index" lines="none">
                     <ion-thumbnail slot="start" v-image-preview="getProduct(productComponent.productIdTo)" :key="getProduct(productComponent.productIdTo)?.mainImageUrl">
                       <DxpShopifyImg :src="getProduct(productComponent.productIdTo).mainImageUrl" :key="getProduct(productComponent.productIdTo).mainImageUrl" size="small" />
                     </ion-thumbnail>
@@ -127,14 +125,14 @@
                       <p>{{ commonUtil.getFeatures(getProduct(productComponent.productIdTo).productFeatures) }}</p>
                     </ion-label>
                   </ion-item>
-                </ion-card>
+                </template>
               </div>
             </div>
 
             <div class="mobile-only">
               <ion-item>
-                <ion-button :disabled="isProductStoreSettingEnabled('DISABLE_SHIPNOW') || order.hasMissingShipmentInfo || order.hasMissingPackageInfo || ((isTrackingRequiredForAnyShipmentPackage(order) && !order.trackingCode) && !userStore.hasPermission('COMMON_ADMIN'))" fill="clear">{{ translate("Ship Now") }}</ion-button>
-                <ion-button slot="end" fill="clear" color="medium" @click.stop="shippingPopover">
+                <ion-button :disabled="!canShipNow || order.hasMissingShipmentInfo || order.hasMissingPackageInfo || ((isTrackingRequiredForAnyShipmentPackage(order) && !order.trackingCode) && !userStore.hasPermission(Actions.APP_FORCE_SHIP_ORDER))" fill="clear" @click.stop="shipOrder(order)">{{ translate("Ship Now") }}</ion-button>
+                <ion-button slot="end" fill="clear" color="medium" @click.stop="shippingPopover(order, $event)">
                   <ion-icon slot="icon-only" :icon="ellipsisVerticalOutline" />
                 </ion-button>
               </ion-item>
@@ -143,7 +141,7 @@
             <div class="actions">
               <div class="desktop-only">
                 <ion-button v-if="!hasPackedShipments(order)" :disabled="true">{{ translate("Shipped") }}</ion-button>
-                <ion-button v-else :disabled="isProductStoreSettingEnabled('DISABLE_SHIPNOW') || order.hasMissingShipmentInfo || order.hasMissingPackageInfo || ((isTrackingRequiredForAnyShipmentPackage(order) && !order.trackingCode) && !userStore.hasPermission('COMMON_ADMIN'))" @click.stop="shipOrder(order)">{{ translate("Ship Now") }}</ion-button>
+                <ion-button v-else :disabled="!canShipNow || order.hasMissingShipmentInfo || order.hasMissingPackageInfo || ((isTrackingRequiredForAnyShipmentPackage(order) && !order.trackingCode) && !userStore.hasPermission(Actions.APP_FORCE_SHIP_ORDER))" @click.stop="shipOrder(order)">{{ translate("Ship Now") }}</ion-button>
                 <ion-button :disabled="order.hasMissingShipmentInfo || order.hasMissingPackageInfo" fill="outline" @click.stop="regenerateShippingLabel(order)">
                   {{ translate(order.missingLabelImage ? "Regenerate Shipping Label" : "Print Shipping Label") }}
                   <ion-spinner color="primary" slot="end" v-if="order.isGeneratingShippingLabel" name="crescent" />
@@ -156,7 +154,7 @@
               </div>
               <div class="desktop-only">
                 <ion-button v-if="order.missingLabelImage" fill="outline" @click.stop="showShippingLabelErrorModal(order)">{{ translate("Shipping label error") }}</ion-button>
-                <ion-button :disabled="isProductStoreSettingEnabled('DISABLE_UNPACK') || !userStore.hasPermission('COMMON_ADMIN OR SF_UNLOCK_ORDER') || order.hasMissingShipmentInfo || order.hasMissingPackageInfo || !hasPackedShipments(order)" fill="outline" color="danger" @click.stop="unpackOrder(order)">{{ translate("Unpack") }}</ion-button>
+                <ion-button :disabled="!canUnpack || order.hasMissingShipmentInfo || order.hasMissingPackageInfo || !hasPackedShipments(order)" fill="outline" color="danger" @click.stop="unpackOrder(order)">{{ translate("Unpack") }}</ion-button>
               </div>
             </div>
           </ion-card>
@@ -169,7 +167,7 @@
         <ion-spinner name="crescent"></ion-spinner>
       </div>
       <ion-fab v-else-if="completedOrders.total" class="mobile-only" vertical="bottom" horizontal="end" slot="fixed">
-        <ion-fab-button :disabled="hasAnyMissingInfo() || (hasAnyShipmentTrackingInfoMissing() && !userStore.hasPermission('COMMON_ADMIN'))" @click="bulkShipOrders()">
+        <ion-fab-button :disabled="!canShipNow || hasAnyMissingInfo() || (hasAnyShipmentTrackingInfoMissing() && !userStore.hasPermission(Actions.APP_FORCE_SHIP_ORDER))" @click="bulkShipOrders()">
           <ion-icon :icon="checkmarkDoneOutline" />
         </ion-fab-button>
       </ion-fab>
@@ -223,6 +221,7 @@ import { useProductStore as useProduct } from "@/store/product";
 import { useStockStore } from "@/store/stock";
 import { useUtilStore } from "@/store/util";
 import router from "@/router";
+import Actions from "@/authorization/actions";
 
 const orderStore = useOrderStore();
 const carrierStore = useCarrierStore();
@@ -251,6 +250,8 @@ const isProductStoreSettingEnabled = computed(() => (settingTypeEnumId: string) 
 const currentProductStore = computed(() => useProductStore().getCurrentProductStore);
 const currentFacility = computed(() => useProductStore().getCurrentFacility);
 const productIdentificationPref = computed(() => useProductStore().getProductIdentificationPref);
+const canShipNow = computed(() => userStore.hasPermission(Actions.APP_SHIP_ORDER));
+const canUnpack = computed(() => userStore.hasPermission(Actions.APP_UNPACK_ORDER));
 
 const getTime = (time: any) => {
   return time ? DateTime.fromMillis(time).toLocaleString(DateTime.DATETIME_MED) : "";
@@ -390,13 +391,26 @@ const bulkShipOrders = async () => {
   return shipOrderAlert.present();
 };
 
-const shippingPopover = async (ev: Event) => {
+const shippingPopover = async (order: any, ev: Event) => {
   const popover = await popoverController.create({
     component: Popover,
     event: ev,
     translucent: true,
-    showBackdrop: false
+    showBackdrop: false,
+    componentProps: {
+          disablePrint: order.hasMissingShipmentInfo || order.hasMissingPackageInfo,
+          disableUnpack: !canUnpack.value || order.hasMissingShipmentInfo || order.hasMissingPackageInfo || !hasPackedShipments(order)
+        }
   });
+
+   popover.onDidDismiss().then((result) => {
+      if (result.data) {
+        const { action } = result.data;
+        if (action === "printShippingLabel") regenerateShippingLabel(order);
+        else if (action === "printPackingSlip") localPrintPackingSlip(order);
+        else if (action === "unpack") unpackOrder(order);
+      }
+    });
   return popover.present();
 };
 

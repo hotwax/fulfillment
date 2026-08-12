@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import { api, commonUtil, useEmbeddedAppStore, logger, translate, useSolrSearch } from '@common'
 import { useUserStore } from '@/store/user'
+import Actions from "@/authorization/actions"
 const defaultProductStoreSettings = JSON.parse(import.meta.env.VITE_DEFAULT_PRODUCT_STORE_SETTINGS as string || '{}')
 
 export const useProductStore = defineStore('productStore', {
@@ -20,8 +21,6 @@ export const useProductStore = defineStore('productStore', {
       downloadPicklist: "",
       excludeOrderBrokerDays: undefined,
       affectQoh: "",
-      disableShipNow: "",
-      disableUnpack: "",
       useReservationFacility: "",
 
       productIdentifier: {
@@ -82,7 +81,7 @@ export const useProductStore = defineStore('productStore', {
     async fetchUserFacilities() {
       const userStore = useUserStore();
       const partyId = userStore.getUserProfile?.partyId;
-      const isAdminUser = userStore.hasPermission("STOREFULFILLMENT_ADMIN");
+      const isAdminUser = userStore.hasPermission(Actions.APP_STOREFULFILLMENT_ADMIN);
       const facilityGroupId = "OMS_FULFILLMENT";
 
       this.currentFacility = {
@@ -589,26 +588,22 @@ export const useProductStore = defineStore('productStore', {
       const productStoreSettings = {} as any
 
       if (productStoreId) {
-        const payload = {
-          productStoreId,
-          settingTypeEnumId: Object.keys(defaultProductStoreSettings),
-          settingTypeEnumId_op: "in",
-          pageIndex: 0,
-          pageSize: 50
-        }
         try {
           const resp = await api({
-            url: `/oms/dataDocumentView`,
-            method: "POST",
-            data: {
-              dataDocumentId: "ProductStoreSetting",
-              customParametersMap: payload
+            url: `/admin/productStores/${productStoreId}/settings`,
+            method: "GET",
+            params: {
+              settingTypeEnumId: Object.keys(defaultProductStoreSettings),
+              settingTypeEnumId_op: "in",
+              pageSize: 50
             }
           }) as any
 
-          resp?.data?.entityValueList?.forEach((productSetting: any) => {
-            productStoreSettings[productSetting.settingTypeEnumId] = productSetting.settingValue
-          })
+          if (!commonUtil.hasError(resp) && resp.data) {
+            resp.data.forEach((productSetting: any) => {
+              productStoreSettings[productSetting.settingTypeEnumId] = productSetting.settingValue
+            })
+          }
         } catch (error) {
           logger.error("Failed to fetch settings", error)
         }
