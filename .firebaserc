@@ -1,8 +1,8 @@
 {
   "projects": {
-    "default": "hotwax-digital-commerce",
+    "dev": "hotwax-digital-commerce",
     "uat": "hotwax-digital-commerce-uat",
-    "production": "digital-commerce-71eb8"
+    "prod": "digital-commerce-71eb8"
   },
   "targets": {
     "hotwax-digital-commerce": {
