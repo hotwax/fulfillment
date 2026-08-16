@@ -247,7 +247,6 @@ const getPartyName = (partyId: string) => useUtilStore().getPartyName(partyId);
 const getShipmentMethodDesc = (shipmentMethodId: string) => useUtilStore().getShipmentMethodDesc(shipmentMethodId);
 const getProductStock = (productId: string) => useStockStore().getProductStock(productId);
 const productStoreShipmentMethCount = computed(() => useProductStore().getProductStoreShipmentMethCount);
-const isProductStoreSettingEnabled = computed(() => (settingTypeEnumId: string) => useProductStore().isProductStoreSettingEnabled(settingTypeEnumId));
 const currentProductStore = computed(() => useProductStore().getCurrentProductStore);
 const currentFacility = computed(() => useProductStore().getCurrentFacility);
 const productIdentificationPref = computed(() => useProductStore().getProductIdentificationPref);

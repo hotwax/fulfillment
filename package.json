@@ -54,7 +54,7 @@
     "terser": "^5.44.0",
     "typescript": "catalog:",
     "vite": "catalog:",
-    "vite-plugin-pwa": "1.2.0",
+    "vite-plugin-pwa": "catalog:",
     "vitest": "catalog:"
   }
 }
