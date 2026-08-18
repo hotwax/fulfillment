@@ -172,7 +172,7 @@
               <template v-if="category === 'in-progress'">
                 <ion-button :color="order.hasAllRejectedItem ? 'danger' : ''" @click="packOrder(order)">
                   <ion-icon slot="start" :icon="archiveOutline" />
-                  {{ translate(order.hasAllRejectedItem ? "Reject order" : order.hasRejectedItem ? "Save and Pack Order" : "Pack order") }}
+                  {{ translate(order.hasAllRejectedItem ? "Reject" : order.hasRejectedItem ? "Save and Pack Order" : "Pack order") }}
                 </ion-button>
               </template>
               <ion-button v-else-if="category === 'open'" @click="assignPickers">
