@@ -57,6 +57,7 @@ import { useUserStore as useDxpUserStore } from "@/store/user";
 import { useProductStore as useAppProductStore } from "@/store/productStore";
 import { useUtilStore } from "@/store/util";
 import { useOrderStore } from "@/store/order";
+import Actions from "@/authorization/actions";
 
 const props = defineProps(["order"]);
 const orderStore = useOrderStore();

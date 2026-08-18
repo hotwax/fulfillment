@@ -399,7 +399,7 @@ export const useOrderStore = defineStore("order", {
       orders = await this.fetchGiftCardActivationDetails({ isDetailsPage: false, currentOrders: orders })
 
 
-      this.setInProgressQuery({ ...inProgressQuery })
+      this.setInProgressQuery({ ...inProgressQuery, viewSize: orders?.length})
       this.setInProgressOrders({ orders, total: inProgressTotal })
 
       emitter.emit("dismissLoader")
@@ -427,7 +427,7 @@ export const useOrderStore = defineStore("order", {
       orders = await this.fetchGiftCardActivationDetails({ isDetailsPage: false, currentOrders: orders })
 
 
-      this.setCompletedQuery({ ...completedOrderQuery })
+      this.setCompletedQuery({ ...completedOrderQuery, viewSize: orders?.length })
       this.setCompletedOrders({ list: orders, total: completedTotal })
 
       emitter.emit("dismissLoader")
@@ -542,19 +542,15 @@ export const useOrderStore = defineStore("order", {
 
       try {
         const resp = await api({
-          url: "oms/entity-query",
-          method: "post",
-          data: {
-            "entityName": "OrderItemAndShipGroupAssoc",
-            "inputFields": {
-              orderId: currentOrder.orderId,
-              shipGroupSeqId: shipGroupSeqId,
-              shipGroupSeqId_op: "equals",
-              shipGroupSeqId_not: "Y",
-            },
+          url: `oms/orders/${currentOrder.orderId}/items`,
+          method: "get",
+          params: {
+            orderId: currentOrder.orderId,
+            shipGroupSeqId: shipGroupSeqId,
+            shipGroupSeqId_op: "equals",
+            shipGroupSeqId_not: "Y",
             "fieldToSelect": ["orderId", "orderItemseqId", "shipGroupSeqId", "productId"],
-            "viewSize": 50,
-            "noConditionFind": "Y"
+            "pageSize": 50
           }
         }) as any;
 
@@ -669,18 +665,23 @@ export const useOrderStore = defineStore("order", {
       }
 
       if (giftCardActivations.length) {
+        const activationMap = giftCardActivations.reduce((map: any, card: any) => {
+          map[`${card.orderId}_${card.orderItemSeqId}`] = card
+          return map
+        }, {})
+
         if (isDetailsPage) {
-          orders[0].items.map((item: any) => {
-            const activationRecord = giftCardActivations.find((card: any) => card.orderId === item.orderId && card.orderItemSeqId === item.orderItemSeqId)
+          orders[0].items.forEach((item: any) => {
+            const activationRecord = activationMap[`${item.orderId}_${item.orderItemSeqId}`]
             if (activationRecord?.cardNumber) {
               item.isGCActivated = true
               item.gcInfo = activationRecord
             }
           })
         } else {
-          orders.map((order: any) => {
-            order.items.map((item: any) => {
-              const activationRecord = giftCardActivations.find((card: any) => card.orderId === item.orderId && card.orderItemSeqId === item.orderItemSeqId)
+          orders.forEach((order: any) => {
+            order.items.forEach((item: any) => {
+              const activationRecord = activationMap[`${item.orderId}_${item.orderItemSeqId}`]
               if (activationRecord?.cardNumber) {
                 item.isGCActivated = true
                 item.gcInfo = activationRecord

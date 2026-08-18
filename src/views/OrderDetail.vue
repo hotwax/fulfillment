@@ -72,84 +72,80 @@
             </div>
           </div>
 
-          <div v-for="item in order.items" :key="item" class="order-line-item">
-            <div class="order-item">
-              <div class="product-info">
-                <ion-item lines="none">
-                  <ion-thumbnail slot="start" v-image-preview="getProduct(item.productId)" :key="getProduct(item.productId)?.mainImageUrl">
-                    <DxpShopifyImg :src="getProduct(item.productId).mainImageUrl" size="small" />
-                  </ion-thumbnail>
-                  <ion-label>
-                    <p class="overline">{{ commonUtil.getProductIdentificationValue(productIdentificationPref.secondaryId, getProduct(item.productId)) }}</p>
-                    <div>
-                      {{ commonUtil.getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(item.productId)) ? commonUtil.getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(item.productId)) : getProduct(item.productId).productName }}
-                      <ion-badge class="kit-badge" color="dark" v-if="orderUtil.isKit(item)">{{ translate("Kit") }}</ion-badge>
-                    </div>
-                    <p>{{ commonUtil.getFeatures(getProduct(item.productId).productFeatures) }}</p>
-                  </ion-label>
-                </ion-item>
-              </div>
+          <div v-for="item in order.items" :key="item" class="order-item">
+            <div class="product-info">
+              <ion-item lines="none">
+                <ion-thumbnail slot="start" v-image-preview="getProduct(item.productId)" :key="getProduct(item.productId)?.mainImageUrl">
+                  <DxpShopifyImg :src="getProduct(item.productId).mainImageUrl" size="small" />
+                </ion-thumbnail>
+                <ion-label>
+                  <p class="overline">{{ commonUtil.getProductIdentificationValue(productIdentificationPref.secondaryId, getProduct(item.productId)) }}</p>
+                  <div>
+                    {{ commonUtil.getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(item.productId)) ? commonUtil.getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(item.productId)) : getProduct(item.productId).productName }}
+                    <ion-badge class="kit-badge" color="dark" v-if="orderUtil.isKit(item)">{{ translate("Kit") }}</ion-badge>
+                  </div>
+                  <p>{{ commonUtil.getFeatures(getProduct(item.productId).productFeatures) }}</p>
+                </ion-label>
+              </ion-item>
+            </div>
 
-              <div v-if="category === 'in-progress'" class="desktop-only ion-text-center">
-                <template v-if="item.rejectReason">
-                  <ion-chip outline color="danger">
-                    <ion-label> {{ getRejectionReasonDescription(item.rejectReason) }}</ion-label>
-                    <ion-icon :icon="closeCircleOutline" @click.stop="removeRejectionReason($event, item, order)" />
-                  </ion-chip>
-                </template>
-                <template v-else-if="isEntierOrderRejectionEnabled(order)">
-                  <ion-chip outline color="danger">
-                    <ion-label> {{ getRejectionReasonDescription(rejectEntireOrderReasonId) ? getRejectionReasonDescription(rejectEntireOrderReasonId) : translate('Reject to avoid order split (no variance)') }}</ion-label>
-                  </ion-chip>
-                </template>
-                <template v-else>
-                  <ion-chip outline @click="openShipmentBoxPopover($event, item, order)">
-                    <ion-icon :icon="fileTrayOutline" />
-                    {{ `Box ${item.selectedBox || ''}` }}
-                    <ion-icon :icon="caretDownOutline" />
-                  </ion-chip>
-                </template>
-              </div>
+            <div v-if="category === 'in-progress'" class="desktop-only ion-text-center">
+              <template v-if="item.rejectReason">
+                <ion-chip outline color="danger">
+                  <ion-label> {{ getRejectionReasonDescription(item.rejectReason) }}</ion-label>
+                  <ion-icon :icon="closeCircleOutline" @click.stop="removeRejectionReason($event, item, order)" />
+                </ion-chip>
+              </template>
+              <template v-else-if="isEntierOrderRejectionEnabled(order)">
+                <ion-chip outline color="danger">
+                  <ion-label> {{ getRejectionReasonDescription(rejectEntireOrderReasonId) ? getRejectionReasonDescription(rejectEntireOrderReasonId) : translate('Reject to avoid order split (no variance)') }}</ion-label>
+                </ion-chip>
+              </template>
+              <template v-else>
+                <ion-chip outline @click="openShipmentBoxPopover($event, item, order)">
+                  <ion-icon :icon="fileTrayOutline" />
+                  {{ `Box ${item.selectedBox || ''}` }}
+                  <ion-icon :icon="caretDownOutline" />
+                </ion-chip>
+              </template>
+            </div>
 
-              <div v-else></div>
+            <div v-else></div>
 
-              <div class="product-metadata">
-                <ion-note v-if="getProductStock(item.productId).qoh" class="ion-padding-end">{{ getProductStock(item.productId).qoh }} {{ translate('pieces in stock') }}</ion-note>
-                <ion-button color="medium" fill="clear" v-else size="small" @click="fetchProductStock(item.productId)">
-                  {{ translate('Check stock') }}
-                  <ion-icon slot="end" :icon="cubeOutline" />
-                </ion-button>
-                <ion-button v-if="category === 'in-progress'" @click="openRejectReasonPopover($event, item, order)" class="desktop-only" color="danger" fill="clear" size="small">
-                  {{ translate('Report an issue') }}
-                  <ion-icon slot="end" :icon="trashBinOutline" />
-                </ion-button>
-                <ion-button v-if="orderUtil.isKit(item)" fill="clear" color="medium" size="small" @click.stop="fetchKitComponent(item)">
-                  {{ translate('Components') }}
-                  <ion-icon v-if="item.showKitComponents" color="medium" slot="end" :icon="chevronUpOutline" />
-                  <ion-icon v-else color="medium" slot="end" :icon="listOutline" />
-                </ion-button>
-                <ion-button v-if="item.productTypeId === 'GIFT_CARD'" fill="clear" color="medium" size="small" @click="openGiftCardActivationModal(item)">
-                  {{ translate('Gift card') }}
-                  <ion-icon color="medium" slot="end" :icon="item.isGCActivated ? gift : giftOutline" />
-                </ion-button>
-              </div>
+            <div class="product-metadata">
+              <ion-note v-if="getProductStock(item.productId).qoh" class="ion-padding-end">{{ getProductStock(item.productId).qoh }} {{ translate('pieces in stock') }}</ion-note>
+              <ion-button color="medium" fill="clear" v-else size="small" @click="fetchProductStock(item.productId)">
+                {{ translate('Check stock') }}
+                <ion-icon slot="end" :icon="cubeOutline" />
+              </ion-button>
+              <ion-button v-if="category === 'in-progress'" @click="openRejectReasonPopover($event, item, order)" class="desktop-only" color="danger" fill="clear" size="small">
+                {{ translate('Report an issue') }}
+                <ion-icon slot="end" :icon="trashBinOutline" />
+              </ion-button>
+              <ion-button v-if="orderUtil.isKit(item)" fill="clear" color="medium" size="small" @click.stop="fetchKitComponent(item)">
+                {{ translate('Components') }}
+                <ion-icon v-if="item.showKitComponents" color="medium" slot="end" :icon="chevronUpOutline" />
+                <ion-icon v-else color="medium" slot="end" :icon="listOutline" />
+              </ion-button>
+              <ion-button v-if="item.productTypeId === 'GIFT_CARD'" fill="clear" color="medium" size="small" @click="openGiftCardActivationModal(item)">
+                {{ translate('Gift card') }}
+                <ion-icon color="medium" slot="end" :icon="item.isGCActivated ? gift : giftOutline" />
+              </ion-button>
             </div>
             <div v-if="item.showKitComponents && getProduct(item.productId)?.productComponents" class="kit-components">
-              <ion-card v-for="(productComponent, index) in getProduct(item.productId).productComponents" :key="index">
-                <ion-item lines="none">
-                  <ion-thumbnail slot="start" v-image-preview="getProduct(productComponent.productIdTo)" :key="getProduct(productComponent.productIdTo)?.mainImageUrl">
-                    <DxpShopifyImg :src="getProduct(productComponent.productIdTo).mainImageUrl" size="small" />
-                  </ion-thumbnail>
-                  <ion-label>
-                    <p class="overline">{{ commonUtil.getProductIdentificationValue(productIdentificationPref.secondaryId, getProduct(productComponent.productIdTo)) }}</p>
-                    <div>
-                      {{ commonUtil.getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(productComponent.productIdTo)) ? commonUtil.getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(productComponent.productIdTo)) : productComponent.productIdTo }}
-                    </div>
-                    <p>{{ commonUtil.getFeatures(getProduct(productComponent.productIdTo).productFeatures) }}</p>
-                  </ion-label>
-                  <ion-checkbox v-if="item.rejectReason || isEntierOrderRejectionEnabled(order)" :checked="item.kitComponents?.includes(productComponent.productIdTo)" @ionChange="rejectKitComponent(order, item, productComponent.productIdTo)" />
-                </ion-item>
-              </ion-card>
+              <ion-item v-for="(productComponent, index) in getProduct(item.productId).productComponents" :key="index" lines="none">
+                <ion-thumbnail slot="start" v-image-preview="getProduct(productComponent.productIdTo)" :key="getProduct(productComponent.productIdTo)?.mainImageUrl">
+                  <DxpShopifyImg :src="getProduct(productComponent.productIdTo).mainImageUrl" size="small" />
+                </ion-thumbnail>
+                <ion-label>
+                  <p class="overline">{{ commonUtil.getProductIdentificationValue(productIdentificationPref.secondaryId, getProduct(productComponent.productIdTo)) }}</p>
+                  <div>
+                    {{ commonUtil.getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(productComponent.productIdTo)) ? commonUtil.getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(productComponent.productIdTo)) : productComponent.productIdTo }}
+                  </div>
+                  <p>{{ commonUtil.getFeatures(getProduct(productComponent.productIdTo).productFeatures) }}</p>
+                </ion-label>
+                <ion-checkbox v-if="item.rejectReason || isEntierOrderRejectionEnabled(order)" :checked="item.kitComponents?.includes(productComponent.productIdTo)" @ionChange="rejectKitComponent(order, item, productComponent.productIdTo)" />
+              </ion-item>
             </div>
           </div>
 
@@ -164,8 +160,8 @@
 
           <div v-else-if="category === 'completed'" class="mobile-only">
             <ion-item>
-              <ion-button :disabled="isProductStoreSettingEnabled('DISABLE_SHIPNOW') || order.hasMissingShipmentInfo || order.hasMissingPackageInfo || ((isTrackingRequiredForAnyShipmentPackage(order) && !order.trackingCode) && !userStore.hasPermission('COMMON_ADMIN'))" fill="clear">{{ translate("Ship Now") }}</ion-button>
-              <ion-button slot="end" fill="clear" color="medium" @click.stop="shippingPopover">
+              <ion-button :disabled="!canShipNow || order.hasMissingShipmentInfo || order.hasMissingPackageInfo || ((isTrackingRequiredForAnyShipmentPackage(order) && !order.trackingCode) && !userStore.hasPermission(Actions.APP_FORCE_SHIP_ORDER))" fill="clear" @click.stop="shipOrder(order)">{{ translate("Ship Now") }}</ion-button>
+              <ion-button slot="end" fill="clear" color="medium" @click.stop="shippingPopover(order, $event)">
                 <ion-icon slot="icon-only" :icon="ellipsisVerticalOutline" />
               </ion-button>
             </ion-item>
@@ -178,7 +174,6 @@
                   <ion-icon slot="start" :icon="archiveOutline" />
                   {{ translate(order.hasAllRejectedItem ? "Reject order" : order.hasRejectedItem ? "Save and Pack Order" : "Pack order") }}
                 </ion-button>
-                <Component :is="printDocumentsExt" :category="category" :order="order" :currentFacility="currentFacility" :hasMissingInfo="order.missingLabelImage" />
               </template>
               <ion-button v-else-if="category === 'open'" @click="assignPickers">
                 <ion-icon slot="start" :icon="personAddOutline" />
@@ -189,7 +184,7 @@
                   <ion-icon slot="start" :icon="bagCheckOutline" />
                   {{ translate("Shipped") }}
                 </ion-button>
-                <ion-button v-else :disabled="isProductStoreSettingEnabled('DISABLE_SHIPNOW') || order.hasMissingShipmentInfo || order.hasMissingPackageInfo || ((isTrackingRequiredForAnyShipmentPackage(order) && !order.trackingCode) && !userStore.hasPermission('COMMON_ADMIN'))" @click.stop="shipOrder(order)">
+                <ion-button v-else :disabled="!canShipNow || order.hasMissingShipmentInfo || order.hasMissingPackageInfo || ((isTrackingRequiredForAnyShipmentPackage(order) && !order.trackingCode) && !userStore.hasPermission(Actions.APP_FORCE_SHIP_ORDER))" @click.stop="shipOrder(order)">
                   <ion-icon slot="start" :icon="bagCheckOutline" />
                   {{ translate("Ship order") }}
                 </ion-button>
@@ -200,7 +195,7 @@
               </div>
             </div>
             <div class="desktop-only" v-if="category === 'completed'">
-              <ion-button :disabled="isProductStoreSettingEnabled('DISABLE_UNPACK') || !useUserStore().hasPermission('COMMON_ADMIN OR SF_UNLOCK_ORDER') || order.hasMissingShipmentInfo || order.hasMissingPackageInfo || !hasPackedShipments(order)" fill="outline" color="danger" @click.stop="unpackOrder(order)">{{ translate("Unpack") }}</ion-button>
+              <ion-button :disabled="!canUnpack || order.hasMissingShipmentInfo || order.hasMissingPackageInfo || !hasPackedShipments(order)" fill="outline" color="danger" @click.stop="unpackOrder(order)">{{ translate("Unpack") }}</ion-button>
             </div>
           </div>
         </ion-card>
@@ -272,13 +267,13 @@
               <ion-icon slot="end" :icon="cashOutline" />
             </ion-item>
             <ion-item>
-              <ion-select :disabled="!order.missingLabelImage || !useUserStore().hasPermission('ORDER_SHIPMENT_METHOD_UPDATE')" :label="translate('Carrier')" v-model="carrierPartyId" interface="popover" @ionChange="updateCarrierAndShippingMethod(carrierPartyId, shipmentMethodTypeId)" :selected-text="getSelectedCarrier(carrierPartyId)">
+              <ion-select :disabled="!order.missingLabelImage || !useUserStore().hasPermission(Actions.APP_ORDER_SHIPMENT_METHOD_UPDATE)" :label="translate('Carrier')" v-model="carrierPartyId" interface="popover" @ionChange="updateCarrierAndShippingMethod(carrierPartyId, shipmentMethodTypeId)" :selected-text="getSelectedCarrier(carrierPartyId)">
                 <ion-select-option v-for="carrier in filteredFacilityCarriers" :key="carrier.partyId" :value="carrier.partyId">{{ translate(carrier.groupName) }}</ion-select-option>
               </ion-select>
             </ion-item>
             <ion-item>
               <template v-if="carrierMethods && carrierMethods.length > 0">
-                <ion-select :disabled="!order.missingLabelImage || shipmentMethodTypeId === 'SHIP_TO_STORE' || !useUserStore().hasPermission('ORDER_SHIPMENT_METHOD_UPDATE')" :label="translate('Method')" v-model="shipmentMethodTypeId" interface="popover" @ionChange="updateCarrierAndShippingMethod(carrierPartyId, shipmentMethodTypeId)" :selected-text="getSelectedShipmentMethod(shipmentMethodTypeId)">
+                <ion-select :disabled="!order.missingLabelImage || shipmentMethodTypeId === 'SHIP_TO_STORE' || !useUserStore().hasPermission(Actions.APP_ORDER_SHIPMENT_METHOD_UPDATE)" :label="translate('Method')" v-model="shipmentMethodTypeId" interface="popover" @ionChange="updateCarrierAndShippingMethod(carrierPartyId, shipmentMethodTypeId)" :selected-text="getSelectedShipmentMethod(shipmentMethodTypeId)">
                   <ion-select-option v-for="method in carrierMethods" :key="method.partyId + method.shipmentMethodTypeId" :value="method.shipmentMethodTypeId">{{ translate(method.description) }}</ion-select-option>
                 </ion-select>
               </template>
@@ -319,7 +314,7 @@
             </ion-item>
           </ion-card>
 
-          <Component v-if="useUserStore().hasPermission('FF_INVOICING_STATUS_VIEW')" :is="orderInvoiceExt" :category="category" :order="order" :userProfile="userProfile" :maargBaseUrl="commonUtil.getMaargBaseURL()" :userToken="commonUtil.getToken()" />
+          <Component v-if="useUserStore().hasPermission(Actions.APP_INVOICING_STATUS_VIEW)" :is="orderInvoiceExt" :category="category" :order="order" :userProfile="userProfileWithFacilities" />
         </div>
         
         <h4 class="ion-padding-top ion-padding-start" v-if="order.otherShipGroups?.length">{{ translate('Other shipments in this order') }}</h4>
@@ -394,7 +389,7 @@
 
 <script setup lang="ts">
 import { IonBackButton, IonBadge, IonButton, IonCard, IonCheckbox, IonChip, IonContent, IonHeader, IonIcon, IonItem, IonLabel, IonNote, IonPage, IonRow, IonSkeletonText, IonTitle, IonToolbar, IonThumbnail, alertController, popoverController, modalController, onIonViewDidEnter } from "@ionic/vue";
-import { computed, defineProps, onMounted, ref } from "vue";
+import { computed, defineProps, onMounted, ref, shallowRef } from "vue";
 import { addOutline, archiveOutline, bagCheckOutline, cashOutline, caretDownOutline, checkmarkCircleOutline, chevronUpOutline, closeCircleOutline, cubeOutline, documentTextOutline, ellipsisVerticalOutline, fileTrayOutline, gift, giftOutline, informationCircleOutline, listOutline, locateOutline, personAddOutline, pricetagOutline, ribbonOutline, trashBinOutline } from "ionicons/icons";
 import { cookieHelper, commonUtil, DxpShopifyImg, emitter, logger, moduleFederationUtil, translate } from "@common";
 import { useProductStore } from "@/store/productStore";
@@ -420,6 +415,7 @@ import OrderAdjustmentModal from "@/components/OrderAdjustmentModal.vue";
 import ShippingLabelActionPopover from "@/components/ShippingLabelActionPopover.vue";
 import TrackingCodeModal from "@/components/TrackingCodeModal.vue";
 import router from "@/router";
+import Actions from "@/authorization/actions";
 
 const props = defineProps(["category", "orderId", "shipGroupSeqId", "shipmentId"]);
 
@@ -447,16 +443,13 @@ const initialShipmentMethodTypeId = ref("");
 const carrierPartyId = ref("");
 const carrierMethods = ref([] as any);
 const orderInvoicingInfo = ref({} as any);
-const orderInvoiceExt = ref("" as any);
+const orderInvoiceExt = shallowRef(null as any);
 const isCODPaymentPending = ref(false);
 const isOrderAdjustmentPending = ref(false);
 const orderAdjustments = ref([] as any);
 const orderHeaderAdjustmentTotal = ref(0);
 const adjustmentsByGroup = ref({} as any);
 const orderAdjustmentShipmentId = ref("");
-const printDocumentsExt = ref("" as any);
-const productCategoryFilter = ref("" as any);
-const shippingManifest = ref("" as any);
 
 const boxTypeDesc = (id: string) => useUtilStore().getShipmentBoxDesc(id);
 const getProduct = (productId: string) => useProduct().getProduct(productId);
@@ -472,6 +465,8 @@ const excludeOrderBrokerDays = computed(() => useProductStore().getSettings.excl
 const productStoreShipmentMethods = computed(() => useCarrierStore().getProductStoreShipmentMethods);
 const facilityCarriers = computed(() => useCarrierStore().getFacilityCarriers);
 const productStoreShipmentMethCount = computed(() => useProductStore().getProductStoreShipmentMethCount);
+const canShipNow = computed(() => userStore.hasPermission(Actions.APP_SHIP_ORDER));
+const canUnpack = computed(() => userStore.hasPermission(Actions.APP_UNPACK_ORDER));
 const filteredFacilityCarriers = computed(() => {
   if (initialShipmentMethodTypeId.value === 'SHIP_TO_STORE') {
     const allowedPartyIds = new Set(productStoreShipmentMethods.value
@@ -482,6 +477,7 @@ const filteredFacilityCarriers = computed(() => {
   return facilityCarriers.value;
 })
 const userProfile = computed(() => useUserStore().getUserProfile);
+const userProfileWithFacilities = computed(() => ({ ...userProfile.value, facilities: useProductStore().getFacilities }));
 const carrierShipmentBoxTypes = computed(() => useUtilStore().getCarrierShipmentBoxTypes);
 const getShipmentMethodDesc = (shipmentMethodId: string) => useUtilStore().getShipmentMethodDesc(shipmentMethodId);
 const productIdentificationPref = computed(() => useProductStore().getProductIdentificationPref);
@@ -833,7 +829,20 @@ const shippingPopover = async (ev: Event) => {
     component: Popover,
     event: ev,
     translucent: true,
-    showBackdrop: false
+    showBackdrop: false,
+    componentProps: {
+      disablePrint: order.hasMissingShipmentInfo || order.hasMissingPackageInfo,
+      disableUnpack: !canUnpack.value || order.hasMissingShipmentInfo || order.hasMissingPackageInfo || !hasPackedShipments(order)
+    }
+  });
+
+  popover.onDidDismiss().then((result) => {
+    if (result.data) {
+      const { action } = result.data;
+      if (action === "printShippingLabel") regenerateShippingLabel(order);
+      else if (action === "printPackingSlip") printPackingSlip(order);
+      else if (action === "unpack") unpackOrder(order);
+    }
   });
   return popover.present();
 };
@@ -1436,12 +1445,7 @@ onIonViewDidEnter(async () => {
 
 onMounted(async () => {
   const instance = commonUtil.getOmsURL().split("-")[0].replace(new RegExp("^(https|http)://"), "").replace(new RegExp("/api.*"), "").replace(new RegExp(":.*"), "");
-  printDocumentsExt.value = await moduleFederationUtil.useDynamicImport({ scope: "fulfillment_extensions", module: `${instance}_PrintDocument` });
   orderInvoiceExt.value = await moduleFederationUtil.useDynamicImport({ scope: "fulfillment_extensions", module: `${instance}_OrderInvoice` });
-  if (instance) {
-    productCategoryFilter.value = await moduleFederationUtil.useDynamicImport({ scope: "fulfillment_extensions", module: `${instance}_ProductCategoryFilter` })
-    shippingManifest.value = await moduleFederationUtil.useDynamicImport({ scope: "fulfillment_extensions", module: `${instance}_ShippingManifest` })
-  }
 });
 </script>
 
