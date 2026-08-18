@@ -100,12 +100,6 @@ const findPickers = async (pickerIds?: Array<any>) => {
     query = `(${keyword.map((key) => `*${key}*`).join(" OR ")}) OR "${queryString.value}"^100`;
   }
 
-  const facilityFilter = [];
-
-  if (!userStore.hasPermission(Actions.APP_SHOW_ALL_PICKERS)) {
-    facilityFilter.push(`facilityIds:${currentFacility.value.facilityId}`);
-  }
-
   const payload = {
     json: {
       params: {
@@ -115,7 +109,7 @@ const findPickers = async (pickerIds?: Array<any>) => {
         qf: "firstName lastName groupName partyId externalId",
         sort: "firstName asc"
       },
-      filter: ["docType:EMPLOYEE", "statusId:PARTY_ENABLED", "WAREHOUSE_PICKER_role:true", ...facilityFilter, partyIdsFilter.length ? `partyId:(${partyIdsFilter})` : ""]
+      filter: ["docType:EMPLOYEE", "statusId:PARTY_ENABLED", "WAREHOUSE_PICKER_role:true", partyIdsFilter.length ? `partyId:(${partyIdsFilter})` : ""]
     }
   };
 
