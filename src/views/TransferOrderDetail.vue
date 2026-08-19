@@ -124,11 +124,11 @@
             <ion-icon slot="start" :icon="trashOutline" />
             {{ translate("Reject Items") }}
           </ion-button>
-          <ion-button color="primary" fill="outline" :disabled="!userStore.hasPermission(Actions.APP_STOREFULFILLMENT_ADMIN) || isCreatingShipment" @click="printTransferOrderPicklist()">
+          <ion-button color="primary" fill="outline" :disabled="!userStore.hasPermission(Actions.APP_TRANSFER_ORDER_UPDATE) || isCreatingShipment" @click="printTransferOrderPicklist()">
             <ion-icon slot="start" :icon="printOutline" />
             {{ translate('Picklist') }}
           </ion-button>
-          <ion-button color="primary" fill="solid" :disabled="!userStore.hasPermission(Actions.APP_STOREFULFILLMENT_ADMIN) || !isEligibleForCreatingShipment() || isCreatingShipment" @click="confirmCreateShipment">
+          <ion-button color="primary" fill="solid" :disabled="!userStore.hasPermission(Actions.APP_TRANSFER_ORDER_UPDATE) || !isEligibleForCreatingShipment() || isCreatingShipment" @click="confirmCreateShipment">
             <ion-spinner v-if="isCreatingShipment" slot="start" name="crescent" />
             {{ translate('Create shipment') }}
           </ion-button>
