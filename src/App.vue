@@ -45,7 +45,7 @@
 <script setup lang="ts">
 import { IonApp, IonContent, IonHeader, IonIcon, IonItem, IonItemDivider, IonLabel, IonList, IonMenu, IonMenuToggle, IonRouterOutlet, IonSplitPane, IonTitle, IonToolbar, loadingController, toastController } from "@ionic/vue";
 import { computed, onMounted, onUnmounted, ref, watch } from "vue";
-import { translate, emitter, logger, useNotificationStore, useAuth } from "@common";
+import { translate, emitter, logger, useNotificationStore, useAuth, i18n } from "@common";
 import { Settings } from "luxon";
 import { init } from "@module-federation/runtime";
 import { useUserStore } from "@/store/user";
@@ -121,6 +121,10 @@ onMounted(async () => {
 
   if (userProfile.value && userProfile.value.timeZone) {
     Settings.defaultZone = userProfile.value.timeZone;
+  }
+
+  if(userProfile.value) {
+    i18n.global.locale.value = useUserStore().getLocale
   }
 
   const currentProductStore: any = useProductStore().getCurrentProductStore;
