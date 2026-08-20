@@ -123,7 +123,7 @@ onMounted(async () => {
     Settings.defaultZone = userProfile.value.timeZone;
   }
 
-  if(userProfile.value) {
+  if(userProfile.value?.userId) {
     i18n.global.locale.value = useUserStore().getLocale
   }
 
