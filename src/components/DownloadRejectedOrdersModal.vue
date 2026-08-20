@@ -31,8 +31,8 @@
           <template v-else-if="selectedField.name === 'rejectedFrom'">
             <ion-checkbox justify="start" label-placement="end" v-model="selectedField.value" :checked="selectedField.value" :disabled="selectedField.disabled">{{ translate("Facility") }}</ion-checkbox>
             <ion-select aria-label="facilityField" interface="popover" v-model="selectedFacilityId" slot="end">
-              <ion-select-option value="facilityId">Internal ID</ion-select-option>
-              <ion-select-option value="externalId">External ID</ion-select-option>
+              <ion-select-option value="facilityId">{{ translate("Internal ID") }}</ion-select-option>
+              <ion-select-option value="externalId">{{ translate("External ID") }}</ion-select-option>
             </ion-select>
           </template>
           <template v-else>
