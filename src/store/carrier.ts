@@ -612,6 +612,13 @@ export const useCarrierStore = defineStore("carrier", {
         params: payload,
       });
     },
+    async fetchCarrierManifests(payload: any): Promise<any> {
+      return api({
+        url: `/poorti/carrierManifests`,
+        method: "GET",
+        params: payload,
+      });
+    },
     async generateManifest(payload: any): Promise<any> {
       return api({
         url: `/poorti/generateManifest`,
@@ -623,7 +630,8 @@ export const useCarrierStore = defineStore("carrier", {
       return api({
         url: `/poorti/Manifest.pdf`,
         method: "GET",
-        params
+        params,
+        responseType: "blob"
       });
     },
     async fetchStoreCarrierAndMethods(payload: any): Promise<any> {
