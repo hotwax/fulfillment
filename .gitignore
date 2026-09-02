@@ -38,9 +38,9 @@ npm-debug.log*
 !.env.example
 
 # Playwright
-node_modules/
-/test-results/
-/playwright-report/
-/blob-report/
-/playwright/.cache/
-/playwright/.auth/
+Playwright/node_modules/
+Playwright/test-results/
+Playwright/playwright-report/
+Playwright/blob-report/
+Playwright/.cache/
+Playwright/.auth/
