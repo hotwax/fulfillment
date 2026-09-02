@@ -19,21 +19,25 @@ test.describe("API Negative Tests - Transfer Orders", () => {
     
     const authData = JSON.parse(fs.readFileSync(authFilePath, "utf8"));
     
-    // Search across all origins and localStorage entries for the token and maargOms
-    for (const origin of authData.origins || []) {
-      for (const item of origin.localStorage || []) {
-        try {
-          const parsed = JSON.parse(item.value);
-          if (parsed.token?.value && parsed.maargOms) {
-            token = parsed.token.value;
-            maargBaseUrl = parsed.maargOms;
-            break;
+    // Search across cookies for the token and maargOms
+    for (const cookie of authData.cookies || []) {
+      if (cookie.name === 'token') token = cookie.value;
+      if (cookie.name === 'maarg') maargBaseUrl = decodeURIComponent(cookie.value);
+    }
+    
+    // Fallback to localStorage for backward compatibility
+    if (!token || !maargBaseUrl) {
+      for (const origin of authData.origins || []) {
+        for (const item of origin.localStorage || []) {
+          try {
+            const parsed = JSON.parse(item.value);
+            if (parsed.token?.value) token = token || parsed.token.value;
+            if (parsed.maargOms) maargBaseUrl = maargBaseUrl || parsed.maargOms;
+          } catch (e) {
+            // ignore parse errors for non-JSON items
           }
-        } catch (e) {
-          // ignore parse errors for non-JSON items
         }
       }
-      if (token) break;
     }
     
     if (!token) throw new Error("Authentication token not found in auth file");
@@ -44,22 +48,22 @@ test.describe("API Negative Tests - Transfer Orders", () => {
     
     // 1. Test poorti reject without /api/
     const urlPoorti = `${maargBaseUrl}/poorti/transferOrders/${orderId}/reject`;
-    console.log(`Sending POST to: ${urlPoorti}`);
+    console.log(`API [Endpoint: ${urlPoorti}] - Sending POST request`);
     let response = await request.post(urlPoorti, {
       headers: { "Authorization": `Bearer ${token}`, "Content-Type": "application/json" },
       data: { rejectReasonId: "SYSTEM_ERROR" }
     });
-    console.log(`Response Status: ${response.status()}`);
-    console.log(`Response Body: ${await response.text()}`);
+    console.log(`API [Status: ${response.status()}] - Received response`);
+    console.log(`API [Body: ${await response.text()}] - Response body`);
 
     // 2. Test oms cancel without /api/
     const urlOms = `${maargBaseUrl}/oms/transferOrders/${orderId}/cancel`;
-    console.log(`Sending POST to: ${urlOms}`);
+    console.log(`API [Endpoint: ${urlOms}] - Sending POST request`);
     response = await request.post(urlOms, {
       headers: { "Authorization": `Bearer ${token}`, "Content-Type": "application/json" }
     });
-    console.log(`Response Status: ${response.status()}`);
-    console.log(`Response Body: ${await response.text()}`);
+    console.log(`API [Status: ${response.status()}] - Received response`);
+    console.log(`API [Body: ${await response.text()}] - Response body`);
   });
 
   test("Discard Order API - Invalid Order ID", async ({ request }) => {
@@ -68,7 +72,7 @@ test.describe("API Negative Tests - Transfer Orders", () => {
     // Using maargBaseUrl as per TransferOrderService (baseURL for oms/transferOrders/${orderId}/cancel is Maarg URL)
     const url = `${maargBaseUrl}/api/oms/transferOrders/${invalidOrderId}/cancel`;
 
-    console.log(`Sending POST to ${url}`);
+    console.log(`API [Endpoint: ${url}] - Sending POST request`);
     const response = await request.post(url, {
       headers: {
         "Authorization": `Bearer ${token}`,
@@ -76,9 +80,9 @@ test.describe("API Negative Tests - Transfer Orders", () => {
       }
     });
 
-    console.log(`Discard API Response Status: ${response.status()}`);
+    console.log(`API [Status: ${response.status()}] - Discard response received`);
     const body = await response.text();
-    console.log(`Discard API Response Body: ${body}`);
+    console.log(`API [Body: ${body}] - Discard response body`);
 
     // Expecting 400 or 404, not 500
     expect(response.status()).toBeGreaterThanOrEqual(400);
@@ -89,7 +93,7 @@ test.describe("API Negative Tests - Transfer Orders", () => {
     // TransferOrderService.createOutboundTransferShipment calls poorti/transferShipments
     const url = `${maargBaseUrl}/api/poorti/transferShipments`;
 
-    console.log(`Sending POST to ${url}`);
+    console.log(`API [Endpoint: ${url}] - Sending POST request`);
     const response = await request.post(url, {
       headers: {
         "Authorization": `Bearer ${token}`,
@@ -100,9 +104,9 @@ test.describe("API Negative Tests - Transfer Orders", () => {
       }
     });
 
-    console.log(`Ship Later API Response Status: ${response.status()}`);
+    console.log(`API [Status: ${response.status()}] - Ship later response received`);
     const body = await response.text();
-    console.log(`Ship Later API Response Body: ${body}`);
+    console.log(`API [Body: ${body}] - Ship later response body`);
 
     // Expecting 400 Bad Request
     expect(response.status()).toBeGreaterThanOrEqual(400);
@@ -114,7 +118,7 @@ test.describe("API Negative Tests - Transfer Orders", () => {
     // TransferOrderService.shipTransferOrderShipment calls poorti/transferShipments/${shipmentId}/ship
     const url = `${maargBaseUrl}/api/poorti/transferShipments/${invalidShipmentId}/ship`;
 
-    console.log(`Sending POST to ${url}`);
+    console.log(`API [Endpoint: ${url}] - Sending POST request`);
     const response = await request.post(url, {
       headers: {
         "Authorization": `Bearer ${token}`,
@@ -125,9 +129,9 @@ test.describe("API Negative Tests - Transfer Orders", () => {
       }
     });
 
-    console.log(`Ship Order API Response Status: ${response.status()}`);
+    console.log(`API [Status: ${response.status()}] - Ship order response received`);
     const body = await response.text();
-    console.log(`Ship Order API Response Body: ${body}`);
+    console.log(`API [Body: ${body}] - Ship order response body`);
 
     // Expecting 400 or 404
     expect(response.status()).toBeGreaterThanOrEqual(400);

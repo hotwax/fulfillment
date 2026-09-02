@@ -35,7 +35,7 @@ export default class TransferOrderDetailsPage {
     // Fallback: If the "Add to Transfer" button doesn't become visible for the requested SKU,
     // we assume it is missing/out of stock and pivot to finding any available product.
     if (!(await addToTransfer.isVisible({ timeout: 5000 }).catch(() => false))) {
-      console.warn(`SKU '${query}' not found. Falling back to generic product search.`);
+      console.warn(`Product [SKU: ${query}] - Not found; falling back to generic product search`);
       
       // Clear the current search explicitly to avoid appending
       await searchBox.fill("");

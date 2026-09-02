@@ -9,14 +9,14 @@ import { getClientConfig } from "../config/clients";
 async function performLogin(page, config) {
   // Log all console errors and failed network requests
   page.on('console', msg => {
-    if (msg.type() === 'error') console.log(`PAGE ERROR: ${msg.text()}`);
+    if (msg.type() === 'error') console.log(`Page [Type: error] - Encountered error: ${msg.text()}`);
   });
   page.on('requestfailed', request => {
-    console.log(`REQUEST FAILED: ${request.url()} - ${request.failure().errorText}`);
+    console.log(`Request [URL: ${request.url()}] - Failed: ${request.failure().errorText}`);
   });
   page.on('response', response => {
     if (response.status() >= 400) {
-      console.log(`API ERROR: ${response.url()} returned ${response.status()}`);
+      console.log(`API [URL: ${response.url()}, Status: ${response.status()}] - Error returned`);
     }
   });
 
@@ -33,7 +33,7 @@ async function performLogin(page, config) {
     throw new Error(`Credentials missing for ${clientId}. Provide username/password in CLIENTS JSON or env.`);
   }
 
-  console.log(`\nStarting direct login flow for Fulfillment (${clientId})...`);
+  console.log(`\nAuthentication [Client: ${clientId}] - Starting direct login flow for Fulfillment`);
   await page.goto(`${baseUrl}`);
   await page.waitForLoadState('networkidle');
   await page.waitForTimeout(2000); // Give Vue router time to settle
@@ -41,7 +41,7 @@ async function performLogin(page, config) {
   // Handle Launchpad redirect for OMS input
   const nextBtn = page.locator('ion-button:has-text("NEXT"), button:has-text("NEXT")').first();
   if (await nextBtn.isVisible().catch(() => false)) {
-    console.log(`Launchpad OMS screen detected. Filling OMS...`);
+    console.log(`Authentication [Client: ${clientId}] - Launchpad OMS screen detected, filling OMS`);
     // Locate the OMS input.
     const omsInput = page.locator('ion-input, input[type="text"]').first();
     // Pass the full URL to prevent the frontend from auto-appending .hotwax.io
@@ -61,7 +61,7 @@ async function performLogin(page, config) {
   const userField = page.locator('input[name="username"], input[name="USERNAME"], ion-input[name="username"] input, input[placeholder*="sername"]').first();
   await expect(userField).toBeVisible({ timeout: 15000 });
   
-  console.log(`Filling credentials for ${clientId}...`);
+  console.log(`Authentication [Client: ${clientId}] - Filling credentials`);
   await userField.click();
   await page.keyboard.type(username, { delay: 50 });
   
@@ -105,7 +105,7 @@ async function performLogin(page, config) {
      throw new Error(`Login Failed for ${clientId}: Did not reach the dashboard after login.`);
   }
 
-  console.log(`Successfully logged into Fulfillment for ${clientId}`);
+  console.log(`Authentication [Client: ${clientId}] - Successfully logged into Fulfillment`);
 }
 
 setup("authenticate and save storage state", async ({ page }, testInfo) => {
@@ -119,5 +119,5 @@ setup("authenticate and save storage state", async ({ page }, testInfo) => {
 
   fs.mkdirSync(path.dirname(authFilePath), { recursive: true });
   await page.context().storageState({ path: authFilePath });
-  console.log(`Saved authentication state for ${clientId} to ${authFilePath}`);
+  console.log(`Authentication [Client: ${clientId}] - Saved authentication state to ${authFilePath}`);
 });
