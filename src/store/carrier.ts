@@ -13,6 +13,7 @@ interface CarrierState {
   shipmentMethodQuery: any
   shipmentMethods: Record<string, any>
   carrierShipmentMethodsByProductStore: Record<string, any>
+  carrierFacilitiesByProductStore: Record<string, any>
   facilityCarriers: any[]
   productStoreShipmentMethods: any[]
   shipmentGatewayConfigs: any
@@ -28,6 +29,7 @@ export const useCarrierStore = defineStore("carrier", {
     shipmentMethodQuery: {},
     shipmentMethods: {},
     carrierShipmentMethodsByProductStore: {},
+    carrierFacilitiesByProductStore: {},
     facilityCarriers: [],
     productStoreShipmentMethods: [],
     shipmentGatewayConfigs: []
@@ -62,8 +64,8 @@ export const useCarrierStore = defineStore("carrier", {
     getProductStoreShipmentMethods(state) {
       return state.productStoreShipmentMethods
     },
-    getCarrierFacilities(state) {
-      return state.current.facilities || {}
+    getCarrierFacilitiesByProductStore(state) {
+      return state.carrierFacilitiesByProductStore
     },
     getFacilityCarriers(state) {
       return state.facilityCarriers
@@ -97,6 +99,9 @@ export const useCarrierStore = defineStore("carrier", {
     },
     setCarrierShipmentMethodsByProductStore(payload: any) {
       this.carrierShipmentMethodsByProductStore = payload
+    },
+    setCarrierFacilitiesByProductStore(payload: any) {
+      this.carrierFacilitiesByProductStore = payload
     },
     setProductStoreShipmentMethods(payload: any) {
       this.productStoreShipmentMethods = payload
@@ -246,7 +251,6 @@ export const useCarrierStore = defineStore("carrier", {
       this.setCurrent(currentCarrier)
     },
     async fetchProductStoreShipmentMethods(payload: any) {
-      let currentCarrier = JSON.parse(JSON.stringify(this.current))
       let productStoreShipmentMethods = [] as any
       let viewIndex = 0
       let resp
@@ -278,8 +282,8 @@ export const useCarrierStore = defineStore("carrier", {
           }
         } while (resp.data?.entityValueList?.length >= 250)
 
-        currentCarrier = {
-          ...currentCarrier,
+        this.setCurrent({
+          ...this.current,
           productStoreShipmentMethods: productStoreShipmentMethods.reduce((updatedMethodDetail: any, productStoreShipmentMethod: any) => {
             const { productStoreId, shipmentMethodTypeId } = productStoreShipmentMethod
 
@@ -290,56 +294,84 @@ export const useCarrierStore = defineStore("carrier", {
             updatedMethodDetail[productStoreId][shipmentMethodTypeId] = productStoreShipmentMethod
             return updatedMethodDetail
           }, {})
-        }
+        })
       } catch (error) {
         logger.error(error)
       }
-      this.setCurrent(currentCarrier)
     },
-    async updateCarrierFacilityAssociation(facility: any, carrierPartyId: any) {
+    async updateCarrierFacilityAssociation(facility: any, carrierPartyId: string, productStoreId: string) {
       try {
-        const payload = {
-          facilityId: facility.facilityId,
-          partyId: carrierPartyId,
-          roleTypeId: "CARRIER"
-        }
-        let resp = {} as any;
+        const calls = [] as Promise<any>[]
+
         if (facility.isChecked) {
-          resp = await api({
-            url: `/oms/facilities/${payload.facilityId}/parties`,
-            method: "PUT",
-            data: {
-              ...payload,
-              fromDate: facility.fromDate,
-              thruDate: DateTime.now().toMillis()
-            }
-          });
-          if (commonUtil.hasError(resp)) {
-            throw resp.data
+          // Unassociate from whichever source(s) currently hold this association.
+          if (facility.carrierConfigId) {
+            calls.push(api({
+              url: `/poorti/carrierConfigs`,
+              method: "DELETE",
+              data: { carrierConfigId: facility.carrierConfigId }
+            }))
           }
-          facility.isChecked = false
-          facility.fromDate = ""
+          if (facility.hasFacilityParty) {
+            calls.push(api({
+              url: `/oms/facilities/${facility.facilityId}/parties`,
+              method: "PUT",
+              data: {
+                facilityId: facility.facilityId,
+                partyId: carrierPartyId,
+                roleTypeId: "CARRIER",
+                fromDate: facility.facilityPartyFromDate,
+                thruDate: DateTime.now().toMillis()
+              }
+            }))
+          }
         } else {
-          resp = await api({
-            url: `/oms/facilities/${payload.facilityId}/parties`,
+          // Associate in ShippingCarrierConfig (always, for this store) and, only if not
+          // already present, in the legacy FacilityParty.
+          calls.push(api({
+            url: `/poorti/carrierConfigs`,
             method: "POST",
-            data: {
-              ...payload,
-              fromDate: DateTime.now().toMillis()
-            }
-          });
-          if (commonUtil.hasError(resp)) {
-            throw resp.data;
+            data: { productStoreId, carrierPartyId, facilityId: facility.facilityId }
+          }))
+          if (!facility.hasFacilityParty) {
+            facility.facilityPartyFromDate = DateTime.now().toMillis()
+            calls.push(api({
+              url: `/oms/facilities/${facility.facilityId}/parties`,
+              method: "POST",
+              data: {
+                facilityId: facility.facilityId,
+                partyId: carrierPartyId,
+                roleTypeId: "CARRIER",
+                fromDate: facility.facilityPartyFromDate
+              }
+            }))
           }
-          facility = { ...facility, ...payload, isChecked: true }
         }
 
-        if (!commonUtil.hasError(resp)) {
-          commonUtil.showToast(translate("Facility carrier association updated successfully."))
-          await this.updateCarrierFacilityState(facility)
-        } else {
-          throw resp.data;
+        const results = await Promise.all(calls)
+        if (results.some((resp: any) => commonUtil.hasError(resp))) {
+          throw results.find((resp: any) => commonUtil.hasError(resp))?.data
         }
+
+        const currentCarrier = JSON.parse(JSON.stringify(this.current))
+        const carrierConfigsByStore = currentCarrier.carrierConfigs || {}
+        const legacyFacilityParties = currentCarrier.legacyFacilityParties || {}
+
+        if (facility.isChecked) {
+          if (carrierConfigsByStore[productStoreId]) delete carrierConfigsByStore[productStoreId][facility.facilityId]
+          if (facility.hasFacilityParty) delete legacyFacilityParties[facility.facilityId]
+        } else {
+          const configResp = results[0]
+          if (!carrierConfigsByStore[productStoreId]) carrierConfigsByStore[productStoreId] = {}
+          carrierConfigsByStore[productStoreId][facility.facilityId] = configResp.data
+          if (!facility.hasFacilityParty) {
+            legacyFacilityParties[facility.facilityId] = { fromDate: facility.facilityPartyFromDate }
+          }
+        }
+
+        this.setCurrent({ ...currentCarrier, carrierConfigs: carrierConfigsByStore, legacyFacilityParties })
+        commonUtil.showToast(translate("Facility carrier association updated successfully."))
+        this.checkAssociatedCarrierFacilities()
       } catch (err) {
         commonUtil.showToast(translate("Failed to update facility carrier association."))
         logger.error(err)
@@ -734,8 +766,48 @@ export const useCarrierStore = defineStore("carrier", {
       this.setShipmentMethods(shipmentMethods)
       return shipmentMethodTypes
     },
+    async fetchCarrierConfigs(payload: any) {
+      let carrierConfigs = [] as any
+      let viewIndex = 0
+      let resp
+      let docCount = 0
+
+      try {
+        do {
+          resp = await api({
+            url: `/poorti/carrierConfigs`,
+            method: "GET",
+            params: {
+              carrierPartyId: payload.partyId,
+              pageIndex: viewIndex,
+              pageSize: 250
+            }
+          });
+
+          if (!commonUtil.hasError(resp)) {
+            carrierConfigs = [...carrierConfigs, ...resp.data]
+            docCount = resp.data.length
+            viewIndex++
+          } else {
+            docCount = 0
+          }
+        } while (docCount >= 250)
+
+        this.setCurrent({
+          ...this.current,
+          carrierConfigs: carrierConfigs.reduce((configsByStore: any, config: any) => {
+            if (!config.facilityId) return configsByStore
+            if (!configsByStore[config.productStoreId]) configsByStore[config.productStoreId] = {}
+            configsByStore[config.productStoreId][config.facilityId] = config
+            return configsByStore
+          }, {})
+        })
+      } catch (error) {
+        logger.error(error)
+      }
+    },
     async fetchCarrierFacilities() {
-      let currentCarrier = JSON.parse(JSON.stringify(this.current))
+      const partyId = this.current.partyId
       let carrierFacilities = [] as any
       let viewIndex = 0
       let resp
@@ -745,7 +817,7 @@ export const useCarrierStore = defineStore("carrier", {
         do {
           const params = {
             customParametersMap: {
-              partyId: currentCarrier.partyId,
+              partyId,
               pageIndex: viewIndex,
               pageSize: 250
             },
@@ -768,33 +840,37 @@ export const useCarrierStore = defineStore("carrier", {
           }
         } while (docCount >= 250)
 
-        const facilityInfo = carrierFacilities?.reduce((facilityDetail: any, facility: any) => {
-          facilityDetail[facility.facilityId] = facility
-          return facilityDetail
-        }, {})
-
-        let allFacilities = useAppProductStore().getAllFacilities
-        allFacilities = allFacilities.map((facility: any) => {
-          if (facilityInfo?.[facility.facilityId]) {
-            facility.fromDate = facilityInfo?.[facility.facilityId].fromDate
-            facility.isChecked = true
-          } else {
-            facility.isChecked = false
-          }
-          return facility
-        })
-
-        currentCarrier = {
-          ...currentCarrier,
-          facilities: allFacilities?.reduce((facilityDetail: any, facility: any) => {
-            facilityDetail[facility.facilityId] = facility
-            return facilityDetail
+        this.setCurrent({
+          ...this.current,
+          legacyFacilityParties: carrierFacilities.reduce((legacyFacilityParties: any, facilityParty: any) => {
+            legacyFacilityParties[facilityParty.facilityId] = { fromDate: facilityParty.fromDate }
+            return legacyFacilityParties
           }, {})
-        }
+        })
       } catch (error) {
         logger.error(error)
       }
-      this.setCurrent(currentCarrier)
+    },
+    checkAssociatedCarrierFacilities() {
+      const currentCarrier = this.current
+      const carrierConfigsByStore = currentCarrier.carrierConfigs || {}
+      const legacyFacilityParties = currentCarrier.legacyFacilityParties || {}
+      const productStores = useAppProductStore().getAllProductStores
+      const allFacilities = useAppProductStore().getAllFacilities
+      const carrierFacilitiesByProductStore = {} as any
+
+      productStores.forEach((productStore: any) => {
+        carrierFacilitiesByProductStore[productStore.productStoreId] = JSON.parse(JSON.stringify(allFacilities)).map((facility: any) => {
+          const config = carrierConfigsByStore[productStore.productStoreId]?.[facility.facilityId]
+          const legacy = legacyFacilityParties[facility.facilityId]
+          facility.isChecked = !!config || !!legacy
+          facility.carrierConfigId = config?.carrierConfigId || ""
+          facility.hasFacilityParty = !!legacy
+          facility.facilityPartyFromDate = legacy?.fromDate || ""
+          return facility
+        })
+      })
+      this.setCarrierFacilitiesByProductStore(carrierFacilitiesByProductStore)
     },
     async updateCarrierShipmentMethod(payload: any) {
       const { shipmentMethod, updatedData, messages } = payload
@@ -840,7 +916,54 @@ export const useCarrierStore = defineStore("carrier", {
         logger.error(messages.errorMessage, error)
       }
     },
-    async fetchFacilityCarriers() {
+    async fetchFacilityCarriersFromCarrierConfig() {
+      let carrierConfigs = [] as any
+      let viewIndex = 0
+      let resp
+      let docCount = 0
+      const productStoreId = useAppProductStore().getCurrentProductStore?.productStoreId
+      const currentFacilityId = useAppProductStore().getCurrentFacility?.facilityId
+
+      try {
+        do {
+          resp = await api({
+            url: `/poorti/carrierConfigs`,
+            method: "GET",
+            params: {
+              productStoreId,
+              pageIndex: viewIndex,
+              pageSize: 250
+            }
+          });
+
+          if (!commonUtil.hasError(resp)) {
+            carrierConfigs = [...carrierConfigs, ...resp.data]
+            docCount = resp.data.length
+            viewIndex++
+          } else {
+            docCount = 0
+          }
+        } while (docCount >= 250)
+      } catch (error) {
+        logger.error(error)
+      }
+
+      const configByCarrier = {} as any
+      carrierConfigs.forEach((config: any) => {
+        const isFacilitySpecific = config.facilityId === currentFacilityId
+        const isStoreDefault = !config.facilityId
+        if (!isFacilitySpecific && !isStoreDefault) return
+        if (!configByCarrier[config.carrierPartyId] || isFacilitySpecific) {
+          configByCarrier[config.carrierPartyId] = config
+        }
+      })
+
+      return Object.values(configByCarrier).map((config: any) => ({
+        partyId: config.carrierPartyId,
+        roleTypeId: "CARRIER"
+      })) as any
+    },
+    async fetchFacilityCarriersFromFacilityParty() {
       let facilityCarriers = [] as any
       let viewIndex = 0
       let resp
@@ -875,11 +998,54 @@ export const useCarrierStore = defineStore("carrier", {
       } catch (error) {
         logger.error(error)
       }
+
+      return facilityCarriers.map((carrier: any) => ({ partyId: carrier.partyId, roleTypeId: carrier.roleTypeId })) as any
+    },
+    async fetchFacilityCarriers() {
+      const [fromConfig, fromParty] = await Promise.all([
+        this.fetchFacilityCarriersFromCarrierConfig(),
+        this.fetchFacilityCarriersFromFacilityParty()
+      ])
+
+      let facilityCarriers = [...fromConfig, ...fromParty].reduce((deduped: any[], carrier: any) => {
+        if (!deduped.find((existing: any) => existing.partyId === carrier.partyId)) deduped.push(carrier)
+        return deduped
+      }, [])
+
       if (!facilityCarriers.find((facilityCarrier: any) => facilityCarrier.partyId === "_NA_")) {
         facilityCarriers = [...facilityCarriers, { partyId: "_NA_", groupName: "Default", roleTypeId: "CARRIER" }]
       }
 
+      let resp
       const carrierIds = facilityCarriers.map((carrier: any) => carrier.partyId)
+
+      try {
+        resp = await api({
+          url: `/oms/shippingGateways/carrierParties`,
+          method: "GET",
+          params: {
+            partyId: carrierIds,
+            partyId_op: "in",
+            fieldsToSelect: ["partyId", "groupName"],
+            pageSize: 250
+          }
+        });
+
+        if (!commonUtil.hasError(resp)) {
+          const groupNames = resp.data.reduce((names: any, party: any) => {
+            names[party.partyId] = party.groupName
+            return names
+          }, {})
+          facilityCarriers.forEach((carrier: any) => {
+            if (groupNames[carrier.partyId]) carrier.groupName = groupNames[carrier.partyId]
+          })
+        } else {
+          throw resp.data
+        }
+      } catch (error) {
+        logger.error(error)
+      }
+
       const trackingUrls = {} as any
       const logoUrls = {} as any
 
@@ -1025,11 +1191,6 @@ export const useCarrierStore = defineStore("carrier", {
     },
     clearShipmentMethodQuery() {
       this.setShipmentMethodQuery({ query: { showSelected: false } })
-    },
-    async updateCarrierFacilityState(payload: any) {
-      const currentCarrier = this.current
-      currentCarrier.facilities[payload.facilityId] = payload
-      this.setCurrent(currentCarrier)
     }
   },
   persist: false

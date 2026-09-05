@@ -33,9 +33,6 @@
         <ion-segment-button value="shipping-methods">
           <ion-label>{{ translate("Methods") }}</ion-label>
         </ion-segment-button>
-        <ion-segment-button value="facilities">
-          <ion-label>{{ translate("Facilities") }}</ion-label>
-        </ion-segment-button>
         <ion-segment-button v-for="(productStore, index) in productStores" :key="index" :value="productStore.productStoreId">
           <ion-label>{{ productStore.storeName ? productStore.storeName : productStore.productStoreId }}</ion-label>
         </ion-segment-button>
@@ -44,22 +41,6 @@
       <div class="segments" v-if="currentCarrier">
         <template v-if="selectedSegment === 'shipping-methods'">
           <ShipmentMethods />
-        </template>
-        <template v-else-if="selectedSegment === 'facilities'">
-          <section v-if="currentCarrier.facilities">
-            <ion-card v-for="(facility, index) in currentCarrier.facilities" :key="index">
-              <ion-card-header>
-                <div>
-                  <ion-card-title>{{ facility.facilityName }}</ion-card-title>
-                  <ion-card-subtitle>{{ facility.facilityId }}</ion-card-subtitle>
-                </div>
-                <ion-checkbox :checked="facility.isChecked" @click="updateCarrierFacilityAssociation($event, facility)" />
-              </ion-card-header>
-            </ion-card>
-          </section>
-          <div v-else class="empty-state">
-            <p>{{ translate('No data found') }}</p>
-          </div>
         </template>
         <template v-for="(productStore, index) in productStores" :key="index">
           <template v-if="selectedSegment === productStore.productStoreId">
@@ -90,6 +71,23 @@
                 </div>
               </div>
             </template>
+            <div v-else class="empty-state">
+              <p>{{ translate('No data found') }}</p>
+            </div>
+
+            <hr />
+            <h3 class="ion-padding-start">{{ translate('Facilities') }}</h3>
+            <section v-if="carrierFacilitiesByProductStore[productStore.productStoreId]?.length">
+              <ion-card v-for="(facility, index) in carrierFacilitiesByProductStore[productStore.productStoreId]" :key="index">
+                <ion-card-header>
+                  <div>
+                    <ion-card-title>{{ facility.facilityName }}</ion-card-title>
+                    <ion-card-subtitle>{{ facility.facilityId }}</ion-card-subtitle>
+                  </div>
+                  <ion-checkbox :checked="facility.isChecked" @click="updateCarrierFacilityAssociation($event, facility, productStore.productStoreId)" />
+                </ion-card-header>
+              </ion-card>
+            </section>
             <div v-else class="empty-state">
               <p>{{ translate('No data found') }}</p>
             </div>
@@ -127,6 +125,7 @@ const currentCarrier = computed(() => carrierStore.getCurrent);
 const productStores = computed(() => useAppProductStore().getAllProductStores);
 const shipmentMethods = computed(() => carrierStore.getShipmentMethods);
 const carrierShipmentMethodsByProductStore = computed(() => carrierStore.getCarrierShipmentMethodsByProductStore);
+const carrierFacilitiesByProductStore = computed(() => carrierStore.getCarrierFacilitiesByProductStore);
 const shipmentGatewayConfigs = computed(() => carrierStore.getShipmentGatewayConfigs);
 
 const getGatewayConfigDescription = (shipmentGatewayConfigId: string) => {
@@ -188,10 +187,10 @@ const openCreateShipmentMethodModal = async () => {
   return createShipmentMethodModal.present();
 };
 
-const updateCarrierFacilityAssociation = async (event: any, facility: any) => {
+const updateCarrierFacilityAssociation = async (event: any, facility: any, productStoreId: string) => {
   event.preventDefault();
   event.stopImmediatePropagation();
-  await carrierStore.updateCarrierFacilityAssociation(facility, currentCarrier.value.partyId);
+  await carrierStore.updateCarrierFacilityAssociation(facility, currentCarrier.value.partyId, productStoreId);
 };
 
 const updateShipmentGatewayConfigId = async (shipmentMethod: any) => {
@@ -259,11 +258,13 @@ onMounted(async () => {
     carrierStore.fetchShipmentMethodTypes(),
     useAppProductStore().fetchAllProductStores(),
     carrierStore.fetchProductStoreShipmentMethods({ partyId: route.params.partyId as string }),
+    carrierStore.fetchCarrierConfigs({ partyId: route.params.partyId as string }),
+    carrierStore.fetchCarrierFacilities(),
     useAppProductStore().fetchAllFacilities()
   ]);
   await carrierStore.checkAssociatedShipmentMethods();
   await carrierStore.checkAssociatedProductStoreShipmentMethods();
-  await carrierStore.fetchCarrierFacilities();
+  carrierStore.checkAssociatedCarrierFacilities();
   await carrierStore.fetchShipmentGatewayConfigs();
 
   emitter.emit("dismissLoader");
