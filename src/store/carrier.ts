@@ -16,6 +16,9 @@ interface CarrierState {
   facilityCarriers: any[]
   productStoreShipmentMethods: any[]
   shipmentGatewayConfigs: any
+  carrierFacilitiesByProductStore: Record<string, any[]>
+  facilitiesByProductStore: Record<string, any[]>
+  weightUoms: any[]
 }
 
 export const useCarrierStore = defineStore("carrier", {
@@ -30,7 +33,10 @@ export const useCarrierStore = defineStore("carrier", {
     carrierShipmentMethodsByProductStore: {},
     facilityCarriers: [],
     productStoreShipmentMethods: [],
-    shipmentGatewayConfigs: []
+    shipmentGatewayConfigs: [],
+    carrierFacilitiesByProductStore: {},
+    facilitiesByProductStore: {},
+    weightUoms: []
   }),
   getters: {
     getCarriers(state) {
@@ -70,6 +76,18 @@ export const useCarrierStore = defineStore("carrier", {
     },
     getShipmentGatewayConfigs(state) {
       return state.shipmentGatewayConfigs
+    },
+    getCarrierFacilitiesByProductStore(state) {
+      return state.carrierFacilitiesByProductStore
+    },
+    getCarrierConfigsByProductStore(state) {
+      return state.current.carrierConfigs || {}
+    },
+    getCarrierStoreDefaultConfigsByProductStore(state) {
+      return state.current.storeDefaultConfigs || {}
+    },
+    getWeightUoms(state) {
+      return state.weightUoms
     }
   },
   actions: {
@@ -106,6 +124,15 @@ export const useCarrierStore = defineStore("carrier", {
     },
     setShipmentGatewayConfigs(payload: any) {
       this.shipmentGatewayConfigs = payload
+    },
+    setCarrierFacilitiesByProductStore(payload: any) {
+      this.carrierFacilitiesByProductStore = payload
+    },
+    setFacilitiesByProductStore(payload: any) {
+      this.facilitiesByProductStore = payload
+    },
+    setWeightUoms(payload: any) {
+      this.weightUoms = payload
     },
     async createCarrier(payload: any) {
       try {
@@ -1030,6 +1057,166 @@ export const useCarrierStore = defineStore("carrier", {
       const currentCarrier = this.current
       currentCarrier.facilities[payload.facilityId] = payload
       this.setCurrent(currentCarrier)
+    },
+    async fetchCarrierConfigs(payload: any) {
+      let carrierConfigs = [] as any
+      let viewIndex = 0
+      let resp
+      let docCount = 0
+
+      try {
+        do {
+          resp = await api({
+            url: `/poorti/carrierConfigs`,
+            method: "GET",
+            params: {
+              carrierPartyId: payload.partyId,
+              pageIndex: viewIndex,
+              pageSize: 250
+            }
+          });
+
+          if (!commonUtil.hasError(resp)) {
+            carrierConfigs = [...carrierConfigs, ...resp.data]
+            docCount = resp.data.length
+            viewIndex++
+          } else {
+            docCount = 0
+          }
+        } while (docCount >= 250)
+
+        this.setCurrent({
+          ...this.current,
+          carrierConfigs: carrierConfigs.reduce((configsByStore: any, config: any) => {
+            if (!config.facilityId) return configsByStore
+            if (!configsByStore[config.productStoreId]) configsByStore[config.productStoreId] = {}
+            configsByStore[config.productStoreId][config.facilityId] = config
+            return configsByStore
+          }, {}),
+          storeDefaultConfigs: carrierConfigs.reduce((defaultsByStore: any, config: any) => {
+            if (config.facilityId) return defaultsByStore
+            defaultsByStore[config.productStoreId] = config
+            return defaultsByStore
+          }, {})
+        })
+      } catch (error) {
+        logger.error(error)
+      }
+    },
+    async fetchFacilitiesByProductStore(productStores: any[]) {
+      const facilitiesByProductStore = {} as any
+      await Promise.all(productStores.map(async (productStore: any) => {
+        facilitiesByProductStore[productStore.productStoreId] = await useAppProductStore().fetchProductStoreFacilities(productStore.productStoreId)
+      }))
+      this.setFacilitiesByProductStore(facilitiesByProductStore)
+    },
+    checkAssociatedCarrierConfigFacilities() {
+      const carrierConfigsByStore = this.current.carrierConfigs || {}
+      const productStores = useAppProductStore().getAllProductStores
+      const carrierFacilitiesByProductStore = {} as any
+
+      productStores.forEach((productStore: any) => {
+        const storeFacilities = this.facilitiesByProductStore[productStore.productStoreId] || []
+        carrierFacilitiesByProductStore[productStore.productStoreId] = JSON.parse(JSON.stringify(storeFacilities)).map((facility: any) => {
+          const config = carrierConfigsByStore[productStore.productStoreId]?.[facility.facilityId]
+          facility.isChecked = !!config
+          facility.carrierConfigId = config?.carrierConfigId || ""
+          return facility
+        })
+      })
+      this.setCarrierFacilitiesByProductStore(carrierFacilitiesByProductStore)
+    },
+    async updateProductStoreCarrierFacilityAssociation(facility: any, carrierPartyId: string, productStoreId: string) {
+      try {
+        let resp: any
+
+        if (facility.isChecked) {
+          resp = await api({
+            url: `/poorti/carrierConfigs/${facility.carrierConfigId}`,
+            method: "DELETE"
+          })
+          if (commonUtil.hasError(resp)) throw resp.data
+        } else {
+          const storeDefault = this.current.storeDefaultConfigs?.[productStoreId]
+          const clonedFields = storeDefault
+            ? (({ carrierConfigId: _id, facilityId: _f, productStoreId: _p, carrierPartyId: _c, ...rest }) => rest)(storeDefault)
+            : {}
+
+          resp = await api({
+            url: `/poorti/carrierConfigs`,
+            method: "POST",
+            data: { ...clonedFields, productStoreId, carrierPartyId, facilityId: facility.facilityId }
+          })
+          if (commonUtil.hasError(resp)) throw resp.data
+        }
+
+        commonUtil.showToast(translate("Facility carrier association updated successfully."))
+        await this.fetchCarrierConfigs({ partyId: carrierPartyId })
+        this.checkAssociatedCarrierConfigFacilities()
+      } catch (err) {
+        commonUtil.showToast(translate("Failed to update facility carrier association."))
+        logger.error(err)
+      }
+    },
+    async fetchStoreDefaultCarrierConfig(productStoreId: string, carrierPartyId: string) {
+      try {
+        const resp = await api({
+          url: `/poorti/carrierConfigs`,
+          method: "GET",
+          params: { productStoreId, carrierPartyId, pageSize: 250 }
+        })
+        if (!commonUtil.hasError(resp)) {
+          return resp.data.find((config: any) => !config.facilityId)
+        }
+      } catch (err) {
+        logger.error("Failed to fetch store default carrier configuration", err)
+      }
+      return undefined
+    },
+    async saveCarrierConfig(payload: any) {
+      try {
+        let { carrierConfigId } = payload
+
+        if (!carrierConfigId && !payload.facilityId) {
+          const existing = await this.fetchStoreDefaultCarrierConfig(payload.productStoreId, payload.carrierPartyId)
+          if (existing) {
+            carrierConfigId = existing.carrierConfigId
+            payload = { ...payload, carrierConfigId }
+          }
+        }
+
+        const resp = await api({
+          url: carrierConfigId ? `/poorti/carrierConfigs/${carrierConfigId}` : `/poorti/carrierConfigs`,
+          method: carrierConfigId ? "PUT" : "POST",
+          data: payload
+        })
+
+        if (!commonUtil.hasError(resp)) {
+          return Promise.resolve(resp.data)
+        } else {
+          throw resp.data
+        }
+      } catch (err) {
+        logger.error("Failed to save carrier configuration", err)
+        return Promise.reject(err)
+      }
+    },
+    async fetchWeightUoms() {
+      try {
+        const resp = await api({
+          url: `/admin/uoms`,
+          method: "GET",
+          params: { uomTypeEnumId: "UT_WEIGHT_MEASURE", pageSize: 250 }
+        })
+
+        if (!commonUtil.hasError(resp)) {
+          this.setWeightUoms(resp.data)
+        } else {
+          throw resp.data
+        }
+      } catch (err) {
+        logger.error("Failed to fetch weight UOMs", err)
+      }
     }
   },
   persist: false
