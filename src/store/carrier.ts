@@ -867,7 +867,54 @@ export const useCarrierStore = defineStore("carrier", {
         logger.error(messages.errorMessage, error)
       }
     },
-    async fetchFacilityCarriers() {
+    async fetchFacilityCarriersFromCarrierConfig() {
+      let carrierConfigs = [] as any
+      let viewIndex = 0
+      let resp
+      let docCount = 0
+      const productStoreId = useAppProductStore().getCurrentProductStore?.productStoreId
+      const currentFacilityId = useAppProductStore().getCurrentFacility?.facilityId
+
+      try {
+        do {
+          resp = await api({
+            url: `/poorti/carrierConfigs`,
+            method: "GET",
+            params: {
+              productStoreId,
+              pageIndex: viewIndex,
+              pageSize: 250
+            }
+          });
+
+          if (!commonUtil.hasError(resp)) {
+            carrierConfigs = [...carrierConfigs, ...resp.data]
+            docCount = resp.data.length
+            viewIndex++
+          } else {
+            docCount = 0
+          }
+        } while (docCount >= 250)
+      } catch (error) {
+        logger.error(error)
+      }
+
+      const configByCarrier = {} as any
+      carrierConfigs.forEach((config: any) => {
+        const isFacilitySpecific = config.facilityId === currentFacilityId
+        const isStoreDefault = !config.facilityId
+        if (!isFacilitySpecific && !isStoreDefault) return
+        if (!configByCarrier[config.carrierPartyId] || isFacilitySpecific) {
+          configByCarrier[config.carrierPartyId] = config
+        }
+      })
+
+      return Object.values(configByCarrier).map((config: any) => ({
+        partyId: config.carrierPartyId,
+        roleTypeId: "CARRIER"
+      })) as any
+    },
+    async fetchFacilityCarriersFromFacilityParty() {
       let facilityCarriers = [] as any
       let viewIndex = 0
       let resp
@@ -902,16 +949,66 @@ export const useCarrierStore = defineStore("carrier", {
       } catch (error) {
         logger.error(error)
       }
+
+      return facilityCarriers
+    },
+    async fetchFacilityCarriers() {
+      // Carriers come from two sources: the newer, ShippingCarrierConfig and the legacy,
+      // FacilityParty data. Not every client has migrated to ShippingCarrierConfig yet,
+      // so both are always queried and merged.
+      const [fromFacilityParty, fromCarrierConfig] = await Promise.all([
+        this.fetchFacilityCarriersFromFacilityParty(),
+        this.fetchFacilityCarriersFromCarrierConfig()
+      ])
+
+      let facilityCarriers = [...fromFacilityParty, ...fromCarrierConfig].reduce((deduped: any[], carrier: any) => {
+        if (!deduped.find((existing: any) => existing.partyId === carrier.partyId)) deduped.push(carrier)
+        return deduped
+      }, [])
+
       if (!facilityCarriers.find((facilityCarrier: any) => facilityCarrier.partyId === "_NA_")) {
         facilityCarriers = [...facilityCarriers, { partyId: "_NA_", groupName: "Default", roleTypeId: "CARRIER" }]
       }
 
       const carrierIds = facilityCarriers.map((carrier: any) => carrier.partyId)
+
+      // Carriers sourced only from ShippingCarrierConfig don't carry a display name (unlike
+      // FacilityParty-sourced rows) so fetch groupName where it is missing
+      const carrierIdsMissingName = facilityCarriers.filter((carrier: any) => !carrier.groupName).map((carrier: any) => carrier.partyId)
+      if (carrierIdsMissingName.length) {
+        try {
+          const resp = await api({
+            url: `/oms/shippingGateways/carrierParties`,
+            method: "GET",
+            params: {
+              partyId: carrierIdsMissingName,
+              partyId_op: "in",
+              fieldsToSelect: ["partyId", "groupName"],
+              pageSize: 250
+            }
+          });
+
+          if (!commonUtil.hasError(resp)) {
+            const groupNames = resp.data.reduce((names: any, party: any) => {
+              names[party.partyId] = party.groupName
+              return names
+            }, {})
+            facilityCarriers.forEach((carrier: any) => {
+              if (groupNames[carrier.partyId]) carrier.groupName = groupNames[carrier.partyId]
+            })
+          } else {
+            throw resp.data
+          }
+        } catch (error) {
+          logger.error(error)
+        }
+      }
+
       const trackingUrls = {} as any
       const logoUrls = {} as any
 
       try {
-        resp = await api({
+        const resp = await api({
           url: `/admin/systemProperties`,
           method: "GET",
           params: {
@@ -1132,8 +1229,9 @@ export const useCarrierStore = defineStore("carrier", {
 
         if (facility.isChecked) {
           resp = await api({
-            url: `/poorti/carrierConfigs/${facility.carrierConfigId}`,
-            method: "DELETE"
+            url: `/poorti/carrierConfigs`,
+            method: "DELETE",
+            data: { carrierConfigId: facility.carrierConfigId }
           })
           if (commonUtil.hasError(resp)) throw resp.data
         } else {
@@ -1186,7 +1284,7 @@ export const useCarrierStore = defineStore("carrier", {
         }
 
         const resp = await api({
-          url: carrierConfigId ? `/poorti/carrierConfigs/${carrierConfigId}` : `/poorti/carrierConfigs`,
+          url: `/poorti/carrierConfigs`,
           method: carrierConfigId ? "PUT" : "POST",
           data: payload
         })
