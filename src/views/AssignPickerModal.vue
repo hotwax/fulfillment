@@ -172,6 +172,7 @@ const findPickers = async () => {
         qf: "firstName lastName groupName partyId externalId",
         sort: "firstName asc"
       },
+      query,
       filter: ["docType:EMPLOYEE", "statusId:PARTY_ENABLED", "WAREHOUSE_PICKER_role:true"]
     }
   };
