@@ -38,7 +38,7 @@
         <ion-label>{{ translate("Manual tracking details") }}</ion-label>
       </ion-segment-button>
       <ion-segment-button value="reject-order">
-        <ion-label>{{ translate("Reject order") }}</ion-label>
+        <ion-label>{{ translate("Reject") }}</ion-label>
       </ion-segment-button>
     </ion-segment>
     <div class="segments">
