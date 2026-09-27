@@ -36,7 +36,6 @@ pinia.use(piniaPluginPersistedstate)
 
 export const i18n = createDxpI18n(localeMessages)
 
-
 const app = createApp(App)
   .use(IonicVue, {
     mode: 'md',
@@ -66,7 +65,13 @@ initialiseConfig({
   router: router
 })
 
-router.isReady().then(() => {
+router.isReady().then(async () => {
   app.directive('image-preview', imagePreview)
+
+  if (import.meta.env.DEV) {
+    const { tryDevAutoLogin } = await import('@common/dev/autoLogin');
+    await tryDevAutoLogin();
+  }
+
   app.mount('#app');
 });
