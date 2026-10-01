@@ -13,12 +13,10 @@ import manifest from "./manifest.json"
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '')
-  let appBuild = ''
-  try {
-    appBuild = env.VITE_APP_VERSION_CONFIG && env.VITE_APP_VERSION_CONFIG !== "undefined" ? JSON.parse(env.VITE_APP_VERSION_CONFIG).buildVersion : ''
-  } catch (err) {
-    console.warn("Failed to parse VITE_APP_VERSION_CONFIG:", err)
-  }
+  const appVersionConfig = env.VITE_APP_VERSION_CONFIG
+  const appBuild = appVersionConfig && appVersionConfig !== 'undefined'
+    ? JSON.parse(appVersionConfig).buildVersion || ''
+    : ''
   return {
   // A version build (buildVersion vX.Y.Z in VITE_APP_VERSION_CONFIG) is self-contained under /vX.Y.Z/; an empty buildVersion is the root bootstrap.
   base: appBuild ? `/${appBuild}/` : '/',
