@@ -45,12 +45,15 @@ const title = computed(() => {
   return "Result Size";
 });
 
-const viewSize = computed(() => {
+const storedViewSize = computed(() => {
   if (route.name === "OpenOrders") return useOrderStore().getOpenOrders.query.viewSize;
   if (route.name === "InProgress") return useOrderStore().getInProgressOrders.query.viewSize;
   if (route.name === "Completed") return useOrderStore().getCompletedOrders.query.viewSize;
   return 0;
 });
+
+// The default size comes from the env as text ("10") while the options are numbers, so compare as numbers.
+const viewSize = computed(() => Number(storedViewSize.value) || 0);
 
 const total = computed(() => {
   if(props.total !== undefined) {return props.total;}
