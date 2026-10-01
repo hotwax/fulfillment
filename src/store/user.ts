@@ -12,6 +12,7 @@ import { useStockStore } from "@/store/stock";
 import { useCarrierStore } from "@/store/carrier";
 import { useOrderLookupStore } from "@/store/orderLookup";
 import { useProductStore as useProduct } from "@/store/product";
+import { startLiveOrdersSync, stopLiveOrdersSync } from "@/db/liveOrdersSync";
 
 interface UserState {
   permissions: any[]
@@ -263,6 +264,9 @@ export const useUserStore = defineStore("user", {
             commonUtil.showToast(translate("Redirecting to home page due to incorrect information being passed."))
           }
         }
+
+        // Not awaited: the first sync fills the local orders while the app opens.
+        void startLiveOrdersSync(productStore.getFacilities)
       } catch (error: any) {
         return Promise.reject(error);
       }
@@ -283,6 +287,7 @@ export const useUserStore = defineStore("user", {
       }
     },
     async postLogout() {
+      await stopLiveOrdersSync();
       useNotificationStore().clearNotificationState();
       useCarrierStore().$reset();
       useOrderStore().$reset();

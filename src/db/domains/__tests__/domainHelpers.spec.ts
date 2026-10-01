@@ -1,0 +1,87 @@
+import { describe, expect, it } from "vitest";
+import { mergeProductDocs } from "@/db/domains/productsDomain";
+import { changedRows, chunk, hydrationOrder, runWithConcurrency } from "@/db/domains/rowSync";
+
+describe("mergeProductDocs", () => {
+  it("keeps one record per product, preferring the fullest copy and unioning tags and categories", () => {
+    const full = { productId: "10040", productName: "XS / Black", productFeatures: ["Size/XS", "Color/Black"], tags: ["Men", "Top"], productCategories: ["BROWSE_ROOT"], productStoreIds: ["STORE"] };
+    const thin = { productId: "10040", productName: "XS / Black", productFeatures: ["SIZE/XS", "COLOR/Black"], tags: ["Sale"] };
+
+    const merged = mergeProductDocs([thin, full]);
+
+    expect(merged).toHaveLength(1);
+    expect(merged[0].productFeatures).toEqual(["Size/XS", "Color/Black"]);
+    expect(merged[0].productStoreIds).toEqual(["STORE"]);
+    expect(merged[0].tags).toEqual(["Sale", "Men", "Top"]);
+    expect(merged[0].productCategories).toEqual(["BROWSE_ROOT"]);
+  });
+
+  it("fills a gap in the fullest copy from another copy", () => {
+    const merged = mergeProductDocs([
+      { productId: "1", productName: "Tee", tags: ["Men"], productCategories: ["T-Shirt"], mainImageUrl: "" },
+      { productId: "1", mainImageUrl: "https://cdn.example/tee.png" }
+    ]);
+    expect(merged[0].mainImageUrl).toBe("https://cdn.example/tee.png");
+  });
+
+  it("drops records without a product ID", () => {
+    expect(mergeProductDocs([{ productName: "No ID" }, { productId: "2" }])).toEqual([{ productId: "2" }]);
+  });
+});
+
+describe("changedRows", () => {
+  const row = (key: string, raw: any) => ({ orderKey: key, raw, syncedAt: 1 });
+
+  it("returns only rows that are new or whose server record changed", () => {
+    const existing = new Map([
+      ["A-1", row("A-1", { orderId: "A", itemCount: 1 })],
+      ["B-1", row("B-1", { orderId: "B", itemCount: 2 })]
+    ]);
+    const fresh = [
+      row("A-1", { orderId: "A", itemCount: 1 }),
+      row("B-1", { orderId: "B", itemCount: 3 }),
+      row("C-1", { orderId: "C", itemCount: 1 })
+    ];
+    expect(changedRows(fresh, existing, "orderKey").map((r) => r.orderKey)).toEqual(["B-1", "C-1"]);
+  });
+
+  it("returns nothing when the server set is unchanged", () => {
+    const existing = new Map([["A-1", row("A-1", { orderId: "A" })]]);
+    expect(changedRows([row("A-1", { orderId: "A" })], existing, "orderKey")).toEqual([]);
+  });
+});
+
+describe("chunk and runWithConcurrency", () => {
+  it("splits into fixed-size batches", () => {
+    expect(chunk([1, 2, 3, 4, 5], 2)).toEqual([[1, 2], [3, 4], [5]]);
+  });
+
+  it("runs every task, never more than the limit at once, and keeps going after a failure", async () => {
+    let running = 0;
+    let peak = 0;
+    const done: number[] = [];
+    await runWithConcurrency([1, 2, 3, 4, 5, 6, 7], 3, async (n) => {
+      running++;
+      peak = Math.max(peak, running);
+      await new Promise((resolve) => setTimeout(resolve, 5));
+      running--;
+      if(n === 4) {throw new Error("boom");}
+      done.push(n);
+    });
+    expect(peak).toBeLessThanOrEqual(3);
+    expect(done.sort()).toEqual([1, 2, 3, 5, 6, 7]);
+  });
+});
+
+describe("hydrationOrder", () => {
+  it("interleaves facilities, oldest first within each, so every facility's top orders come first", () => {
+    const orders = [
+      { orderKey: "B-new", facilityId: "B", orderDate: 30 },
+      { orderKey: "A-old", facilityId: "A", orderDate: 10 },
+      { orderKey: "A-new", facilityId: "A", orderDate: 40 },
+      { orderKey: "B-old", facilityId: "B", orderDate: 20 },
+      { orderKey: "A-mid", facilityId: "A", orderDate: 25 }
+    ];
+    expect(hydrationOrder(orders).map((order) => order.orderKey)).toEqual(["A-old", "B-old", "A-mid", "B-new", "A-new"]);
+  });
+});

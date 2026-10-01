@@ -103,6 +103,20 @@
           </ion-item>
         </ion-card>
 
+        <ion-card>
+          <ion-card-header>
+            <ion-card-title>
+              {{ translate("Open order filters") }}
+            </ion-card-title>
+          </ion-card-header>
+          <ion-card-content>
+            {{ translate("Choose which filters appear on the Open page. Applies to this device.") }}
+          </ion-card-content>
+          <ion-item v-for="dimension in OPEN_ORDER_FILTER_DIMENSIONS" :key="dimension.id" lines="none">
+            <ion-toggle label-placement="start" :checked="deviceSettings.openOrderFilterDimensions.includes(dimension.id)" @ionChange="setOpenOrderFilterDimension(dimension.id, $event.detail.checked)">{{ translate(dimension.label) }}</ion-toggle>
+          </ion-item>
+        </ion-card>
+
         <ion-card v-if="notificationPrefs.length">
           <ion-card-header>
             <ion-card-title>
@@ -202,6 +216,8 @@ import { useOrderStore } from "@/store/order";
 import router from "@/router";
 import { firebaseUtil } from "@/utils/firebaseUtil"
 import Actions from "@/authorization/actions"
+import { deviceSettings, loadDeviceSettings, setOpenOrderFilterDimension } from "@/db/deviceSettings"
+import { OPEN_ORDER_FILTER_DIMENSIONS } from "@/utils/openOrderFilters"
 
 const userStore = useUserStore();
 
@@ -625,7 +641,7 @@ const setBarcodeIdentificationPref = async (value: string) => {
 };
 
 onIonViewWillEnter(async () => {
-  Promise.all([getCurrentFacilityDetails(), getFacilityOrderCount(), getEcomInvStatus()]);
+  Promise.all([getCurrentFacilityDetails(), getFacilityOrderCount(), getEcomInvStatus(), loadDeviceSettings()]);
 
   const productStore = useProductStore();
   const notificationStore = useNotificationStore();

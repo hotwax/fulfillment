@@ -53,6 +53,7 @@ import { useProductStore } from "@/store/productStore";
 import router from './router';
 import { firebaseUtil } from "@/utils/firebaseUtil";
 import { useRegisterSW } from 'virtual:pwa-register/vue'
+import { startLiveOrdersSync, syncMasterFacilities } from "@/db/liveOrdersSync";
 
 const { needRefresh, updateServiceWorker } = useRegisterSW()
 
@@ -130,12 +131,20 @@ onMounted(async () => {
   const currentProductStore: any = useProductStore().getCurrentProductStore;
 
     if (useAuth().isAuthenticated.value && currentProductStore?.productStoreId) {
+      // A restored session skips postLogin, so the live order sync starts here too.
+      void startLiveOrdersSync(useProductStore().getFacilities);
+
       await useProductStore().fetchProductStoreSettings(currentProductStore.productStoreId).catch((error) => logger.error(error));
 
       if (allNotificationPrefs.value?.length) {
         await firebaseUtil.initialiseFirebaseMessaging();
       }
     }
+});
+
+// Keep the facility master list in IndexedDB in step with the facilities the app resolved.
+watch(() => useProductStore().getFacilities?.map((facility: any) => facility.facilityId).join(","), () => {
+  void syncMasterFacilities(useProductStore().getFacilities);
 });
 
 onUnmounted(() => {

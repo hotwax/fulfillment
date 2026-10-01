@@ -5,125 +5,151 @@
     <ion-header :translucent="true">
       <ion-toolbar>
         <ion-menu-button menu="start" slot="start" />
-        <ion-title v-if="!openOrders.total">{{ openOrders.total }} {{ translate('orders') }}</ion-title>
-        <ion-title v-else>{{ openOrders.query.viewSize }} {{ translate('of') }} {{ openOrders.total }} {{ translate('orders') }}</ion-title>
+        <template v-if="isLive">
+          <ion-title v-if="!liveFilteredOrders.length">{{ liveFilteredOrders.length }} {{ translate('orders') }}</ion-title>
+          <ion-title v-else>{{ displayedOrders.length }} {{ translate('of') }} {{ liveFilteredOrders.length }} {{ translate('orders') }}</ion-title>
+        </template>
+        <template v-else>
+          <ion-title v-if="!openOrders.total">{{ openOrders.total }} {{ translate('orders') }}</ion-title>
+          <ion-title v-else>{{ openOrders.query.viewSize }} {{ translate('of') }} {{ openOrders.total }} {{ translate('orders') }}</ion-title>
+        </template>
 
         <ion-buttons slot="end">
           <ion-button @click="viewNotifications()">
             <ion-icon slot="icon-only" :icon="notificationsOutline" :color="(unreadNotificationsStatus && notifications.length) ? 'primary' : ''" />
           </ion-button>
-          <ion-button :disabled="!userStore.hasPermission(Actions.APP_RECYCLE_ORDER) || !openOrders.total || isRejecting" fill="clear" color="danger" @click="recycleOutstandingOrders()">
+          <ion-button :disabled="!userStore.hasPermission(Actions.APP_RECYCLE_ORDER) || !ordersTotal || isRejecting" fill="clear" color="danger" @click="recycleOutstandingOrders()">
             {{ translate("Reject all") }}
           </ion-button>
-          <ion-menu-button menu="view-size-selector-open" :disabled="!openOrders.total">
+          <ion-menu-button menu="view-size-selector-open" :disabled="!ordersTotal">
             <ion-icon :icon="optionsOutline" />
           </ion-menu-button>
         </ion-buttons>
       </ion-toolbar>
     </ion-header>
 
-    <ion-content ref="contentRef" :scroll-events="true" @ionScroll="enableScrolling()" id="view-size-selector">
-      <ion-searchbar class="searchbar" :value="openOrders.query.queryString" :placeholder="translate('Search orders')" @keyup.enter="updateQueryString($event.target.value)" />
-      <div class="filters">
-        <ion-item lines="none" v-for="method in shipmentMethods" :key="method.val">
-          <ion-checkbox label-placement="end" :checked="openOrders.query.selectedShipmentMethods.includes(method.val)" @ionChange="updateSelectedShipmentMethods(method.val)">
-            <ion-label>
-              {{ getShipmentMethodDesc(method.val) }}
-              <p>{{ method.ordersCount }} {{ translate("orders") }}, {{ method.count }} {{ translate("items") }}</p>
-            </ion-label>
-          </ion-checkbox>
-        </ion-item>
-      </div>
-      <Component :is="productCategoryFilterExt" :orderQuery="openOrders.query" :currentFacility="currentFacility" :currentProductStore="currentProductStore" @updateOpenQuery="updateOpenQuery" />
-      <div v-if="openOrders.total">
+    <ion-content ref="contentRef" :scroll-events="true" @ionScroll="onContentScroll($event)" id="view-size-selector">
+      <template v-if="isLive">
+        <ion-searchbar class="searchbar" :value="liveQuery" :placeholder="translate('Search orders')" :debounce="200" @ionInput="liveQuery = $event.detail.value ?? ''" />
+        <template v-for="dimension in filterableDimensions" :key="dimension.id">
+          <div class="filters">
+            <ion-item lines="none" v-for="facet in liveFacets[dimension.id]" :key="facet.value">
+              <ion-checkbox label-placement="end" :checked="isFilterSelected(dimension.id, facet.value)" @ionChange="toggleFilter(dimension.id, facet.value)">
+                <ion-label>
+                  {{ filterValueLabel(dimension.id, facet.value) }}
+                  <p>{{ facet.orderCount }} {{ translate("orders") }}, {{ facet.itemCount }} {{ translate("items") }}</p>
+                </ion-label>
+              </ion-checkbox>
+            </ion-item>
+          </div>
+        </template>
+      </template>
+      <template v-else>
+        <ion-searchbar class="searchbar" :value="openOrders.query.queryString" :placeholder="translate('Search orders')" @keyup.enter="updateQueryString($event.target.value)" />
+        <div class="filters">
+          <ion-item lines="none" v-for="method in shipmentMethods" :key="method.val">
+            <ion-checkbox label-placement="end" :checked="openOrders.query.selectedShipmentMethods.includes(method.val)" @ionChange="updateSelectedShipmentMethods(method.val)">
+              <ion-label>
+                {{ shipmentMethodLabel(method.val) }}
+                <p>{{ method.ordersCount }} {{ translate("orders") }}, {{ method.count }} {{ translate("items") }}</p>
+              </ion-label>
+            </ion-checkbox>
+          </ion-item>
+        </div>
+        <Component :is="productCategoryFilterExt" :orderQuery="openOrders.query" :currentFacility="currentFacility" :currentProductStore="currentProductStore" @updateOpenQuery="updateOpenQuery" />
+      </template>
+
+      <div v-if="isLive ? displayedOrders.length : openOrders.total">
         <div class="results">
           <ion-button class="bulk-action desktop-only" size="large" @click="assignPickers">{{ translate("Print Picklist") }}</ion-button>
 
-          <ion-card class="order" v-for="(order, index) in getOpenOrders()" :key="index">
-            <div class="order-header">
-              <div class="order-primary-info">
-                <ion-label>
-                  <strong>{{ order.customerName }}</strong>
-                  <p>{{ translate("Ordered") }} {{ commonUtil.formatUtcDate(order.orderDate, userStore.currentTimeZoneId, 'dd MMMM yyyy hh:mm a ZZZZ') }}</p>
-                </ion-label>
-              </div>
-
-              <div class="order-tags">
-                <ion-chip @click.stop="orderActionsPopover(order, $event)" outline>
-                  <ion-icon :icon="pricetagOutline" />
-                  <ion-label>{{ order.orderName }}</ion-label>
-                  <ion-icon :icon="caretDownOutline" />
-                </ion-chip>
-              </div>
-
-              <div class="order-metadata">
-                <ion-label>
-                  {{ getShipmentMethodDesc(order.shipmentMethodTypeId) }}
-                  <p v-if="order.reservedDatetime">{{ translate("Last brokered") }} {{ commonUtil.formatUtcDate(order.reservedDatetime, userStore.currentTimeZoneId, 'dd MMMM yyyy hh:mm a ZZZZ') }}</p>
-                </ion-label>
-              </div>
-            </div>
-
-            <div v-for="item in order.items" :key="order.orderId + item.orderItemSeqId" class="order-item">
-              <div class="product-info">
-                <ion-item lines="none">
-                  <ion-thumbnail slot="start" v-image-preview="getProduct(item.productId)" :key="getProduct(item.productId)?.mainImageUrl">
-                    <DxpShopifyImg :src="getProduct(item.productId).mainImageUrl" :key="getProduct(item.productId).mainImageUrl" size="small" />
-                  </ion-thumbnail>
+          <TransitionGroup tag="div" name="order" class="order-list" :css="animateCards">
+            <ion-card class="order" v-for="(order, index) in displayedOrders" :key="isLive ? order.orderKey : index" :data-order-key="isLive ? order.orderKey : undefined">
+              <div class="order-header">
+                <div class="order-primary-info">
                   <ion-label>
-                    <p class="overline">{{ commonUtil.getProductIdentificationValue(productIdentificationPref.secondaryId, getProduct(item.productId)) }}</p>
-                    <div>
-                      {{ commonUtil.getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(item.productId)) ? commonUtil.getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(item.productId)) : getProduct(item.productId).productName }}
-                      <ion-badge class="kit-badge" color="dark" v-if="orderUtil.isKit(item)">{{ translate("Kit") }}</ion-badge>
-                    </div>
-                    <p>{{ commonUtil.getFeatures(getProduct(item.productId).productFeatures) }}</p>
+                    <strong>{{ order.customerName }}</strong>
+                    <p>{{ translate("Ordered") }} {{ commonUtil.formatUtcDate(order.orderDate, userStore.currentTimeZoneId, 'dd MMMM yyyy hh:mm a ZZZZ') }}</p>
                   </ion-label>
-                </ion-item>
+                </div>
+
+                <div class="order-tags">
+                  <ion-chip @click.stop="orderActionsPopover(order, $event)" outline>
+                    <ion-icon :icon="pricetagOutline" />
+                    <ion-label>{{ order.orderName }}</ion-label>
+                    <ion-icon :icon="caretDownOutline" />
+                  </ion-chip>
+                </div>
+
+                <div class="order-metadata">
+                  <ion-label>
+                    {{ shipmentMethodLabel(order.shipmentMethodTypeId) }}
+                    <p v-if="order.reservedDatetime">{{ translate("Last brokered") }} {{ commonUtil.formatUtcDate(order.reservedDatetime, userStore.currentTimeZoneId, 'dd MMMM yyyy hh:mm a ZZZZ') }}</p>
+                  </ion-label>
+                </div>
               </div>
-              <div class="product-metadata">
-                <ion-button v-if="orderUtil.isKit(item)" fill="clear" size="small" @click.stop="fetchKitComponents(item)">
-                  <ion-icon v-if="item.showKitComponents" color="medium" slot="icon-only" :icon="chevronUpOutline" />
-                  <ion-icon v-else color="medium" slot="icon-only" :icon="listOutline" />
-                </ion-button>
-                <ion-note v-if="getProductStock(item.productId).qoh">{{ getProductStock(item.productId).qoh }} {{ translate('pieces in stock') }}</ion-note>
-                <ion-button fill="clear" v-else size="small" @click.stop="fetchProductStock(item.productId)">
-                  <ion-icon color="medium" slot="icon-only" :icon="cubeOutline" />
-                </ion-button>
-              </div>
-              <div v-if="item.showKitComponents" class="kit-components">
-                <template v-if="!getProduct(item.productId)?.productComponents">
+
+              <div v-for="item in order.items" :key="order.orderId + item.orderItemSeqId" class="order-item">
+                <div class="product-info">
                   <ion-item lines="none">
-                    <ion-skeleton-text animated style="height: 80%;" />
-                  </ion-item>
-                  <ion-item lines="none">
-                    <ion-skeleton-text animated style="height: 80%;" />
-                  </ion-item>
-                </template>
-                <template v-else>
-                  <ion-item v-for="(productComponent, index) in getProduct(item.productId).productComponents" :key="index" lines="none">
-                    <ion-thumbnail slot="start" v-image-preview="getProduct(productComponent.productIdTo)" :key="getProduct(productComponent.productIdTo)?.mainImageUrl">
-                      <DxpShopifyImg :src="getProduct(productComponent.productIdTo).mainImageUrl" :key="getProduct(productComponent.productIdTo).mainImageUrl" size="small" />
+                    <ion-thumbnail slot="start" v-image-preview="getProduct(item.productId)" :key="getProduct(item.productId)?.mainImageUrl">
+                      <DxpShopifyImg :src="getProduct(item.productId).mainImageUrl" :key="getProduct(item.productId).mainImageUrl" size="small" />
                     </ion-thumbnail>
                     <ion-label>
-                      <p class="overline">{{ commonUtil.getProductIdentificationValue(productIdentificationPref.secondaryId, getProduct(productComponent.productIdTo)) }}</p>
-                      {{ commonUtil.getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(productComponent.productIdTo)) ? commonUtil.getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(productComponent.productIdTo)) : productComponent.productIdTo }}
-                      <p>{{ commonUtil.getFeatures(getProduct(productComponent.productIdTo).productFeatures) }}</p>
+                      <p class="overline">{{ commonUtil.getProductIdentificationValue(productIdentificationPref.secondaryId, getProduct(item.productId)) }}</p>
+                      <div>
+                        {{ commonUtil.getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(item.productId)) ? commonUtil.getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(item.productId)) : getProduct(item.productId).productName }}
+                        <ion-badge class="kit-badge" color="dark" v-if="orderUtil.isKit(item)">{{ translate("Kit") }}</ion-badge>
+                      </div>
+                      <p>{{ commonUtil.getFeatures(getProduct(item.productId).productFeatures) }}</p>
                     </ion-label>
                   </ion-item>
-                </template>
+                </div>
+                <div class="product-metadata">
+                  <ion-button v-if="orderUtil.isKit(item)" fill="clear" size="small" @click.stop="toggleKitComponents(order, item)">
+                    <ion-icon v-if="isKitExpanded(order, item)" color="medium" slot="icon-only" :icon="chevronUpOutline" />
+                    <ion-icon v-else color="medium" slot="icon-only" :icon="listOutline" />
+                  </ion-button>
+                  <ion-note v-if="getProductStock(item.productId).qoh">{{ getProductStock(item.productId).qoh }} {{ translate('pieces in stock') }}</ion-note>
+                  <ion-button fill="clear" v-else size="small" @click.stop="fetchProductStock(item.productId)">
+                    <ion-icon color="medium" slot="icon-only" :icon="cubeOutline" />
+                  </ion-button>
+                </div>
+                <div v-if="isKitExpanded(order, item)" class="kit-components">
+                  <template v-if="!getProduct(item.productId)?.productComponents">
+                    <ion-item lines="none">
+                      <ion-skeleton-text animated style="height: 80%;" />
+                    </ion-item>
+                    <ion-item lines="none">
+                      <ion-skeleton-text animated style="height: 80%;" />
+                    </ion-item>
+                  </template>
+                  <template v-else>
+                    <ion-item v-for="(productComponent, index) in getProduct(item.productId).productComponents" :key="index" lines="none">
+                      <ion-thumbnail slot="start" v-image-preview="getProduct(productComponent.productIdTo)" :key="getProduct(productComponent.productIdTo)?.mainImageUrl">
+                        <DxpShopifyImg :src="getProduct(productComponent.productIdTo).mainImageUrl" :key="getProduct(productComponent.productIdTo).mainImageUrl" size="small" />
+                      </ion-thumbnail>
+                      <ion-label>
+                        <p class="overline">{{ commonUtil.getProductIdentificationValue(productIdentificationPref.secondaryId, getProduct(productComponent.productIdTo)) }}</p>
+                        {{ commonUtil.getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(productComponent.productIdTo)) ? commonUtil.getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(productComponent.productIdTo)) : productComponent.productIdTo }}
+                        <p>{{ commonUtil.getFeatures(getProduct(productComponent.productIdTo).productFeatures) }}</p>
+                      </ion-label>
+                    </ion-item>
+                  </template>
+                </div>
               </div>
-            </div>
-          </ion-card>
+            </ion-card>
+          </TransitionGroup>
 
-          <ion-infinite-scroll @ionInfinite="loadMoreOpenOrders($event)" threshold="100px" v-show="isOpenOrdersScrollable()" ref="infiniteScrollRef">
+          <ion-infinite-scroll v-if="!isLive" @ionInfinite="loadMoreOpenOrders($event)" threshold="100px" v-show="isOpenOrdersScrollable()" ref="infiniteScrollRef">
             <ion-infinite-scroll-content loading-spinner="crescent" :loading-text="translate('Loading')" />
           </ion-infinite-scroll>
         </div>
       </div>
-      <div v-if="isLoadingOrders" class="ion-padding ion-text-center">
+      <div v-if="isLive ? isLiveLoading : isLoadingOrders" class="ion-padding ion-text-center">
         <ion-spinner name="crescent"></ion-spinner>
       </div>
-      <ion-fab v-else-if="openOrders.total" class="mobile-only" vertical="bottom" horizontal="end" slot="fixed">
+      <ion-fab v-else-if="isLive ? displayedOrders.length : openOrders.total" class="mobile-only" vertical="bottom" horizontal="end" slot="fixed">
         <ion-fab-button @click="assignPickers">
           <ion-icon :icon="printOutline" />
         </ion-fab-button>
@@ -137,7 +163,7 @@
 
 <script setup lang="ts">
 import { IonBadge, IonButton, IonButtons, IonCard, IonChip, IonCheckbox, IonContent, IonFab, IonFabButton, IonHeader, IonIcon, IonInfiniteScroll, IonInfiniteScrollContent, IonItem, IonLabel, IonMenuButton, IonNote, IonPage, IonSearchbar, IonSkeletonText, IonSpinner, IonThumbnail, IonTitle, IonToolbar, alertController, modalController, onIonViewWillEnter, popoverController } from "@ionic/vue";
-import { computed, ref, shallowRef } from "vue";
+import { TransitionGroup, computed, nextTick, ref, shallowRef, watch } from "vue";
 import { onBeforeRouteLeave } from "vue-router";
 import { caretDownOutline, chevronUpOutline, cubeOutline, listOutline, notificationsOutline, optionsOutline, pricetagOutline, printOutline } from "ionicons/icons";
 import AssignPickerModal from "@/views/AssignPickerModal.vue";
@@ -145,9 +171,12 @@ import { commonUtil, DxpShopifyImg, emitter, logger, moduleFederationUtil, useSo
 import ViewSizeSelector from "@/components/ViewSizeSelector.vue";
 import OrderActionsPopover from "@/components/OrderActionsPopover.vue";
 import { orderUtil } from "@/utils/orderUtil";
+import { useLiveOpenOrders } from "@/composables/useLiveOpenOrders";
+import { deviceSettings, loadDeviceSettings } from "@/db/deviceSettings";
+import { liveOrdersStatus, refreshLiveOrders } from "@/db/liveOrdersSync";
+import type { FilterSelections } from "@/utils/openOrderFilters";
 
 import { useOrderStore } from "@/store/order";
-import { useCarrierStore } from "@/store/carrier";
 import { useProductStore } from "@/store/product";
 import { useStockStore } from "@/store/stock";
 import { useUtilStore } from "@/store/util";
@@ -156,8 +185,13 @@ import { useProductStore as useAppProductStore } from "@/store/productStore";
 import router from "@/router";
 import Actions from "@/authorization/actions";
 
+// Picking from data this old risks orders that already left the queue.
+const STALE_AFTER_MS = 5 * 60 * 1000;
+// Once the user has scrolled this far, new orders that sort above their view wait until they
+// are back at the top, so the cards they are reading never move under them.
+const HOLD_INSERTS_BELOW_PX = 48;
+
 const userStore = useUserStore();
-const carrierStore = useCarrierStore();
 
 const shipmentMethods = ref([] as Array<any>);
 const searchedQuery = ref("");
@@ -180,12 +214,129 @@ const currentFacility = computed(() => useAppProductStore().getCurrentFacility);
 const currentProductStore = computed(() => useAppProductStore().getCurrentProductStore);
 const productIdentificationPref = computed(() => useAppProductStore().getProductIdentificationPref);
 
+// Live open orders: the Open view of the local orders entity.
+const isLive = computed(() => deviceSettings.liveOpenOrders);
+const liveQuery = ref("");
+const liveSelections = ref<FilterSelections>({});
+const pickSize = computed(() => Number(openOrders.value.query.viewSize) || Number(import.meta.env.VITE_VIEW_SIZE));
+const {
+  hydrated: liveHydrated,
+  allOrders: liveAllOrders,
+  filteredOrders: liveFilteredOrders,
+  visibleOrders: liveVisibleOrders,
+  facets: liveFacets,
+  dimensions: liveDimensions,
+  shipmentMethodLabels
+} = useLiveOpenOrders({
+  facilityId: computed(() => currentFacility.value?.facilityId),
+  productStoreId: computed(() => currentProductStore.value?.productStoreId),
+  query: liveQuery,
+  selections: liveSelections,
+  pickSize
+});
+
+const heldOrderKeys = ref(new Set<string>());
+const animationsReady = ref(false);
+const scrollTop = ref(0);
+const expandedKitKeys = ref(new Set<string>());
+
+const ordersTotal = computed(() => isLive.value ? liveAllOrders.value.length : openOrders.value.total);
+const animateCards = computed(() => isLive.value && animationsReady.value);
+const isLiveLoading = computed(() => !liveHydrated.value || (liveOrdersStatus.mode !== "off" && !liveOrdersStatus.lastSyncAt && !liveAllOrders.value.length));
+const isLiveDataStale = () => isLive.value && !!liveOrdersStatus.lastSyncAt && Date.now() - liveOrdersStatus.lastSyncAt > STALE_AFTER_MS;
+
+const displayedOrders = computed(() => isLive.value
+  ? liveVisibleOrders.value.filter((order: any) => !heldOrderKeys.value.has(order.orderKey))
+  : getOpenOrders());
+
+// Enabled dimensions that have something to filter by. One with no values yet (for example tags
+// before product data loads) stays hidden instead of showing an empty row.
+const filterableDimensions = computed(() => liveDimensions.value.filter((dimension: any) => liveFacets.value[dimension.id]?.length));
+
+const shipmentMethodLabel = (shipmentMethodTypeId: string) => shipmentMethodLabels.value.get(shipmentMethodTypeId) || getShipmentMethodDesc(shipmentMethodTypeId) || shipmentMethodTypeId;
+const filterValueLabel = (dimensionId: string, value: string) => dimensionId === "shipmentMethod" ? shipmentMethodLabel(value) : value;
+const isFilterSelected = (dimensionId: string, value: string) => (liveSelections.value[dimensionId] ?? []).includes(value);
+
+// Changes the user makes (filters, search, picklist size) swap the list at once. Motion is for
+// changes that arrive from the server, so the user can see what moved without asking for it.
+const applyWithoutMotion = (change: () => void) => {
+  animationsReady.value = false;
+  change();
+  nextTick(() => requestAnimationFrame(() => { animationsReady.value = firstPaintReady.value; }));
+};
+
+watch([liveQuery, pickSize], () => applyWithoutMotion(() => undefined), { flush: "sync" });
+
+const toggleFilter = (dimensionId: string, value: string) => applyWithoutMotion(() => {
+  const selected = new Set(liveSelections.value[dimensionId] ?? []);
+  if (selected.has(value)) selected.delete(value);
+  else selected.add(value);
+  liveSelections.value = { ...liveSelections.value, [dimensionId]: [...selected] };
+});
+
+const kitKey = (order: any, item: any) => `${order.orderKey || order.orderId}-${item.orderItemSeqId}`;
+const isKitExpanded = (order: any, item: any) => isLive.value ? expandedKitKeys.value.has(kitKey(order, item)) : item.showKitComponents;
+
+const toggleKitComponents = (order: any, item: any) => {
+  if (!isLive.value) return fetchKitComponents(item);
+  const key = kitKey(order, item);
+  const expanded = new Set(expandedKitKeys.value);
+  if (expanded.has(key)) {
+    expanded.delete(key);
+  } else {
+    expanded.add(key);
+    useProductStore().fetchProductComponents({ productId: item.productId });
+  }
+  expandedKitKeys.value = expanded;
+};
+
+// The first card at least partly in view. New orders that sort before it land above the user's view.
+const firstVisibleOrderKey = (): string | undefined => {
+  const contentEl = contentRef.value?.$el as HTMLElement | undefined;
+  if (!contentEl) return undefined;
+  const top = contentEl.getBoundingClientRect().top;
+  for (const card of contentEl.querySelectorAll<HTMLElement>("[data-order-key]")) {
+    if (card.getBoundingClientRect().bottom > top) return card.dataset.orderKey;
+  }
+  return undefined;
+};
+
+watch(() => liveVisibleOrders.value.map((order: any) => order.orderKey as string), (nextKeys, previousKeys) => {
+  const present = new Set(nextKeys);
+  const held = new Set([...heldOrderKeys.value].filter((key) => present.has(key)));
+  if (animationsReady.value && previousKeys && scrollTop.value > HOLD_INSERTS_BELOW_PX) {
+    const previous = new Set(previousKeys);
+    const anchorIndex = nextKeys.indexOf(firstVisibleOrderKey() ?? "");
+    nextKeys.forEach((key, index) => {
+      if (index < anchorIndex && !previous.has(key)) held.add(key);
+    });
+  }
+  heldOrderKeys.value = held;
+});
+
+// The first paint of a list (page open, facility switch, first sync) appears without animation.
+const firstPaintReady = computed(() => liveHydrated.value && (liveAllOrders.value.length > 0 || liveOrdersStatus.lastSyncAt > 0));
+watch([firstPaintReady, () => currentFacility.value?.facilityId], ([ready, facilityId], previous) => {
+  animationsReady.value = false;
+  if (facilityId !== previous?.[1]) heldOrderKeys.value = new Set();
+  if (ready) nextTick(() => requestAnimationFrame(() => { animationsReady.value = true; }));
+}, { immediate: true });
+
+const onContentScroll = (event: any) => {
+  scrollTop.value = event?.detail?.scrollTop ?? 0;
+  if (scrollTop.value <= HOLD_INSERTS_BELOW_PX && heldOrderKeys.value.size) heldOrderKeys.value = new Set();
+  enableScrolling();
+};
+
 const updateOpenQuery = (payload: any) => {
   useOrderStore().updateOpenQuery(payload);
 };
 
 const getErrorMessage = () => {
-  return searchedQuery.value ? (commonUtil.hasActiveFilters(openOrders.value.query) ? translate("No results found for . Try using different filters.", { searchedQuery: searchedQuery.value }) : translate("No results found for . Try searching In Progress or Completed tab instead. If you still can't find what you're looking for, try switching stores.", { searchedQuery: searchedQuery.value, lineBreak: "<br />" })) : translate("doesn't have any outstanding orders right now.", { facilityName: currentFacility.value?.facilityName });
+  const query = isLive.value ? liveQuery.value : searchedQuery.value;
+  const hasFilters = isLive.value ? Object.values(liveSelections.value).some((values) => values.length) : commonUtil.hasActiveFilters(openOrders.value.query);
+  if (isLive.value && !query && hasFilters) return translate("No orders match the selected filters.");
+  return query ? (hasFilters ? translate("No results found for . Try using different filters.", { searchedQuery: query }) : translate("No results found for . Try searching In Progress or Completed tab instead. If you still can't find what you're looking for, try switching stores.", { searchedQuery: query, lineBreak: "<br />" })) : translate("doesn't have any outstanding orders right now.", { facilityName: currentFacility.value?.facilityName });
 };
 
 const viewNotifications = () => {
@@ -249,8 +400,21 @@ const fetchKitComponents = async (orderItem: any) => {
 };
 
 const assignPickers = async () => {
+  // Never pick from an old copy of the queue: bring it up to date first.
+  if (isLiveDataStale()) {
+    emitter.emit("presentLoader");
+    try {
+      await refreshLiveOrders();
+      await nextTick();
+    } finally {
+      emitter.emit("dismissLoader");
+    }
+  }
+
   const assignPickerModal = await modalController.create({
-    component: AssignPickerModal
+    component: AssignPickerModal,
+    // Live: pick exactly the orders on screen, the filtered set capped by the picklist size.
+    componentProps: isLive.value ? { orders: displayedOrders.value } : {}
   });
   return assignPickerModal.present();
 };
@@ -315,10 +479,16 @@ const updateQueryString = async (queryString: string) => {
   searchedQuery.value = queryString;
 };
 
+// The live list only needs the new picklist size; the legacy list refetches from the server.
+const applyOpenQuery = async (openOrdersQuery: any) => {
+  if (isLive.value) await useOrderStore().updateOpenOrderQuery({ ...openOrdersQuery });
+  else await useOrderStore().updateOpenQuery({ ...openOrdersQuery });
+};
+
 const updateOrderQuery = async (size: any) => {
   const openOrdersQuery = JSON.parse(JSON.stringify(openOrders.value.query));
   openOrdersQuery.viewSize = size;
-  await useOrderStore().updateOpenQuery({ ...openOrdersQuery });
+  await applyOpenQuery(openOrdersQuery);
 };
 
 const initialiseOrderQuery = async () => {
@@ -326,13 +496,13 @@ const initialiseOrderQuery = async () => {
   openOrdersQuery.viewIndex = 0;
   openOrdersQuery.viewSize = import.meta.env.VITE_VIEW_SIZE;
   if (selectedShipmentMethods.value?.length) openOrdersQuery.selectedShipmentMethods = selectedShipmentMethods.value;
-  await useOrderStore().updateOpenQuery({ ...openOrdersQuery });
+  await applyOpenQuery(openOrdersQuery);
 };
 
 const recycleOutstandingOrders = async () => {
   const alert = await alertController.create({
     header: translate("Reject all open orders"),
-    message: translate("Reject open orders.", { ordersCount: openOrders.value.total }),
+    message: translate("Reject open orders.", { ordersCount: ordersTotal.value }),
     buttons: [{
       text: translate("Cancel"),
       role: "cancel"
@@ -355,6 +525,8 @@ const recycleOutstandingOrders = async () => {
 
           if (!commonUtil.hasError(resp)) {
             commonUtil.showToast(translate("Rejecting has been started. All outstanding orders will be rejected shortly."));
+            // The rejection runs as a background job; each sync removes the orders it has finished.
+            if (isLive.value) void refreshLiveOrders();
           } else {
             throw resp.data;
           }
@@ -388,14 +560,19 @@ const fetchProductStock = (productId: string) => {
 
 onIonViewWillEnter(async () => {
   isScrollingEnabled.value = false;
-  isLoadingOrders.value = true;
-  try {
-    await Promise.all([initialiseOrderQuery(), fetchShipmentMethods()]);
-  } finally {
-    isLoadingOrders.value = false;
+  await loadDeviceSettings();
+  if (isLive.value) {
+    await initialiseOrderQuery();
+  } else {
+    isLoadingOrders.value = true;
+    try {
+      await Promise.all([initialiseOrderQuery(), fetchShipmentMethods()]);
+    } finally {
+      isLoadingOrders.value = false;
+    }
+    const instance = commonUtil.getOmsURL().split("-")[0].replace(new RegExp("^(https|http)://"), "").replace(new RegExp("/api.*"), "").replace(new RegExp(":.*"), "");
+    productCategoryFilterExt.value = await moduleFederationUtil.useDynamicImport({ scope: "fulfillment_extensions", module: `${instance}_ProductCategoryFilter` });
   }
-  const instance = commonUtil.getOmsURL().split("-")[0].replace(new RegExp("^(https|http)://"), "").replace(new RegExp("/api.*"), "").replace(new RegExp(":.*"), "");
-  productCategoryFilterExt.value = await moduleFederationUtil.useDynamicImport({ scope: "fulfillment_extensions", module: `${instance}_ProductCategoryFilter` });
   emitter.on("updateOrderQuery", updateOrderQuery);
 });
 
@@ -414,6 +591,42 @@ onBeforeRouteLeave(() => {
 @media (max-width: 991px) {
   .order-item {
     border-bottom: none;
+  }
+}
+
+/* Live list updates: new orders fade and drop in, removed ones fade out, the rest glide into place. */
+.order-list {
+  position: relative;
+}
+
+.order-enter-active {
+  transition: opacity 240ms cubic-bezier(0.2, 0.7, 0.2, 1), transform 240ms cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+
+.order-leave-active {
+  position: absolute;
+  inset-inline: 0;
+  transition: opacity 220ms cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+
+.order-move {
+  transition: transform 220ms cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+
+.order-enter-from {
+  opacity: 0;
+  transform: translateY(-8px);
+}
+
+.order-leave-to {
+  opacity: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .order-enter-active,
+  .order-leave-active,
+  .order-move {
+    transition: none;
   }
 }
 </style>
