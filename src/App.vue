@@ -44,7 +44,7 @@
 
 <script setup lang="ts">
 import { IonApp, IonContent, IonHeader, IonIcon, IonItem, IonItemDivider, IonLabel, IonList, IonMenu, IonMenuToggle, IonRouterOutlet, IonSplitPane, IonTitle, IonToolbar, loadingController, toastController } from "@ionic/vue";
-import { computed, onMounted, onUnmounted, ref, watch } from "vue";
+import { computed, onMounted, onUnmounted, watch } from "vue";
 import { translate, emitter, logger, useNotificationStore, useAuth, i18n } from "@common";
 import { Settings } from "luxon";
 import { init } from "@module-federation/runtime";
@@ -57,7 +57,10 @@ import { startLiveOrdersSync, syncMasterFacilities } from "@/db/liveOrdersSync";
 
 const { needRefresh, updateServiceWorker } = useRegisterSW()
 
-const loader = ref<any>(null);
+// Holds the loader's creation promise rather than the loader, so a dismiss that arrives while the loader is still being created can still reach it.
+let loader: ReturnType<typeof loadingController.create> | null = null;
+// Incremented by every dismiss, so a present still waiting for its loader knows it was dismissed in the meantime.
+let dismissCount = 0;
 
 const userProfile = computed(() => useUserStore().getUserProfile);
 const allNotificationPrefs = computed(() => useNotificationStore().getAllNotificationPrefs);
@@ -85,24 +88,40 @@ const selectedIndex = computed(() => {
   return menuItems.value.findIndex((item) => item.url === path || item.childRoutes?.includes(path) || item.childRoutes?.some((route: any) => path.includes(route)));
 });
 
-const presentLoader = async (options = { message: "", backdropDismiss: false }) => {
-  if (options.message && loader.value) dismissLoader();
+// The options arrive through the untyped event bus, so they cannot be typed narrower than any.
+const presentLoader = async (options: any = { message: "", backdropDismiss: false }) => {
+  if(options.message && loader) {
+    dismissLoader();
+  }
 
-  if (!loader.value) {
-    loader.value = await loadingController.create({
+  const dismissCountBefore = dismissCount;
+  if(!loader) {
+    loader = loadingController.create({
       message: options.message ? translate(options.message) : (options.backdropDismiss ? translate("Click the backdrop to dismiss.") : translate("Loading...")),
       translucent: true,
       backdropDismiss: options.backdropDismiss || false
     });
   }
-  loader.value.present();
+  const overlay = await loader;
+  if(dismissCount === dismissCountBefore) {
+    overlay.present();
+  }
 };
 
 const dismissLoader = () => {
-  if (loader.value) {
-    loader.value.dismiss();
-    loader.value = null;
+  if(!loader) {
+    return;
   }
+
+  const pendingLoader = loader;
+  loader = null;
+  dismissCount++;
+  // dismiss() waits for a present that is in progress, but leaves a loader that was never presented in the DOM.
+  pendingLoader.then(async (overlay) => {
+    if(!(await overlay.dismiss())) {
+      overlay.remove();
+    }
+  });
 };
 
 onMounted(async () => {
@@ -111,13 +130,13 @@ onMounted(async () => {
     remotes: [{ name: "fulfillment_extensions", entry: import.meta.env.VITE_REMOTE_ENTRY as string, type: "module" }]
   });
 
-  loader.value = await loadingController.create({
+  loader = loadingController.create({
     message: translate("Loading..."),
     translucent: true,
     backdropDismiss: false
   });
 
-  emitter.on("presentLoader", (options: any) => presentLoader(options));
+  emitter.on("presentLoader", presentLoader);
   emitter.on("dismissLoader", dismissLoader);
 
   if (userProfile.value && userProfile.value.timeZone) {
@@ -148,7 +167,7 @@ watch(() => useProductStore().getFacilities?.map((facility: any) => facility.fac
 });
 
 onUnmounted(() => {
-  emitter.off("presentLoader", (options: any) => presentLoader(options));
+  emitter.off("presentLoader", presentLoader);
   emitter.off("dismissLoader", dismissLoader);
 });
 
