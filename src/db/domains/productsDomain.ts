@@ -22,6 +22,11 @@ const UNIONED_FIELDS = ["tags", "productCategories"];
 // When each product was last asked for, so a product Solr doesn't return isn't re-queried every tick.
 const lastQueriedAt = new Map<string, number>();
 
+/** Forget which products were asked for. The products table is cleared when the sync stops, and this must go with it. */
+export function forgetProductQueries(): void {
+  lastQueriedAt.clear();
+}
+
 const isEmpty = (value: unknown) => value === undefined || value === null || value === "" || (Array.isArray(value) && !value.length);
 
 /**

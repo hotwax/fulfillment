@@ -31,6 +31,11 @@ const shipGroupOf = (row: DbRow): [string, string] => [String(row.orderId), Stri
 // group whose items come back empty from being fetched again on every tick.
 const fetchedForVersion = new Map<string, number>();
 
+/** Forget which ship groups' items were fetched. The items table is cleared when the sync stops, and this must go with it. */
+export function forgetItemFetches(): void {
+  fetchedForVersion.clear();
+}
+
 async function syncItemsOf(db: BaseDB, ctx: SyncContext, order: DbRow): Promise<void> {
   const shipGroup = shipGroupOf(order);
   const response = await workerGet(ctx, `oms/orders/${encodeURIComponent(shipGroup[0])}/items`, { pageSize: 250 });

@@ -14,7 +14,7 @@ import { commonUtil, logger } from "@common";
 import { type DbKey, type DbRow, clearDatabaseTables, ensureDbReady, entityKeyOf, getSyncDomain, projectRows, registerDomains, setupAppDbSync } from "@common/db";
 import { reactive } from "vue";
 import { deviceSettings, loadDeviceSettings } from "./deviceSettings";
-import { FULFILLMENT_SYNC_DOMAINS, LIVE_ORDERS_INTERVAL_MS, LIVE_ORDER_DOMAINS, OPEN_ORDERS_DOMAIN } from "./domains";
+import { FULFILLMENT_SYNC_DOMAINS, LIVE_ORDERS_INTERVAL_MS, LIVE_ORDER_DOMAINS, OPEN_ORDERS_DOMAIN, resetLiveOrderDomains } from "./domains";
 import { ORDER_STAGE, fulfillmentDb, orderKeyOf } from "./fulfillmentDb";
 import fulfillmentSyncWorkerUrl from "./fulfillmentSync.worker.ts?worker&url";
 
@@ -211,6 +211,8 @@ export async function stopLiveOrdersSync(): Promise<void> {
   liveOrdersStatus.mode = "off";
   liveOrdersStatus.lastSyncAt = 0;
   starting = null;
+  // The main-thread fallback's bookkeeping. A worker's goes with the worker.
+  resetLiveOrderDomains();
   if(activeOms || wasRunning) {
     try {
       await appDbSync.deactivateSyncDomains(syncOwner);
