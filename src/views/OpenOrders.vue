@@ -1,6 +1,6 @@
 <template>
   <ion-page :key="router.currentRoute.value.path">
-    <ViewSizeSelector menu-id="view-size-selector-open" content-id="view-size-selector" />
+    <ViewSizeSelector menu-id="view-size-selector-open" content-id="view-size-selector" :total="isLive ? liveFilteredOrders.length : undefined" />
 
     <ion-header :translucent="true">
       <ion-toolbar>
