@@ -57,7 +57,8 @@ const fulfillmentSchema = defineSchema({
   }),
 
   orderItems: defineEntity({
-    primaryKey: "orderId,orderItemSeqId",
+    // One order item can be allocated across several ship groups, so the ship group is part of the key.
+    primaryKey: "orderId,shipGroupSeqId,orderItemSeqId",
     fields: {
       orderId: "text",
       orderItemSeqId: "text",
@@ -91,7 +92,8 @@ const fulfillmentSchema = defineSchema({
 
 export const fulfillmentDb = defineAppDb({
   suffix: "FulfillmentDB",
-  version: 1,
+  // v2: order items are keyed by their ship group too.
+  version: 2,
   schema: mergeSchemas(commonSchema.pick(["shipmentMethodTypes"]), fulfillmentSchema)
 });
 

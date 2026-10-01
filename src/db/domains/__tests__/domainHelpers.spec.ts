@@ -1,7 +1,9 @@
 import { defineEntity } from "@common/db/schema/defineEntity";
+import { canonicalKey, entityKeyOf, projectRows } from "@common/db/storage/projection";
 import { describe, expect, it } from "vitest";
 import { mergeProductDocs } from "@/db/domains/productsDomain";
 import { changedRows, chunk, hydrationOrder, runWithConcurrency } from "@/db/domains/rowSync";
+import { fulfillmentDb } from "@/db/fulfillmentDb";
 
 describe("mergeProductDocs", () => {
   it("keeps one record per product, preferring the fullest copy and unioning tags and categories", () => {
@@ -90,5 +92,15 @@ describe("hydrationOrder", () => {
       { orderKey: "A-mid", facilityId: "A", orderDate: 25 }
     ];
     expect(hydrationOrder(orders).map((order) => order.orderKey)).toEqual(["A-old", "B-old", "A-mid", "B-new", "A-new"]);
+  });
+});
+
+describe("order item keys", () => {
+  it("keeps one row per ship group when an order item is allocated to two of them", () => {
+    const entity = fulfillmentDb.entities.orderItems;
+    const item = { orderId: "10110", orderItemSeqId: "00101", productId: "10001", quantity: 1, statusId: "ITEM_APPROVED" };
+    const rows = projectRows([{ ...item, shipGroupSeqId: "00001" }, { ...item, shipGroupSeqId: "00002" }], entity, 1);
+
+    expect(new Set(rows.map((row) => canonicalKey(entityKeyOf(row, entity)!))).size).toBe(2);
   });
 });
