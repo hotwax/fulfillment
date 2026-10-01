@@ -63,7 +63,7 @@
         <div class="results">
           <ion-button class="bulk-action desktop-only" size="large" @click="assignPickers">{{ translate("Print Picklist") }}</ion-button>
 
-          <TransitionGroup tag="div" name="order" class="order-list" :css="animateCards">
+          <TransitionGroup tag="div" name="order" class="order-list" :css="animateCards" @before-enter="collapseEnteringCard" @enter="expandEnteringCard" @enter-cancelled="stopEnteringCard">
             <ion-card class="order" v-for="(order, index) in displayedOrders" :key="isLive ? order.orderKey : index" :data-order-key="isLive ? order.orderKey : undefined">
               <div class="order-header">
                 <div class="order-primary-info">
@@ -266,6 +266,74 @@ const applyWithoutMotion = (change: () => void) => {
 };
 
 watch([liveQuery, pickSize], () => applyWithoutMotion(() => undefined), { flush: "sync" });
+
+// A new ion-card is inline and unstyled until Ionic sets it up, and its inner components keep
+// settling for a frame or two after that, so the list can't measure how far the cards below it
+// move, and they would jump as it reaches its real size. Instead the new card lays out hidden and
+// out of the flow until its height holds. Then it takes its place, the cards below glide down from
+// where they were, and it fades in behind them.
+const ENTER_MS = 260;
+const ENTER_EASING = "cubic-bezier(0.2, 0.7, 0.2, 1)";
+const STAGED_PROPERTIES = ["position", "left", "right", "visibility"];
+const enteringAnimations = new WeakMap<Element, Animation[]>();
+const prefersReducedMotion = () => window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+const nextFrame = () => new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+
+// Waits for the card to keep one height for two frames in a row, for at most ten frames.
+const waitForSteadyHeight = async (card: HTMLElement) => {
+  let height = card.getBoundingClientRect().height;
+  for(let frame = 0, steadyFrames = 0; frame < 10 && steadyFrames < 2; frame++) {
+    await nextFrame();
+    const nextHeight = card.getBoundingClientRect().height;
+    steadyFrames = nextHeight === height ? steadyFrames + 1 : 0;
+    height = nextHeight;
+  }
+};
+
+const collapseEnteringCard = (el: Element) => {
+  if(!animateCards.value || prefersReducedMotion()) {return;}
+  // Laid out at the list's width, so it wraps as it will in place, without moving anything below.
+  Object.assign((el as HTMLElement).style, { position: "absolute", left: "0px", right: "0px", visibility: "hidden", opacity: "0" });
+};
+
+const expandEnteringCard = async (el: Element, done: () => void) => {
+  const card = el as HTMLElement;
+  if(card.style.visibility !== "hidden") {return done();}
+
+  // The card and the Ionic components inside it render on Ionic's schedule; wait until they have.
+  await Promise.all([card, ...card.querySelectorAll("*")].map((node: any) => node.componentOnReady?.()));
+  await waitForSteadyHeight(card);
+  // Removed while waiting: it leaves without ever showing.
+  if(!card.isConnected || card.classList.contains("order-leave-active")) {return done();}
+
+  const below: HTMLElement[] = [];
+  for(let node = card.nextElementSibling; node; node = node.nextElementSibling) {
+    if(node instanceof HTMLElement && !node.classList.contains("order-leave-active")) {below.push(node);}
+  }
+  const topsBefore = below.map((node) => node.getBoundingClientRect().top);
+  STAGED_PROPERTIES.forEach((property) => card.style.removeProperty(property));
+
+  // Started from their old places in the same task, so they never paint at the new ones first.
+  const glides = below.map((node, index) => {
+    const offset = topsBefore[index] - node.getBoundingClientRect().top;
+
+    return offset ? node.animate([{ transform: `translateY(${offset}px)` }, { transform: "none" }], { duration: ENTER_MS, easing: ENTER_EASING }) : undefined;
+  }).filter((animation): animation is Animation => !!animation);
+  const fade = card.animate([{ opacity: 0 }, { opacity: 0, offset: 0.25 }, { opacity: 1 }], { duration: ENTER_MS, easing: ENTER_EASING });
+  card.style.removeProperty("opacity");
+
+  enteringAnimations.set(card, [fade, ...glides]);
+  fade.onfinish = () => {
+    enteringAnimations.delete(card);
+    done();
+  };
+};
+
+// The card is leaving: stop its entry where it is, so one that never showed stays hidden.
+const stopEnteringCard = (el: Element) => {
+  enteringAnimations.get(el)?.forEach((animation) => animation.cancel());
+  enteringAnimations.delete(el);
+};
 
 const toggleFilter = (dimensionId: string, value: string) => applyWithoutMotion(() => {
   const selected = new Set(liveSelections.value[dimensionId] ?? []);
@@ -594,13 +662,11 @@ onBeforeRouteLeave(() => {
   }
 }
 
-/* Live list updates: new orders fade and drop in, removed ones fade out, the rest glide into place. */
+/* Live list updates: removed orders fade out while the rest glide into place. New orders fade in
+   from script (expandEnteringCard) while the cards below glide down, since their size isn't known
+   until Ionic sets them up. */
 .order-list {
   position: relative;
-}
-
-.order-enter-active {
-  transition: opacity 240ms cubic-bezier(0.2, 0.7, 0.2, 1), transform 240ms cubic-bezier(0.2, 0.7, 0.2, 1);
 }
 
 .order-leave-active {
@@ -613,17 +679,11 @@ onBeforeRouteLeave(() => {
   transition: transform 220ms cubic-bezier(0.2, 0.7, 0.2, 1);
 }
 
-.order-enter-from {
-  opacity: 0;
-  transform: translateY(-8px);
-}
-
 .order-leave-to {
   opacity: 0;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .order-enter-active,
   .order-leave-active,
   .order-move {
     transition: none;
