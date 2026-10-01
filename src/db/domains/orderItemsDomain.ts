@@ -6,12 +6,12 @@
  * are fetched; an unchanged queue makes no item requests at all.
  */
 
-import type { BaseDB } from "@common/db/baseDb";
-import { diffStaleKeys, projectRows } from "@common/db/projection";
-import { registerSyncDomain } from "@common/db/sync/syncRegistry";
-import { unwrapCollection, workerGet } from "@common/db/sync/workerFetch";
-import type { DbRow, SyncContext } from "@common/db/types";
-import { ORDER_STAGE, orderItemProjection } from "../fulfillmentDb";
+import { unwrapCollection, workerGet } from "@common/core/workerRemoteApi";
+import type { BaseDB } from "@common/db/storage/baseDb";
+import { canonicalKey, diffStaleKeys, entityKeyOf, projectRows } from "@common/db/storage/projection";
+import { defineSyncDomain } from "@common/db/sync/defineSyncDomain";
+import type { DbKey, DbRow, SyncContext } from "@common/db/types";
+import { ORDER_STAGE, fulfillmentDb, getFulfillmentDb } from "../fulfillmentDb";
 import { hydrationOrder, runWithConcurrency } from "./rowSync";
 
 export const ORDER_ITEMS_DOMAIN = "orderItems";
@@ -23,54 +23,60 @@ const ORDERS_PER_PASS = 150;
 // Only approved lines are open work. Completed and cancelled lines of the same ship group aren't picked.
 const OPEN_ITEM_STATUS = "ITEM_APPROVED";
 
-// The order row version (its syncedAt) each order's items were last fetched for. Stops a ship
+const itemEntity = fulfillmentDb.entities.orderItems;
+
+const shipGroupOf = (row: DbRow): [string, string] => [String(row.orderId), String(row.shipGroupSeqId)];
+
+// The order row version (its syncedAt) each ship group's items were last fetched for. Stops a ship
 // group whose items come back empty from being fetched again on every tick.
 const fetchedForVersion = new Map<string, number>();
 
 async function syncItemsOf(db: BaseDB, ctx: SyncContext, order: DbRow): Promise<void> {
-  const orderKey = String(order.orderKey);
-  const response = await workerGet(ctx, `oms/orders/${encodeURIComponent(String(order.orderId))}/items`, { pageSize: 250 });
+  const shipGroup = shipGroupOf(order);
+  const response = await workerGet(ctx, `oms/orders/${encodeURIComponent(shipGroup[0])}/items`, { pageSize: 250 });
   const rawItems = unwrapCollection(response, null)
-    .filter((item: any) => item?.shipGroupSeqId === order.shipGroupSeqId && item?.statusId === OPEN_ITEM_STATUS)
-    .map((item: any) => ({ ...item, orderKey }));
-  const fresh = projectRows(rawItems, orderItemProjection, ctx.now);
+    .filter((item: any) => item?.shipGroupSeqId === order.shipGroupSeqId && item?.statusId === OPEN_ITEM_STATUS);
+  const fresh = projectRows(rawItems, itemEntity, Date.now());
 
   await db.transaction("rw", ["orders", "orderItems"], async () => {
     // The order may have left the queue while its items were in flight; don't keep orphans.
-    if(!(await db.table("orders").get(orderKey))) {return;}
-    const existingKeys = (await db.table("orderItems").where("orderKey").equals(orderKey).primaryKeys()).map(String);
-    const staleKeys = diffStaleKeys(existingKeys, fresh.map((row) => String(row.itemKey)));
+    if(!(await db.table("orders").get(shipGroup))) {return;}
+    const existingKeys = await db.table<DbRow, DbKey>("orderItems").where("[orderId+shipGroupSeqId]").equals(shipGroup).primaryKeys();
+    const staleKeys = diffStaleKeys(existingKeys, fresh.map((row) => entityKeyOf(row, itemEntity) as DbKey));
     if(staleKeys.length) {await db.table("orderItems").bulkDelete(staleKeys);}
     if(fresh.length) {await db.table("orderItems").bulkPut(fresh);}
   });
-  fetchedForVersion.set(orderKey, Number(order.syncedAt) || 0);
+  fetchedForVersion.set(canonicalKey(shipGroup), Number(order.syncedAt) || 0);
 }
 
-export function registerOrderItemsDomain(getDb: (omsInstance: string) => BaseDB): void {
-  registerSyncDomain({
-    name: ORDER_ITEMS_DOMAIN,
+export const orderItemsDomain = defineSyncDomain({
+  name: ORDER_ITEMS_DOMAIN,
+  label: "Order items",
+  syncClass: "A",
+  table: "orderItems",
 
-    async sync(ctx: SyncContext) {
-      const db = getDb(ctx.omsInstance);
-      const orders = await db.table<DbRow, string>("orders").where("stage").equals(ORDER_STAGE.OPEN).toArray();
-      if(!orders.length) {return;}
+  async sync(ctx: SyncContext) {
+    const db = getFulfillmentDb(ctx.omsInstance);
+    const orders = await db.table<DbRow, DbKey>("orders").where("stage").equals(ORDER_STAGE.OPEN).toArray();
+    if(!orders.length) {return 0;}
 
-      const newestItemSync = new Map<string, number>();
-      await db.table<DbRow, string>("orderItems").each((item) => {
-        const key = String(item.orderKey);
-        newestItemSync.set(key, Math.max(newestItemSync.get(key) ?? 0, Number(item.syncedAt) || 0));
-      });
+    const newestItemSync = new Map<string, number>();
+    await db.table<DbRow, DbKey>("orderItems").each((item) => {
+      const key = canonicalKey(shipGroupOf(item));
+      newestItemSync.set(key, Math.max(newestItemSync.get(key) ?? 0, Number(item.syncedAt) || 0));
+    });
 
-      // Due: no items stored yet, or the order row was rewritten after its items were.
-      const due = orders.filter((order) => {
-        const key = String(order.orderKey);
-        const version = Number(order.syncedAt) || 0;
+    // Due: no items stored yet, or the order row was rewritten after its items were.
+    const due = orders.filter((order) => {
+      const key = canonicalKey(shipGroupOf(order));
+      const version = Number(order.syncedAt) || 0;
 
-        return (newestItemSync.get(key) ?? -1) < version && fetchedForVersion.get(key) !== version;
-      });
+      return (newestItemSync.get(key) ?? -1) < version && fetchedForVersion.get(key) !== version;
+    });
 
-      const pass = hydrationOrder(due).slice(0, ORDERS_PER_PASS);
-      await runWithConcurrency(pass, ITEM_FETCH_CONCURRENCY, (order) => syncItemsOf(db, ctx, order));
-    }
-  });
-}
+    const pass = hydrationOrder(due).slice(0, ORDERS_PER_PASS);
+    await runWithConcurrency(pass, ITEM_FETCH_CONCURRENCY, (order) => syncItemsOf(db, ctx, order));
+
+    return pass.length;
+  }
+});

@@ -6,18 +6,20 @@
  * The bucket service has no updated-since filter, so there is no cursor to keep.
  */
 
-import type { BaseDB } from "@common/db/baseDb";
-import { diffStaleKeys, isUnkeyableFetch, projectRows } from "@common/db/projection";
-import { registerSyncDomain } from "@common/db/sync/syncRegistry";
-import { pageAll } from "@common/db/sync/workerFetch";
-import type { DbRow, SyncContext } from "@common/db/types";
-import { ORDER_STAGE, orderProjection } from "../fulfillmentDb";
+import { pageAll } from "@common/core/workerRemoteApi";
+import type { BaseDB } from "@common/db/storage/baseDb";
+import { diffStaleKeys, entityKeyOf, isUnkeyableFetch, projectRows } from "@common/db/storage/projection";
+import { defineSyncDomain } from "@common/db/sync/defineSyncDomain";
+import type { DbKey, DbRow, SyncContext } from "@common/db/types";
+import { ORDER_STAGE, fulfillmentDb, getFulfillmentDb, orderKeyOf } from "../fulfillmentDb";
 import { changedRows } from "./rowSync";
 
 export const OPEN_ORDERS_DOMAIN = "ordersOpen";
 
 // Store pickup and POS-completed orders are fulfilled in other apps; the Open page has always excluded them.
 const EXCLUDED_SHIPMENT_METHODS = "STOREPICKUP,POS_COMPLETED";
+
+const orderEntity = fulfillmentDb.entities.orders;
 
 function fetchOpenOrders(ctx: SyncContext, filters: Record<string, unknown>): Promise<any[]> {
   return pageAll({
@@ -32,7 +34,10 @@ function fetchOpenOrders(ctx: SyncContext, filters: Record<string, unknown>): Pr
       orderByField: "orderDate"
     },
     batchSize: 250,
-    keyOf: (record) => orderProjection.buildKey?.(record)
+    // A short read would prune orders that are still open, so a truncated walk fails the pass instead.
+    requireComplete: true,
+    keyOf: (record) => orderKeyOf(record?.orderId, record?.shipGroupSeqId),
+    label: OPEN_ORDERS_DOMAIN
   });
 }
 
@@ -44,53 +49,58 @@ async function masterFacilityIds(db: BaseDB): Promise<string[]> {
  * Make the open rows that match `inScope` equal the fetched set: delete the ones the server no
  * longer returns (with their items) and write only the rows that are new or changed.
  */
-async function replaceOpenRows(db: BaseDB, rawRows: any[], now: number, inScope: (row: DbRow) => boolean): Promise<void> {
-  if(rawRows.length && isUnkeyableFetch(rawRows, orderProjection)) {
+function replaceOpenRows(db: BaseDB, rawRows: any[], inScope: (row: DbRow) => boolean): Promise<number> {
+  if(isUnkeyableFetch(rawRows, orderEntity)) {
     console.warn(`[db] ${OPEN_ORDERS_DOMAIN}: fetched ${rawRows.length} orders but none could be keyed. Leaving the table unchanged.`);
 
-    return;
+    return Promise.resolve(0);
   }
-  const fresh = projectRows(rawRows.map((raw) => ({ ...raw, stage: ORDER_STAGE.OPEN })), orderProjection, now);
+  const fresh = projectRows(rawRows.map((raw) => ({ ...raw, stage: ORDER_STAGE.OPEN })), orderEntity, Date.now());
+  const keyOf = (row: DbRow) => entityKeyOf(row, orderEntity) as DbKey;
 
-  await db.transaction("rw", ["orders", "orderItems"], async () => {
-    const existing = await db.table<DbRow, string>("orders").where("stage").equals(ORDER_STAGE.OPEN).filter(inScope).toArray();
-    const existingByKey = new Map(existing.map((row) => [String(row.orderKey), row]));
+  return db.transaction("rw", ["orders", "orderItems"], async () => {
+    const existing = (await db.table<DbRow, DbKey>("orders").where("stage").equals(ORDER_STAGE.OPEN).toArray()).filter(inScope);
 
-    const staleKeys = diffStaleKeys([...existingByKey.keys()], fresh.map((row) => String(row.orderKey)));
+    const staleKeys = diffStaleKeys(existing.map(keyOf), fresh.map(keyOf));
     if(staleKeys.length) {
       await db.table("orders").bulkDelete(staleKeys);
-      await db.table("orderItems").where("orderKey").anyOf(staleKeys).delete();
+      await db.table("orderItems").where("[orderId+shipGroupSeqId]").anyOf(staleKeys as any[]).delete();
     }
 
-    const changed = changedRows(fresh, existingByKey, "orderKey");
+    const changed = changedRows(fresh, existing, orderEntity);
     if(changed.length) {await db.table("orders").bulkPut(changed);}
+
+    return changed.length;
   });
 }
 
-export function registerOpenOrdersDomain(getDb: (omsInstance: string) => BaseDB): void {
-  registerSyncDomain({
-    name: OPEN_ORDERS_DOMAIN,
+export const openOrdersDomain = defineSyncDomain({
+  name: OPEN_ORDERS_DOMAIN,
+  label: "Open orders",
+  syncClass: "A",
+  table: "orders",
 
-    async sync(ctx: SyncContext) {
-      const db = getDb(ctx.omsInstance);
-      const facilityIds = await masterFacilityIds(db);
-      // Without a master list there is nothing to scope the prune by, so leave the table alone.
-      if(!facilityIds.length) {return;}
+  async sync(ctx: SyncContext) {
+    const db = getFulfillmentDb(ctx.omsInstance);
+    const facilityIds = await masterFacilityIds(db);
+    // Without a master list there is nothing to scope the prune by, so leave the table alone.
+    if(!facilityIds.length) {return 0;}
 
-      const rawRows = await fetchOpenOrders(ctx, { facilityId: facilityIds.join(","), facilityId_op: "in" });
-      await replaceOpenRows(db, rawRows, ctx.now, () => true);
-    },
+    const rawRows = await fetchOpenOrders(ctx, { facilityId: facilityIds.join(","), facilityId_op: "in" });
 
-    // After an action on one order: re-read just that order and settle its open rows.
-    async refetchOne(pk: Record<string, unknown>, ctx: SyncContext) {
-      const orderId = pk?.orderId ? String(pk.orderId) : "";
-      if(!orderId) {return;}
-      const db = getDb(ctx.omsInstance);
-      const facilityIds = await masterFacilityIds(db);
-      if(!facilityIds.length) {return;}
+    return replaceOpenRows(db, rawRows, () => true);
+  },
 
-      const rawRows = await fetchOpenOrders(ctx, { orderId, facilityId: facilityIds.join(","), facilityId_op: "in" });
-      await replaceOpenRows(db, rawRows, ctx.now, (row) => row.orderId === orderId);
-    }
-  });
-}
+  // After an action on one order: re-read just that order and settle its open rows.
+  async refetchOne(ctx: SyncContext, pk: Record<string, unknown>) {
+    const orderId = pk?.orderId ? String(pk.orderId) : "";
+    if(!orderId) {return 0;}
+    const db = getFulfillmentDb(ctx.omsInstance);
+    const facilityIds = await masterFacilityIds(db);
+    if(!facilityIds.length) {return 0;}
+
+    const rawRows = await fetchOpenOrders(ctx, { orderId, facilityId: facilityIds.join(","), facilityId_op: "in" });
+
+    return replaceOpenRows(db, rawRows, (row) => row.orderId === orderId);
+  }
+});

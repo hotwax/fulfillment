@@ -1,37 +1,25 @@
 /**
  * Main-thread control of the fulfillment sync.
  *
- * Starts the accxui polling harness in a worker, keeps the facility master list in IndexedDB in
- * step with the facilities Pinia resolved, and exposes the refreshes pages call after an action.
+ * Runs the accxui app database sync (one worker running the polling harness) with the fulfillment
+ * domains, keeps the facility master list in IndexedDB in step with the facilities Pinia resolved,
+ * scopes the worker to the live order domains, and exposes the refreshes pages call after an action.
  *
- * When a worker can't start (for example inside a host that loads this app from another origin,
+ * When the worker can't start (for example inside a host that loads this app from another origin,
  * where browsers refuse a cross-origin worker script), the same registered domains run on the
- * main thread on the same cadence. Those runs are called directly with the app's own token,
- * because the framework's direct path reads the token from cookies, which embedded logins don't set.
+ * main thread on the same cadence, called directly with the app's own token.
  */
 
-import {
-  DB_SYNC_CHANNEL,
-  bootstrapState,
-  clearLocalDb,
-  commonUtil,
-  ensureDbReady,
-  getSyncDomain,
-  logger,
-  projectRows,
-  refreshAfterMutation,
-  registerCommonSeedDomains,
-  resyncDomain,
-  startDbBootstrap,
-  updateWorkerToken
-} from "@common";
+import { commonUtil, logger } from "@common";
+import { type DbKey, type DbRow, clearDatabaseTables, ensureDbReady, entityKeyOf, getSyncDomain, projectRows, registerDomains, setupAppDbSync } from "@common/db";
 import { reactive } from "vue";
 import { deviceSettings, loadDeviceSettings } from "./deviceSettings";
-import { FULFILLMENT_SYNC_DOMAINS, OPEN_ORDERS_DOMAIN, ORDER_ITEMS_DOMAIN, PRODUCTS_DOMAIN, registerFulfillmentDomains } from "./domains";
-import { getFulfillmentDb, userFacilityProjection } from "./fulfillmentDb";
+import { FULFILLMENT_SYNC_DOMAINS, LIVE_ORDERS_INTERVAL_MS, LIVE_ORDER_DOMAINS, OPEN_ORDERS_DOMAIN } from "./domains";
+import { ORDER_STAGE, fulfillmentDb, orderKeyOf } from "./fulfillmentDb";
+import fulfillmentSyncWorkerUrl from "./fulfillmentSync.worker.ts?worker&url";
 
-const BASE_TICK_MS = 15_000;
-const LIVE_ORDER_DOMAINS = [OPEN_ORDERS_DOMAIN, ORDER_ITEMS_DOMAIN, PRODUCTS_DOMAIN];
+// A worker that loads posts its first status within moments; one that never answers didn't load.
+const WORKER_START_TIMEOUT_MS = 20_000;
 
 export const liveOrdersStatus = reactive({
   mode: "off" as "off" | "worker" | "main",
@@ -43,24 +31,22 @@ let activeOms = "";
 let starting: Promise<void> | null = null;
 let mainThreadTimer: ReturnType<typeof setInterval> | null = null;
 let mainThreadRunning = false;
-let mainThreadDomainsRegistered = false;
-let syncChannel: BroadcastChannel | null = null;
+let workerAnswered = false;
 
-/** The same domains in this thread's registry, for the main-thread fallback. */
-function registerMainThreadDomains(): void {
-  if(mainThreadDomainsRegistered) {return;}
-  registerCommonSeedDomains(getFulfillmentDb);
-  registerFulfillmentDomains(getFulfillmentDb);
-  mainThreadDomainsRegistered = true;
-}
+// The instance the sync started for, so logout clears the database it filled.
+fulfillmentDb.setOmsInstanceResolver(() => activeOms || commonUtil.getOMSInstanceName());
+// The same domains in this thread's registry, for the main-thread fallback.
+registerDomains(FULFILLMENT_SYNC_DOMAINS);
 
-function listenForWorkerSyncs(): void {
-  if(syncChannel || typeof BroadcastChannel === "undefined") {return;}
-  syncChannel = new BroadcastChannel(DB_SYNC_CHANNEL);
-  syncChannel.onmessage = (event) => {
-    if(event.data?.type === "domain-synced" && event.data?.domain === OPEN_ORDERS_DOMAIN) {liveOrdersStatus.lastSyncAt = Date.now();}
-  };
-}
+const appDbSync = setupAppDbSync({
+  db: fulfillmentDb,
+  getWorkerUrl: () => new URL(fulfillmentSyncWorkerUrl, import.meta.url),
+  onStatus: (status) => {
+    workerAnswered = true;
+    if(status.type === "sync-end" && status.domain === OPEN_ORDERS_DOMAIN) {liveOrdersStatus.lastSyncAt = Date.now();}
+  }
+});
+const syncOwner = appDbSync.createSyncDomainOwner("liveOpenOrders");
 
 function mainThreadContext() {
   return {
@@ -93,8 +79,9 @@ async function runOnMainThread(domainNames: string[]): Promise<void> {
 function startMainThreadLoop(): void {
   if(liveOrdersStatus.mode === "main") {return;}
   liveOrdersStatus.mode = "main";
-  void runOnMainThread(FULFILLMENT_SYNC_DOMAINS);
-  mainThreadTimer = setInterval(() => void runOnMainThread(FULFILLMENT_SYNC_DOMAINS), BASE_TICK_MS);
+  const domainNames = FULFILLMENT_SYNC_DOMAINS.map((domain) => domain.name);
+  void runOnMainThread(domainNames);
+  mainThreadTimer = setInterval(() => void runOnMainThread(domainNames), LIVE_ORDERS_INTERVAL_MS);
 }
 
 /**
@@ -102,10 +89,10 @@ function startMainThreadLoop(): void {
  * changed, so callers resync only when the set of facilities really moved.
  */
 async function writeMasterFacilities(facilities: any[]): Promise<boolean> {
-  const db = getFulfillmentDb(activeOms);
-  // Pinia hands out reactive proxies, which IndexedDB can't clone.
-  const plain = JSON.parse(JSON.stringify(facilities ?? []));
-  const fresh = projectRows(plain, userFacilityProjection, Date.now());
+  const db = fulfillmentDb.raw();
+  // Pinia hands out reactive proxies, which IndexedDB can't clone. Before facilities load, the store holds `{}`.
+  const plain = JSON.parse(JSON.stringify(Array.isArray(facilities) ? facilities : []));
+  const fresh = projectRows(plain, fulfillmentDb.entities.userFacilities, Date.now());
   const freshKeys = fresh.map((row) => String(row.facilityId)).sort();
   const storedKeys = (await db.table("userFacilities").toCollection().primaryKeys()).map(String).sort();
   if(freshKeys.join(",") === storedKeys.join(",")) {return false;}
@@ -118,46 +105,43 @@ async function writeMasterFacilities(facilities: any[]): Promise<boolean> {
   return true;
 }
 
+/** Resolves when the worker answers, or once it has stayed silent too long to be loading. */
+function workerStartTimeout(): Promise<"timeout"> {
+  return new Promise((resolve) => {
+    const startedAt = Date.now();
+    const check = setInterval(() => {
+      if(workerAnswered || Date.now() - startedAt >= WORKER_START_TIMEOUT_MS) {
+        clearInterval(check);
+        if(!workerAnswered) {resolve("timeout");}
+      }
+    }, 500);
+  });
+}
+
 async function start(facilities: any[]): Promise<void> {
   activeOms = commonUtil.getOMSInstanceName();
-  const db = getFulfillmentDb(activeOms);
-  await ensureDbReady(db);
-  registerMainThreadDomains();
-  listenForWorkerSyncs();
+  await ensureDbReady(fulfillmentDb.raw());
   await writeMasterFacilities(facilities);
 
-  // A worker that fails to load never answers the harness, so its error also ends the start.
-  let workerFailed: () => void = () => {};
-  const workerFailure = new Promise<void>((resolve) => { workerFailed = resolve; });
+  workerAnswered = false;
+  const outcome = await Promise.race([appDbSync.startAppDbSync().then(() => "started" as const), workerStartTimeout()]);
+  if(outcome === "timeout" || !appDbSync.syncService()) {
+    logger.error("Fulfillment sync worker did not start, syncing on the main thread", appDbSync.bootstrapState.errors.__start);
+    appDbSync.syncService()?.stop();
+    startMainThreadLoop();
 
-  await Promise.race([
-    startDbBootstrap({
-      workerFactory: () => {
-        const worker = new Worker(new URL("./fulfillmentSync.worker.ts", import.meta.url), { type: "module" });
-        worker.addEventListener("error", (event) => {
-          logger.error("Fulfillment sync worker failed, syncing on the main thread", event);
-          startMainThreadLoop();
-          workerFailed();
-        });
+    return;
+  }
 
-        return worker;
-      },
-      token: commonUtil.getToken() || "",
-      maargUrl: commonUtil.getMaargURL(),
-      omsInstance: activeOms,
-      db,
-      domains: FULFILLMENT_SYNC_DOMAINS,
-      baseTickMs: BASE_TICK_MS
-    }),
-    workerFailure
-  ]);
-
-  if(bootstrapState.error) {startMainThreadLoop();} else if(liveOrdersStatus.mode === "off") {liveOrdersStatus.mode = "worker";}
+  await appDbSync.activateSyncDomains(LIVE_ORDER_DOMAINS, syncOwner);
+  liveOrdersStatus.mode = "worker";
+  // Run the live domains now rather than on the harness's next tick.
+  await appDbSync.syncNow().catch((error) => logger.error("Failed the first live order sync", error));
 }
 
 /**
  * Start the live sync for the logged-in session. Safe to call more than once: later calls only
- * refresh the token and the facility master list.
+ * refresh the facility master list.
  */
 export async function startLiveOrdersSync(facilities: any[]): Promise<void> {
   await loadDeviceSettings();
@@ -165,7 +149,6 @@ export async function startLiveOrdersSync(facilities: any[]): Promise<void> {
 
   if(starting) {
     await starting;
-    updateWorkerToken(commonUtil.getToken() || "");
     await syncMasterFacilities(facilities);
 
     return;
@@ -173,6 +156,8 @@ export async function startLiveOrdersSync(facilities: any[]): Promise<void> {
 
   starting = start(facilities).catch((error) => {
     logger.error("Failed to start the live order sync, syncing on the main thread", error);
+    // Never sync from both threads.
+    appDbSync.syncService()?.stop();
     startMainThreadLoop();
   });
   await starting;
@@ -185,11 +170,11 @@ export async function syncMasterFacilities(facilities: any[]): Promise<void> {
 }
 
 /** Re-read the open bucket now, then fill items and products for anything new. */
-export async function refreshLiveOrders(domainNames: string[] = LIVE_ORDER_DOMAINS): Promise<void> {
+export async function refreshLiveOrders(domainNames: string[] = LIVE_ORDER_DOMAINS.map((domain) => domain.name)): Promise<void> {
   liveOrdersStatus.syncing = true;
   try {
     if(liveOrdersStatus.mode === "worker") {
-      for(const name of domainNames) {await resyncDomain(name);}
+      for(const name of domainNames) {await appDbSync.resyncDomain(name);}
     } else if(liveOrdersStatus.mode === "main") {
       await runOnMainThread(domainNames);
     }
@@ -200,26 +185,19 @@ export async function refreshLiveOrders(domainNames: string[] = LIVE_ORDER_DOMAI
   }
 }
 
-/** After an action on one order, settle just that order's open rows. */
-export async function refreshOpenOrder(orderId: string): Promise<void> {
-  try {
-    if(liveOrdersStatus.mode === "worker") {
-      await refreshAfterMutation(OPEN_ORDERS_DOMAIN, { orderId });
-    } else if(liveOrdersStatus.mode === "main") {
-      await getSyncDomain(OPEN_ORDERS_DOMAIN)?.refetchOne?.({ orderId }, mainThreadContext());
-    }
-  } catch (error) {
-    logger.error("Failed to refresh the order", error);
-  }
-}
-
-/** Take orders out of the local queue at once, ahead of the confirming resync. */
+/** Take orders out of the local queue at once, ahead of the confirming resync. `orderKeys` are the Open view's keys. */
 export async function removeOpenOrdersLocally(orderKeys: string[]): Promise<void> {
   if(!orderKeys.length || liveOrdersStatus.mode === "off") {return;}
-  const db = getFulfillmentDb(activeOms);
+  const removed = new Set(orderKeys);
+  const db = fulfillmentDb.raw();
   await db.transaction("rw", ["orders", "orderItems"], async () => {
-    await db.table("orders").bulkDelete(orderKeys);
-    await db.table("orderItems").where("orderKey").anyOf(orderKeys).delete();
+    const rows = await db.table<DbRow, DbKey>("orders").where("stage").equals(ORDER_STAGE.OPEN).toArray();
+    const keys = rows
+      .filter((row) => removed.has(String(orderKeyOf(row.orderId, row.shipGroupSeqId))))
+      .map((row) => entityKeyOf(row, fulfillmentDb.entities.orders) as DbKey);
+    if(!keys.length) {return;}
+    await db.table("orders").bulkDelete(keys);
+    await db.table("orderItems").where("[orderId+shipGroupSeqId]").anyOf(keys as any[]).delete();
   });
 }
 
@@ -229,15 +207,19 @@ export async function stopLiveOrdersSync(): Promise<void> {
     clearInterval(mainThreadTimer);
     mainThreadTimer = null;
   }
+  const wasRunning = liveOrdersStatus.mode !== "off";
   liveOrdersStatus.mode = "off";
   liveOrdersStatus.lastSyncAt = 0;
-  const oms = activeOms;
   starting = null;
-  activeOms = "";
-  if(!oms) {return;}
-  try {
-    await clearLocalDb(getFulfillmentDb(oms));
-  } catch (error) {
-    logger.error("Failed to clear the local order database", error);
+  if(activeOms || wasRunning) {
+    try {
+      await appDbSync.deactivateSyncDomains(syncOwner);
+      // Terminates the worker and clears the tables of the instance the sync started for.
+      await appDbSync.stopAppDbSync();
+    } catch (error) {
+      logger.error("Failed to stop the live order sync", error);
+      if(activeOms) {await clearDatabaseTables(fulfillmentDb.get(activeOms));}
+    }
   }
+  activeOms = "";
 }

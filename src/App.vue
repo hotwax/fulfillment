@@ -162,7 +162,13 @@ onMounted(async () => {
 });
 
 // Keep the facility master list in IndexedDB in step with the facilities the app resolved.
-watch(() => useProductStore().getFacilities?.map((facility: any) => facility.facilityId).join(","), () => {
+// Before facilities load, the store holds `{}` rather than a list.
+const facilityIdsKey = () => {
+  const facilities = useProductStore().getFacilities;
+
+  return Array.isArray(facilities) ? facilities.map((facility: any) => facility.facilityId).join(",") : "";
+};
+watch(facilityIdsKey, () => {
   void syncMasterFacilities(useProductStore().getFacilities);
 });
 

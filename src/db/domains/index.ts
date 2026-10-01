@@ -1,18 +1,21 @@
-import type { BaseDB } from "@common/db/baseDb";
-import { OPEN_ORDERS_DOMAIN, registerOpenOrdersDomain } from "./openOrdersDomain";
-import { ORDER_ITEMS_DOMAIN, registerOrderItemsDomain } from "./orderItemsDomain";
-import { PRODUCTS_DOMAIN, registerProductsDomain } from "./productsDomain";
+import { commonDomains } from "@common/db/seed/seedDomains";
+import type { ActiveDomain } from "@common/db/sync/syncRegistry";
+import type { SyncDomain } from "@common/db/types";
+import { OPEN_ORDERS_DOMAIN, openOrdersDomain } from "./openOrdersDomain";
+import { ORDER_ITEMS_DOMAIN, orderItemsDomain } from "./orderItemsDomain";
+import { PRODUCTS_DOMAIN, productsDomain } from "./productsDomain";
 
 export { OPEN_ORDERS_DOMAIN, ORDER_ITEMS_DOMAIN, PRODUCTS_DOMAIN };
 
-// Shared accxui reference domains the pages read. productStore runs first: productStoreShipmentMethod fans out over it.
-const SHARED_SEED_DOMAINS = ["productStore", "shipmentMethodType", "productStoreShipmentMethod"];
+/** The cadence of the live Open list. */
+export const LIVE_ORDERS_INTERVAL_MS = 15_000;
 
-/** Every domain the harness runs, in tick order: items follow orders, products follow items. */
-export const FULFILLMENT_SYNC_DOMAINS = [...SHARED_SEED_DOMAINS, OPEN_ORDERS_DOMAIN, ORDER_ITEMS_DOMAIN, PRODUCTS_DOMAIN];
+/**
+ * Every domain the fulfillment sync runs: the shared shipment method types the Open filters label
+ * (class B, synced once per login) and the live order domains (class A).
+ */
+export const FULFILLMENT_SYNC_DOMAINS: SyncDomain[] = [commonDomains.shipmentMethodType, openOrdersDomain, orderItemsDomain, productsDomain];
 
-export function registerFulfillmentDomains(getDb: (omsInstance: string) => BaseDB): void {
-  registerOpenOrdersDomain(getDb);
-  registerOrderItemsDomain(getDb);
-  registerProductsDomain(getDb);
-}
+/** The live order domains, as the activation the Open list needs, in tick order: items follow orders, products follow items. */
+export const LIVE_ORDER_DOMAINS: ActiveDomain[] = [OPEN_ORDERS_DOMAIN, ORDER_ITEMS_DOMAIN, PRODUCTS_DOMAIN]
+  .map((name) => ({ name, intervalMs: LIVE_ORDERS_INTERVAL_MS }));

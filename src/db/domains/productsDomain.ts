@@ -5,12 +5,11 @@
  * categories in a single record; REST spreads them across several product resources.
  */
 
-import type { BaseDB } from "@common/db/baseDb";
-import { projectRows } from "@common/db/projection";
-import { registerSyncDomain } from "@common/db/sync/syncRegistry";
-import { workerPost } from "@common/db/sync/workerFetch";
-import type { DbRow, SyncContext } from "@common/db/types";
-import { productProjection } from "../fulfillmentDb";
+import { workerPost } from "@common/core/workerRemoteApi";
+import { projectRows } from "@common/db/storage/projection";
+import { defineSyncDomain } from "@common/db/sync/defineSyncDomain";
+import type { DbKey, DbRow, SyncContext } from "@common/db/types";
+import { fulfillmentDb, getFulfillmentDb } from "../fulfillmentDb";
 import { chunk } from "./rowSync";
 
 export const PRODUCTS_DOMAIN = "products";
@@ -71,35 +70,41 @@ function productQuery(productIds: string[]) {
   };
 }
 
-export function registerProductsDomain(getDb: (omsInstance: string) => BaseDB): void {
-  registerSyncDomain({
-    name: PRODUCTS_DOMAIN,
+export const productsDomain = defineSyncDomain({
+  name: PRODUCTS_DOMAIN,
+  label: "Products",
+  syncClass: "A",
+  table: "products",
 
-    async sync(ctx: SyncContext) {
-      const db = getDb(ctx.omsInstance);
-      const referenced = new Set<string>();
-      await db.table<DbRow, string>("orderItems").each((item) => {
-        if(item.productId) {referenced.add(String(item.productId));}
-      });
-      if(!referenced.size) {return;}
+  async sync(ctx: SyncContext) {
+    const db = getFulfillmentDb(ctx.omsInstance);
+    const referenced = new Set<string>();
+    await db.table<DbRow, DbKey>("orderItems").each((item) => {
+      if(item.productId) {referenced.add(String(item.productId));}
+    });
+    if(!referenced.size) {return 0;}
 
-      const productIds = [...referenced];
-      const stored = await db.table<DbRow, string>("products").bulkGet(productIds);
-      const due = productIds.filter((productId, index) => {
-        const row = stored[index];
-        const isFresh = row && ctx.now - (Number(row.syncedAt) || 0) < PRODUCT_TTL_MS;
-        const askedRecently = ctx.now - (lastQueriedAt.get(productId) ?? 0) < PRODUCT_TTL_MS;
+    const productIds = [...referenced];
+    const now = Date.now();
+    const stored = await db.table<DbRow, string>("products").bulkGet(productIds);
+    const due = productIds.filter((productId, index) => {
+      const row = stored[index];
+      const isFresh = row && now - (Number(row.syncedAt) || 0) < PRODUCT_TTL_MS;
+      const askedRecently = now - (lastQueriedAt.get(productId) ?? 0) < PRODUCT_TTL_MS;
 
-        return !isFresh && !askedRecently;
-      });
+      return !isFresh && !askedRecently;
+    });
 
-      for(const batch of chunk(due, PRODUCT_BATCH_SIZE)) {
-        const response = await workerPost(ctx, "admin/search/query", productQuery(batch));
-        batch.forEach((productId) => lastQueriedAt.set(productId, ctx.now));
-        const docs = response?.response?.response?.docs ?? response?.response?.docs ?? [];
-        const rows = projectRows(mergeProductDocs(docs), productProjection, ctx.now);
-        if(rows.length) {await db.table("products").bulkPut(rows);}
-      }
+    let written = 0;
+    for(const batch of chunk(due, PRODUCT_BATCH_SIZE)) {
+      const response = await workerPost(ctx, "admin/search/query", productQuery(batch));
+      batch.forEach((productId) => lastQueriedAt.set(productId, now));
+      const docs = response?.response?.response?.docs ?? response?.response?.docs ?? [];
+      const rows = projectRows(mergeProductDocs(docs), fulfillmentDb.entities.products, Date.now());
+      if(rows.length) {await db.table("products").bulkPut(rows);}
+      written += rows.length;
     }
-  });
-}
+
+    return written;
+  }
+});

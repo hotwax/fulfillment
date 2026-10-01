@@ -1,3 +1,4 @@
+import { defineEntity } from "@common/db/schema/defineEntity";
 import { describe, expect, it } from "vitest";
 import { mergeProductDocs } from "@/db/domains/productsDomain";
 import { changedRows, chunk, hydrationOrder, runWithConcurrency } from "@/db/domains/rowSync";
@@ -30,24 +31,30 @@ describe("mergeProductDocs", () => {
 });
 
 describe("changedRows", () => {
-  const row = (key: string, raw: any) => ({ orderKey: key, raw, syncedAt: 1 });
+  const entity = defineEntity({
+    primaryKey: "orderId,shipGroupSeqId",
+    fields: { orderId: "text", shipGroupSeqId: "text", itemCount: "count", tags: "structured" }
+  });
+  const row = (orderId: string, fields: Record<string, unknown> = {}, syncedAt = 1) => ({ orderId, shipGroupSeqId: "00001", ...fields, syncedAt });
 
-  it("returns only rows that are new or whose server record changed", () => {
-    const existing = new Map([
-      ["A-1", row("A-1", { orderId: "A", itemCount: 1 })],
-      ["B-1", row("B-1", { orderId: "B", itemCount: 2 })]
-    ]);
-    const fresh = [
-      row("A-1", { orderId: "A", itemCount: 1 }),
-      row("B-1", { orderId: "B", itemCount: 3 }),
-      row("C-1", { orderId: "C", itemCount: 1 })
-    ];
-    expect(changedRows(fresh, existing, "orderKey").map((r) => r.orderKey)).toEqual(["B-1", "C-1"]);
+  it("returns only rows that are new or whose stored fields changed", () => {
+    const existing = [row("A", { itemCount: 1 }), row("B", { itemCount: 2 })];
+    const fresh = [row("A", { itemCount: 1 }, 2), row("B", { itemCount: 3 }, 2), row("C", { itemCount: 1 }, 2)];
+    expect(changedRows(fresh, existing, entity).map((r) => r.orderId)).toEqual(["B", "C"]);
   });
 
-  it("returns nothing when the server set is unchanged", () => {
-    const existing = new Map([["A-1", row("A-1", { orderId: "A" })]]);
-    expect(changedRows([row("A-1", { orderId: "A" })], existing, "orderKey")).toEqual([]);
+  it("returns nothing when the server set is unchanged, whatever the sync time", () => {
+    expect(changedRows([row("A", { tags: ["Sale"] }, 5)], [row("A", { tags: ["Sale"] })], entity)).toEqual([]);
+  });
+
+  it("sees a change inside a structured field and a field that went missing", () => {
+    expect(changedRows([row("A", { tags: ["Sale", "Men"] })], [row("A", { tags: ["Sale"] })], entity)).toHaveLength(1);
+    expect(changedRows([row("A")], [row("A", { itemCount: 1 })], entity)).toHaveLength(1);
+  });
+
+  it("keys compound rows by every key member", () => {
+    const otherShipGroup = { ...row("A", { itemCount: 1 }), shipGroupSeqId: "00002" };
+    expect(changedRows([otherShipGroup], [row("A", { itemCount: 1 })], entity)).toEqual([otherShipGroup]);
   });
 });
 

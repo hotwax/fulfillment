@@ -6,10 +6,10 @@
  * a sync that touches one order hands Vue the same objects for every other card.
  */
 
-import { type DbRow, commonUtil } from "@common";
+import { type DbRow, ensureDbReady } from "@common/db";
 import { type Ref, computed, markRaw, onUnmounted, ref, shallowRef, watch } from "vue";
 import { deviceSettings } from "@/db/deviceSettings";
-import { ORDER_STAGE, getFulfillmentEntities } from "@/db/fulfillmentDb";
+import { ORDER_STAGE, fulfillmentDb, orderKeyOf } from "@/db/fulfillmentDb";
 import { useProductStore } from "@/store/product";
 import { type FilterSelections, OPEN_ORDER_FILTER_DIMENSIONS, filterOpenOrders, openOrderFacets } from "@/utils/openOrderFilters";
 
@@ -22,12 +22,12 @@ interface LiveOpenOrdersOptions {
   pickSize: Ref<number>;
 }
 
-function toOrderView(row: DbRow, items: DbRow[], version: string) {
-  const order: any = row.raw;
+const orderKeyOfRow = (row: DbRow) => String(orderKeyOf(row.orderId, row.shipGroupSeqId));
 
+function toOrderView(order: any, items: DbRow[], version: string) {
   return markRaw({
     category: "open",
-    orderKey: String(row.orderKey),
+    orderKey: orderKeyOfRow(order),
     orderId: order.orderId,
     orderName: order.orderName,
     orderDate: order.orderDate,
@@ -40,14 +40,12 @@ function toOrderView(row: DbRow, items: DbRow[], version: string) {
     customerName: [order.firstName, order.lastName].filter(Boolean).join(" "),
     itemCount: order.itemCount,
     // Picklist creation reads the ship method and facility from the items.
-    items: items.map((item) => ({ ...item.raw, shipmentMethodTypeId: order.shipmentMethodTypeId, facilityId: order.facilityId })),
+    items: items.map((item) => ({ ...item, shipmentMethodTypeId: order.shipmentMethodTypeId, facilityId: order.facilityId })),
     version
   });
 }
 
 export function useLiveOpenOrders(options: LiveOpenOrdersOptions) {
-  const entities = getFulfillmentEntities(commonUtil.getOMSInstanceName());
-
   const orderRows = shallowRef<DbRow[]>([]);
   const itemRows = shallowRef<DbRow[]>([]);
   const productRows = shallowRef<DbRow[]>([]);
@@ -55,33 +53,51 @@ export function useLiveOpenOrders(options: LiveOpenOrdersOptions) {
   const hydrated = ref(false);
 
   let subscriptions: Array<{ unsubscribe: () => void }> = [];
+  // Bumped on every subscribe and on unmount, so a subscribe still opening the database knows it was replaced.
+  let generation = 0;
   const unsubscribe = () => {
     subscriptions.forEach((subscription) => subscription.unsubscribe());
     subscriptions = [];
   };
 
-  const subscribe = (facilityId?: string) => {
+  const subscribe = async (facilityId?: string) => {
+    const current = ++generation;
     unsubscribe();
     hydrated.value = false;
     orderRows.value = [];
     if(!facilityId) {return;}
 
     const onError = (error: unknown) => console.error("[useLiveOpenOrders] live query failed:", error);
+    try {
+      // Open and version-check the database before any live query: the check can rebuild the
+      // database, and a live query may only read.
+      await ensureDbReady(fulfillmentDb.raw());
+    } catch (error) {
+      onError(error);
+      hydrated.value = true;
+
+      return;
+    }
+    if(current !== generation) {return;}
+
     subscriptions = [
-      entities.orders.live({ scope: { field: "facilityId", value: facilityId }, filter: (row) => row.stage === ORDER_STAGE.OPEN }).subscribe({
+      fulfillmentDb.entity<DbRow>("orders").live({ scope: { field: "facilityId", value: facilityId }, filter: (row) => row.stage === ORDER_STAGE.OPEN }).subscribe({
         next: (rows) => { orderRows.value = rows; hydrated.value = true; },
         error: (error) => { onError(error); hydrated.value = true; }
       }),
-      entities.orderItems.live().subscribe({ next: (rows) => { itemRows.value = rows; }, error: onError }),
-      entities.products.live().subscribe({ next: (rows) => { productRows.value = rows; }, error: onError }),
-      entities.shipmentMethodTypes.live().subscribe({ next: (rows) => { shipmentMethodRows.value = rows; }, error: onError })
+      fulfillmentDb.entity<DbRow>("orderItems").live().subscribe({ next: (rows) => { itemRows.value = rows; }, error: onError }),
+      fulfillmentDb.entity<DbRow>("products").live().subscribe({ next: (rows) => { productRows.value = rows; }, error: onError }),
+      fulfillmentDb.entity<DbRow>("shipmentMethodTypes").live().subscribe({ next: (rows) => { shipmentMethodRows.value = rows; }, error: onError })
     ];
   };
 
-  watch(options.facilityId, (facilityId) => subscribe(facilityId), { immediate: true });
-  onUnmounted(unsubscribe);
+  watch(options.facilityId, (facilityId) => void subscribe(facilityId), { immediate: true });
+  onUnmounted(() => {
+    generation++;
+    unsubscribe();
+  });
 
-  const productsById = computed(() => new Map(productRows.value.map((row) => [String(row.productId), row.raw as any])));
+  const productsById = computed(() => new Map(productRows.value.map((row) => [String(row.productId), row as any])));
   const productVersions = computed(() => new Map(productRows.value.map((row) => [String(row.productId), Number(row.syncedAt) || 0])));
 
   // The card helpers (images, identifiers, kit checks) read the Pinia product cache. Push each
@@ -90,14 +106,14 @@ export function useLiveOpenOrders(options: LiveOpenOrdersOptions) {
   watch(productRows, (rows) => {
     const changed = rows.filter((row) => pushedVersions.get(String(row.productId)) !== row.syncedAt);
     if(!changed.length) {return;}
-    useProductStore().addProductToCachedMultiple({ products: changed.map((row) => row.raw) });
+    useProductStore().addProductToCachedMultiple({ products: changed.map((row) => ({ ...row })) });
     changed.forEach((row) => pushedVersions.set(String(row.productId), Number(row.syncedAt)));
   });
 
   const itemsByOrderKey = computed(() => {
     const grouped = new Map<string, DbRow[]>();
     for(const row of itemRows.value) {
-      const key = String(row.orderKey);
+      const key = orderKeyOfRow(row);
       const items = grouped.get(key) ?? [];
       items.push(row);
       grouped.set(key, items);
@@ -117,13 +133,13 @@ export function useLiveOpenOrders(options: LiveOpenOrdersOptions) {
 
     for(const row of orderRows.value) {
       if(productStoreId && row.productStoreId && row.productStoreId !== productStoreId) {continue;}
-      const key = String(row.orderKey);
+      const key = orderKeyOfRow(row);
       const items = itemsByOrderKey.value.get(key) ?? [];
       // An order joins the view once its items are stored, so a card is never shown half-filled.
       if(!items.length) {continue;}
       const version = [
         row.syncedAt,
-        ...items.map((item) => `${item.itemKey}:${item.syncedAt}:${productVersions.value.get(String(item.productId)) ?? 0}`)
+        ...items.map((item) => `${item.orderItemSeqId}:${item.syncedAt}:${productVersions.value.get(String(item.productId)) ?? 0}`)
       ].join("|");
       const cached = viewCache.get(key);
       const view = cached && cached.version === version ? cached.view : toOrderView(row, items, version);
@@ -139,7 +155,7 @@ export function useLiveOpenOrders(options: LiveOpenOrdersOptions) {
 
   const shipmentMethodLabels = computed(() => new Map(shipmentMethodRows.value.map((row) => [
     String(row.shipmentMethodTypeId),
-    String(row.description ?? (row.raw as any)?.description ?? row.shipmentMethodTypeId)
+    String(row.description ?? row.shipmentMethodTypeId)
   ])));
 
   const dimensions = computed(() => OPEN_ORDER_FILTER_DIMENSIONS.filter((dimension) => deviceSettings.openOrderFilterDimensions.includes(dimension.id)));

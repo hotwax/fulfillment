@@ -1,13 +1,14 @@
 /**
- * Fulfillment sync worker: the accxui polling harness with the shared reference domains and the
- * fulfillment domains registered. Registration order is tick order.
+ * Fulfillment sync worker: the accxui polling harness with the shared reference domain and the
+ * fulfillment domains registered.
+ *
+ * Deep imports only: this is a worker entry, and the `@common` barrels pull in `vue`.
  */
 
-import { registerCommonSeedDomains } from "@common/db/domains/commonSeedDomains";
 import { exposeWorkerHarness } from "@common/db/sync/pollingWorkerHarness";
-import { registerFulfillmentDomains } from "./domains";
+import { registerDomains } from "@common/db/sync/syncRegistry";
+import { FULFILLMENT_SYNC_DOMAINS } from "./domains";
 import { getFulfillmentDb } from "./fulfillmentDb";
 
-registerCommonSeedDomains(getFulfillmentDb);
-registerFulfillmentDomains(getFulfillmentDb);
+registerDomains(FULFILLMENT_SYNC_DOMAINS);
 exposeWorkerHarness(getFulfillmentDb);

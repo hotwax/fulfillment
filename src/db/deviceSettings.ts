@@ -5,7 +5,7 @@
  * clears that one and these choices should survive a re-login on the same device.
  */
 
-import { BaseDB, ensureDbReady } from "@common/db/baseDb";
+import { BaseDB, ensureDbReady } from "@common/db/storage/baseDb";
 import { reactive } from "vue";
 import { DEFAULT_OPEN_ORDER_FILTER_DIMENSIONS } from "@/utils/openOrderFilters";
 

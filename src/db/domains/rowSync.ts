@@ -2,19 +2,30 @@
  * Pure helpers shared by the fulfillment sync domains. Free of Dexie so they are unit-testable.
  */
 
+import type { Entity } from "@common/db/schema/defineEntity";
+import { canonicalKey, entityKeyOf } from "@common/db/storage/projection";
 import type { DbRow } from "@common/db/types";
 
+const sameValue = (a: unknown, b: unknown) => a === b || JSON.stringify(a) === JSON.stringify(b);
+
 /**
- * Fresh rows that are new or whose server record changed since it was stored.
+ * Fresh rows that are new or whose stored fields changed since the row was stored.
  *
  * Unchanged rows are skipped on purpose: rewriting them would bump `syncedAt` on every tick,
  * wake every live query, and make the item and card layers treat the whole queue as changed.
  */
-export function changedRows(fresh: DbRow[], existing: Map<string, DbRow>, keyField: string): DbRow[] {
-  return fresh.filter((row) => {
-    const previous = existing.get(String(row[keyField]));
+export function changedRows(fresh: DbRow[], existing: DbRow[], entity: Entity): DbRow[] {
+  const existingByKey = new Map<string, DbRow>();
+  for(const row of existing) {
+    const key = entityKeyOf(row, entity);
+    if(key !== undefined) {existingByKey.set(canonicalKey(key), row);}
+  }
 
-    return !previous || JSON.stringify(previous.raw) !== JSON.stringify(row.raw);
+  return fresh.filter((row) => {
+    const key = entityKeyOf(row, entity);
+    const previous = key === undefined ? undefined : existingByKey.get(canonicalKey(key));
+
+    return !previous || entity.fieldNames.some((field) => !sameValue(previous[field], row[field]));
   });
 }
 
@@ -47,7 +58,7 @@ export async function runWithConcurrency<T>(items: T[], limit: number, task: (it
  * Orders interleaved across facilities, each facility's oldest first: every facility's first
  * order, then every second order, and so on. The top of each facility's Open list fills first.
  */
-export function hydrationOrder<T extends { facilityId?: unknown; orderDate?: unknown }>(orders: T[]): T[] {
+export function hydrationOrder<T extends Record<string, unknown>>(orders: T[]): T[] {
   const byFacility = new Map<string, T[]>();
   for(const order of orders) {
     const facilityOrders = byFacility.get(String(order.facilityId)) ?? [];
