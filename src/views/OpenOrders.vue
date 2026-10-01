@@ -243,7 +243,8 @@ const expandedKitKeys = ref(new Set<string>());
 const ordersTotal = computed(() => isLive.value ? liveAllOrders.value.length : openOrders.value.total);
 const animateCards = computed(() => isLive.value && animationsReady.value);
 const isLiveLoading = computed(() => !liveHydrated.value || (liveOrdersStatus.mode !== "off" && !liveOrdersStatus.lastSyncAt && !liveAllOrders.value.length));
-const isLiveDataStale = () => isLive.value && !!liveOrdersStatus.lastSyncAt && Date.now() - liveOrdersStatus.lastSyncAt > STALE_AFTER_MS;
+// Orders cached by an earlier session count as stale until this session has synced.
+const isLiveDataStale = () => isLive.value && (!liveOrdersStatus.lastSyncAt || Date.now() - liveOrdersStatus.lastSyncAt > STALE_AFTER_MS);
 
 const displayedOrders = computed(() => isLive.value
   ? liveVisibleOrders.value.filter((order: any) => !heldOrderKeys.value.has(order.orderKey))
@@ -476,6 +477,12 @@ const assignPickers = async () => {
       await nextTick();
     } finally {
       emitter.emit("dismissLoader");
+    }
+    // The refresh failed, so the orders on screen may already have left the queue.
+    if(isLiveDataStale()) {
+      commonUtil.showToast(translate("Failed to create picklist for orders"));
+
+      return;
     }
   }
 
