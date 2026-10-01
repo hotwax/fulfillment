@@ -436,76 +436,106 @@ export const useOrderStore = defineStore("order", {
     async getOpenOrder(payload: any) {
       emitter.emit("presentLoader")
 
-      const openOrderQuery = JSON.parse(JSON.stringify(this.open.query))
-      openOrderQuery.orderId = payload.orderId
-      openOrderQuery.shipGroupSeqId = payload.shipGroupSeqId
-      openOrderQuery.viewSize = 1
+      try {
+        const openOrderQuery = JSON.parse(JSON.stringify(this.open.query))
+        openOrderQuery.orderId = payload.orderId
+        openOrderQuery.shipGroupSeqId = payload.shipGroupSeqId
+        openOrderQuery.viewSize = 1
 
-      const { orders } = await this.searchOpenOrders({ openOrderQuery })
-      const order = orders[0]
+        const { orders } = await this.searchOpenOrders({ openOrderQuery })
+        const order = orders[0]
+        if(!order) {
+          throw new Error("No open order found for this ship group at the current facility")
+        }
 
-      const productIds = order.items.map((item: any) => item.productId)
-      useProduct().fetchProducts({ productIds })
-      useUtilStore().fetchShipmentMethodTypeDesc([order.shipmentMethodTypeId])
+        const productIds = order.items.map((item: any) => item.productId)
+        useProduct().fetchProducts({ productIds })
+        useUtilStore().fetchShipmentMethodTypeDesc([order.shipmentMethodTypeId])
 
-      await this.updateCurrent(order)
-      emitter.emit("dismissLoader")
+        await this.updateCurrent(order)
+      } catch (err) {
+        logger.error("Failed to fetch the open order", err)
+        // Without a current order, the order detail page shows that the order could not be fetched.
+        this.setCurrent(null)
+      } finally {
+        emitter.emit("dismissLoader")
+      }
     },
     async getInProgressOrder(payload: any) {
       emitter.emit("presentLoader")
 
-      const inProgressQuery = JSON.parse(JSON.stringify(this.inProgress.query))
-      inProgressQuery.orderId = payload.orderId
-      inProgressQuery.shipmentId = payload.shipmentId
-      inProgressQuery.statusId = "SHIPMENT_APPROVED"
+      try {
+        const inProgressQuery = JSON.parse(JSON.stringify(this.inProgress.query))
+        inProgressQuery.orderId = payload.orderId
+        inProgressQuery.shipmentId = payload.shipmentId
+        inProgressQuery.statusId = "SHIPMENT_APPROVED"
 
-      const { orders: inProgressOrders } = await this.findShipments(inProgressQuery)
+        const { orders: inProgressOrders } = await this.findShipments(inProgressQuery)
 
-      let order = inProgressOrders[0]
+        let order = inProgressOrders[0]
+        if(!order) {
+          throw new Error("No in progress shipment found for this order at the current facility")
+        }
 
-      order.category = "in-progress"
+        order.category = "in-progress"
 
-      order = {
-        ...order,
-        items: order.items.map((item: any) => {
-          const packageName = order?.shipmentPackageRouteSegDetails.find(
-            (shipmentPackageContent: any) => shipmentPackageContent.shipmentItemSeqId === item.shipmentItemSeqId
-          )?.packageName || null
-          return {
-            ...item,
-            selectedBox: packageName,
-            currentBox: packageName
-          }
-        })
+        order = {
+          ...order,
+          items: order.items.map((item: any) => {
+            const packageName = order?.shipmentPackageRouteSegDetails.find(
+              (shipmentPackageContent: any) => shipmentPackageContent.shipmentItemSeqId === item.shipmentItemSeqId
+            )?.packageName || null
+            return {
+              ...item,
+              selectedBox: packageName,
+              currentBox: packageName
+            }
+          })
+        }
+
+        const productIds = order.items.map((item: any) => item.productId)
+        useProduct().fetchProducts({ productIds })
+        useUtilStore().fetchShipmentMethodTypeDesc([order.shipmentMethodTypeId])
+        order = await this.fetchGiftCardActivationDetails({ isDetailsPage: true, currentOrders: [order] })
+
+        await this.updateCurrent(order)
+      } catch (err) {
+        logger.error("Failed to fetch the in progress order", err)
+        // Without a current order, the order detail page shows that the order could not be fetched.
+        this.setCurrent(null)
+      } finally {
+        emitter.emit("dismissLoader")
       }
-
-      const productIds = order.items.map((item: any) => item.productId)
-      useProduct().fetchProducts({ productIds })
-      useUtilStore().fetchShipmentMethodTypeDesc([order.shipmentMethodTypeId])
-      order = await this.fetchGiftCardActivationDetails({ isDetailsPage: true, currentOrders: [order] })
-
-      await this.updateCurrent(order)
-      emitter.emit("dismissLoader")
     },
     async getCompletedOrder(payload: any) {
       emitter.emit("presentLoader")
 
-      const completedOrderQuery = JSON.parse(JSON.stringify(this.completed.query))
-      completedOrderQuery.orderId = payload.orderId
-      completedOrderQuery.shipmentId = payload.shipmentId
+      try {
+        const completedOrderQuery = JSON.parse(JSON.stringify(this.completed.query))
+        completedOrderQuery.orderId = payload.orderId
+        completedOrderQuery.shipmentId = payload.shipmentId
 
-      const { orders: completedOrders } = await this.findShipments(completedOrderQuery)
+        const { orders: completedOrders } = await this.findShipments(completedOrderQuery)
 
-      let order = completedOrders[0]
+        let order = completedOrders[0]
+        if(!order) {
+          throw new Error("No completed shipment found for this order at the current facility")
+        }
 
-      order.category = "completed"
+        order.category = "completed"
 
-      const productIds = order.items.map((item: any) => item.productId)
-      useProduct().fetchProducts({ productIds })
-      useUtilStore().fetchShipmentMethodTypeDesc([order.shipmentMethodTypeId])
-      order = await this.fetchGiftCardActivationDetails({ isDetailsPage: true, currentOrders: [order] })
-      await this.updateCurrent(order)
-      emitter.emit("dismissLoader")
+        const productIds = order.items.map((item: any) => item.productId)
+        useProduct().fetchProducts({ productIds })
+        useUtilStore().fetchShipmentMethodTypeDesc([order.shipmentMethodTypeId])
+        order = await this.fetchGiftCardActivationDetails({ isDetailsPage: true, currentOrders: [order] })
+        await this.updateCurrent(order)
+      } catch (err) {
+        logger.error("Failed to fetch the completed order", err)
+        // Without a current order, the order detail page shows that the order could not be fetched.
+        this.setCurrent(null)
+      } finally {
+        emitter.emit("dismissLoader")
+      }
     },
     async fetchOtherShipments() {
       let otherShipments: any[] = []

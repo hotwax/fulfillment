@@ -1464,6 +1464,10 @@ onIonViewDidEnter(async () => {
   } else {
     await useOrderStore().getCompletedOrder({ orderId: props.orderId, shipmentId: props.shipmentId });
   }
+  // The order could not be fetched, so the page shows that instead of loading its carrier, invoice and payment details.
+  if(!order.value) {
+    return;
+  }
   initialShipmentMethodTypeId.value = order.value?.shipmentMethodTypeId;
   await Promise.all([useUtilStore().fetchCarrierShipmentBoxTypes(), useCarrierStore().fetchFacilityCarriers(), useCarrierStore().fetchProductStoreShipmentMeths(), fetchOrderInvoicingStatus()]);
   if (facilityCarriers.value) {
