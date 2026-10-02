@@ -34,10 +34,19 @@ export function useStorePerformance() {
   });
   const closesAt = computed(() => closingTime(performance.value.store, now.value));
   const pickers = computed(() => pickerPerformance(performance.value.picklists, performance.value.packed, performance.value.rejected, now.value));
-  const mostPickedId = computed(() => pickers.value.find((picker) => picker.partyId && picker.picked)?.partyId);
-  const fastestPackerId = computed(() => pickers.value
+  const mostPicked = computed(() => pickers.value.find((picker) => picker.partyId && picker.picked));
+  const fastestPacker = computed(() => pickers.value
     .filter((picker) => picker.partyId && picker.avgPackMs !== undefined)
-    .sort((a, b) => a.avgPackMs! - b.avgPackMs!)[0]?.partyId);
+    .sort((a, b) => a.avgPackMs! - b.avgPackMs!)[0]);
+  // Widths of the progress bar's layers, against the facility's order limit. Each layer starts at the left edge,
+  // so the rejected layer covers packed and rejected, and the allocated layer everything allocated.
+  const progress = computed(() => {
+    const handled = packedCount.value + rejectedCount.value;
+    const total = Math.max(Number(productStore.getCurrentFacility?.maximumOrderLimit) || 0, allocatedCount.value, handled);
+    const width = (count: number) => `${total ? count / total * 100 : 0}%`;
+
+    return { packed: width(packedCount.value), handled: width(handled), allocated: width(Math.max(allocatedCount.value, handled)) };
+  });
 
   async function loadPerformance() {
     const facilityId = productStore.getCurrentFacility?.facilityId;
@@ -88,5 +97,5 @@ export function useStorePerformance() {
     if(load === latestLoad) {loading.value = false;}
   }
 
-  return { loading, now, allocatedCount, packedCount, rejectedCount, rate, openOrderIds, inProgressOrderIds, oldestPending, closesAt, pickers, mostPickedId, fastestPackerId, loadPerformance };
+  return { loading, now, allocatedCount, packedCount, rejectedCount, rate, openOrderIds, inProgressOrderIds, oldestPending, closesAt, pickers, mostPicked, fastestPacker, progress, loadPerformance };
 }
