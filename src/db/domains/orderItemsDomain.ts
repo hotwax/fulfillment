@@ -23,10 +23,6 @@ const shipGroupOf = (row: DbRow): [string, string] => [String(row.orderId), Stri
 // The order row version each ship group's items were fetched for, so empty results aren't refetched every tick.
 const fetchedForVersion = new Map<string, number>();
 
-export function forgetItemFetches(): void {
-  fetchedForVersion.clear();
-}
-
 async function syncItemsOf(db: BaseDB, ctx: SyncContext, order: DbRow): Promise<void> {
   const shipGroup = shipGroupOf(order);
   const response = await workerGet(ctx, `oms/orders/${encodeURIComponent(shipGroup[0])}/items`, { pageSize: 250 });
@@ -51,7 +47,7 @@ export const orderItemsDomain = defineSyncDomain({
   syncClass: "A",
   table: "orderItems",
 
-  async sync(ctx: SyncContext) {
+  async sync(ctx: SyncContext, args: { facilityId?: string } = {}) {
     const db = getFulfillmentDb(ctx.omsInstance);
     const orders = await db.table<DbRow, DbKey>("orders").where("stage").equals(ORDER_STAGE.OPEN).toArray();
     if(!orders.length) {return 0;}
@@ -69,7 +65,7 @@ export const orderItemsDomain = defineSyncDomain({
       return (newestItemSync.get(key) ?? -1) < version && fetchedForVersion.get(key) !== version;
     });
 
-    const pass = hydrationOrder(due).slice(0, ORDERS_PER_PASS);
+    const pass = hydrationOrder(due, args.facilityId).slice(0, ORDERS_PER_PASS);
     await runWithConcurrency(pass, ITEM_FETCH_CONCURRENCY, (order) => syncItemsOf(db, ctx, order));
 
     return pass.length;

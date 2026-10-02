@@ -1,4 +1,4 @@
-// Read from Solr, the one source that returns card data, identifiers, features, tags and categories in one record.
+// Read from Solr, the one source that returns card data, identifiers, features and tags in one record.
 
 import { workerPost } from "@common/core/workerRemoteApi";
 import { projectRows } from "@common/db/storage/projection";
@@ -11,19 +11,15 @@ export const PRODUCTS_DOMAIN = "products";
 
 const PRODUCT_TTL_MS = 30 * 60 * 1000;
 const PRODUCT_BATCH_SIZE = 50;
-const UNIONED_FIELDS = ["tags", "productCategories"];
+const UNIONED_FIELDS = ["tags"];
 
 // So a product Solr doesn't return isn't re-queried every tick.
 const lastQueriedAt = new Map<string, number>();
 
-export function forgetProductQueries(): void {
-  lastQueriedAt.clear();
-}
-
 const isEmpty = (value: unknown) => value === undefined || value === null || value === "" || (Array.isArray(value) && !value.length);
 
 // Solr can hold several records for one product, for example a stale copy beside a fresh one. Keep the
-// fullest, fill its gaps from the others and union tags and categories, so a thin copy can't hide the full one.
+// fullest, fill its gaps from the others and union the tags, so a thin copy can't hide the full one.
 export function mergeProductDocs(docs: any[]): any[] {
   const byId = new Map<string, any[]>();
   for(const doc of docs) {

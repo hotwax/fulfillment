@@ -2,6 +2,7 @@ import { type DbRow, ensureDbReady } from "@common/db";
 import { type Ref, computed, markRaw, onUnmounted, ref, shallowRef, watch } from "vue";
 import { deviceSettings } from "@/db/deviceSettings";
 import { ORDER_STAGE, fulfillmentDb, orderKeyOf } from "@/db/fulfillmentDb";
+import { focusLiveOrders } from "@/db/liveOrdersSync";
 import { useProductStore } from "@/store/product";
 import { type FilterSelections, OPEN_ORDER_FILTER_DIMENSIONS, filterOpenOrders, openOrderFacets } from "@/utils/openOrderFilters";
 
@@ -51,6 +52,7 @@ export function useLiveOpenOrders(options: LiveOpenOrdersOptions) {
     hydrated.value = false;
     orderRows.value = [];
     if(!facilityId) {return;}
+    void focusLiveOrders(facilityId);
 
     const onError = (error: unknown) => console.error("[useLiveOpenOrders] live query failed:", error);
     try {
@@ -84,12 +86,14 @@ export function useLiveOpenOrders(options: LiveOpenOrdersOptions) {
   const productsById = computed(() => new Map(productRows.value.map((row) => [String(row.productId), row as any])));
   const productVersions = computed(() => new Map(productRows.value.map((row) => [String(row.productId), Number(row.syncedAt) || 0])));
 
-  // The card helpers (images, identifiers, kit checks) read the Pinia product cache.
+  // The card helpers (images, identifiers, kit checks) read the Pinia product cache. Merged rather than
+  // replaced, so what other pages loaded onto a product (such as its kit components) stays.
   const pushedVersions = new Map<string, number>();
   watch(productRows, (rows) => {
     const changed = rows.filter((row) => pushedVersions.get(String(row.productId)) !== row.syncedAt);
     if(!changed.length) {return;}
-    useProductStore().addProductToCachedMultiple({ products: changed.map((row) => ({ ...row })) });
+    const productStore = useProductStore();
+    productStore.addProductToCachedMultiple({ products: changed.map((row) => ({ ...productStore.getProduct(String(row.productId)), ...row })) });
     changed.forEach((row) => pushedVersions.set(String(row.productId), Number(row.syncedAt)));
   });
 

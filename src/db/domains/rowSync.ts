@@ -45,7 +45,8 @@ export async function runWithConcurrency<T>(items: T[], limit: number, task: (it
 }
 
 // Every facility's oldest order first, then every facility's second, so the top of each Open list fills first.
-export function hydrationOrder<T extends Record<string, unknown>>(orders: T[]): T[] {
+// The facility on screen goes ahead of the rest.
+export function hydrationOrder<T extends Record<string, unknown>>(orders: T[], firstFacilityId?: string): T[] {
   const byFacility = new Map<string, T[]>();
   for(const order of orders) {
     const facilityOrders = byFacility.get(String(order.facilityId)) ?? [];
@@ -60,7 +61,9 @@ export function hydrationOrder<T extends Record<string, unknown>>(orders: T[]): 
       .forEach((order, rank) => ranked.push({ order, rank }));
   });
 
+  const isFirst = (order: T) => Number(!!firstFacilityId && order.facilityId === firstFacilityId);
+
   return ranked
-    .sort((a, b) => a.rank - b.rank || (Number(a.order.orderDate) || 0) - (Number(b.order.orderDate) || 0))
+    .sort((a, b) => isFirst(b.order) - isFirst(a.order) || a.rank - b.rank || (Number(a.order.orderDate) || 0) - (Number(b.order.orderDate) || 0))
     .map(({ order }) => order);
 }

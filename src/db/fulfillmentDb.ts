@@ -63,8 +63,7 @@ const fulfillmentSchema = defineSchema({
       mainImageUrl: "text",
       productFeatures: "structured",
       goodIdentifications: "structured",
-      tags: "structured",
-      productCategories: "structured"
+      tags: "structured"
     }
   })
 });

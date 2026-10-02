@@ -55,8 +55,7 @@ const storedViewSize = computed(() => {
 const viewSize = computed(() => Number(storedViewSize.value) || 0);
 
 const total = computed(() => {
-  if(props.total !== undefined) {return props.total;}
-  if (route.name === "OpenOrders") return useOrderStore().getOpenOrders.total;
+  if (route.name === "OpenOrders") return props.total ?? 0;
   if (route.name === "InProgress") return useOrderStore().getInProgressOrders.total;
   if (route.name === "Completed") return useOrderStore().getCompletedOrders.total;
   return 0;

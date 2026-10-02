@@ -15,12 +15,13 @@ const EXCLUDED_SHIPMENT_METHODS = "STOREPICKUP,POS_COMPLETED";
 
 const orderEntity = fulfillmentDb.entities.orders;
 
-function fetchOpenOrders(ctx: SyncContext, facilityIds: string[]): Promise<any[]> {
+function fetchOpenOrders(ctx: SyncContext, facilityIds: string[], filters: Record<string, unknown> = {}): Promise<any[]> {
   return pageAll({
     ctx,
     url: "oms/orders/salesOrders/open",
     collectionKey: "orders",
     params: {
+      ...filters,
       facilityId: facilityIds.join(","),
       facilityId_op: "in",
       shipmentMethodTypeId: EXCLUDED_SHIPMENT_METHODS,
@@ -77,6 +78,9 @@ export const openOrdersDomain = defineSyncDomain({
     // Without a master list there is nothing to scope the prune by, so leave the table alone.
     if(!facilityIds.length) {return 0;}
 
-    return replaceOpenRows(db, await fetchOpenOrders(ctx, facilityIds));
+    // The bucket leaves priority orders out unless asked for them.
+    const [orders, priorityOrders] = await Promise.all([fetchOpenOrders(ctx, facilityIds), fetchOpenOrders(ctx, facilityIds, { isPriority: true })]);
+
+    return replaceOpenRows(db, [...orders, ...priorityOrders]);
   }
 });

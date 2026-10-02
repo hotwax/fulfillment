@@ -6,8 +6,8 @@ import { changedRows, chunk, hydrationOrder, runWithConcurrency } from "@/db/dom
 import { fulfillmentDb } from "@/db/fulfillmentDb";
 
 describe("mergeProductDocs", () => {
-  it("keeps one record per product, preferring the fullest copy and unioning tags and categories", () => {
-    const full = { productId: "10040", productName: "XS / Black", productFeatures: ["Size/XS", "Color/Black"], tags: ["Men", "Top"], productCategories: ["BROWSE_ROOT"], productStoreIds: ["STORE"] };
+  it("keeps one record per product, preferring the fullest copy and unioning tags", () => {
+    const full = { productId: "10040", productName: "XS / Black", productFeatures: ["Size/XS", "Color/Black"], tags: ["Men", "Top"], productStoreIds: ["STORE"] };
     const thin = { productId: "10040", productName: "XS / Black", productFeatures: ["SIZE/XS", "COLOR/Black"], tags: ["Sale"] };
 
     const merged = mergeProductDocs([thin, full]);
@@ -16,12 +16,11 @@ describe("mergeProductDocs", () => {
     expect(merged[0].productFeatures).toEqual(["Size/XS", "Color/Black"]);
     expect(merged[0].productStoreIds).toEqual(["STORE"]);
     expect(merged[0].tags).toEqual(["Sale", "Men", "Top"]);
-    expect(merged[0].productCategories).toEqual(["BROWSE_ROOT"]);
   });
 
   it("fills a gap in the fullest copy from another copy", () => {
     const merged = mergeProductDocs([
-      { productId: "1", productName: "Tee", tags: ["Men"], productCategories: ["T-Shirt"], mainImageUrl: "" },
+      { productId: "1", productName: "Tee", tags: ["Men"], mainImageUrl: "" },
       { productId: "1", mainImageUrl: "https://cdn.example/tee.png" }
     ]);
     expect(merged[0].mainImageUrl).toBe("https://cdn.example/tee.png");
@@ -92,6 +91,7 @@ describe("hydrationOrder", () => {
       { orderKey: "A-mid", facilityId: "A", orderDate: 25 }
     ];
     expect(hydrationOrder(orders).map((order) => order.orderKey)).toEqual(["A-old", "B-old", "A-mid", "B-new", "A-new"]);
+    expect(hydrationOrder(orders, "B").map((order) => order.orderKey)).toEqual(["B-old", "B-new", "A-old", "A-mid", "A-new"]);
   });
 });
 

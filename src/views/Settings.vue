@@ -199,7 +199,7 @@ import { IonAvatar, IonButton, IonCard, IonCardContent, IonCardHeader, IonCardTi
 import { computed, ref } from "vue";
 import { openOutline } from "ionicons/icons";
 import { commonUtil, DxpShopifyImg, emitter, firebaseMessaging,logger, translate, useNotificationStore, useAuth } from "@common";
-import { deviceSettings, loadDeviceSettings, setOpenOrderFilterDimension } from "@/db/deviceSettings";
+import { deviceSettings, setOpenOrderFilterDimension } from "@/db/deviceSettings";
 import { useProductStore } from "@/store/productStore";
 import { useUserStore } from "@/store/user";
 
@@ -641,7 +641,7 @@ const setBarcodeIdentificationPref = async (value: string) => {
 };
 
 onIonViewWillEnter(async () => {
-  Promise.all([getCurrentFacilityDetails(), getFacilityOrderCount(), getEcomInvStatus(), loadDeviceSettings()]);
+  Promise.all([getCurrentFacilityDetails(), getFacilityOrderCount(), getEcomInvStatus()]);
 
   const productStore = useProductStore();
   const notificationStore = useNotificationStore();

@@ -2,9 +2,9 @@ import { describe, expect, it } from "vitest";
 import { OPEN_ORDER_FILTER_DIMENSIONS, filterOpenOrders, matchesSearch, openOrderFacets } from "@/utils/openOrderFilters";
 
 const productsById = new Map<string, any>([
-  ["P1", { productId: "P1", productName: "Aero Daily Tee", tags: ["Men", "Top"], productCategories: ["T-Shirt"], goodIdentifications: ["SKU/MS01-XS"] }],
-  ["P2", { productId: "P2", productName: "Trail Short", tags: ["Women", "Bottom"], productCategories: ["Shorts"] }],
-  ["P3", { productId: "P3", productName: "Rain Jacket", tags: ["Men"], productCategories: ["Jacket"] }]
+  ["P1", { productId: "P1", productName: "Aero Daily Tee", tags: ["Men", "Top"], goodIdentifications: ["SKU/MS01-XS"] }],
+  ["P2", { productId: "P2", productName: "Trail Short", tags: ["Women", "Bottom"] }],
+  ["P3", { productId: "P3", productName: "Rain Jacket", tags: ["Men"] }]
 ]);
 
 const orders = [
@@ -32,8 +32,8 @@ describe("filterOpenOrders", () => {
   });
 
   it("matches a product dimension when any item matches", () => {
-    const selections = { productCategory: ["Jacket"] };
-    expect(keys(filterOpenOrders(orders, { dimensions: allDimensions, selections, productsById, query: "" }))).toEqual(["C-1"]);
+    const selections = { productTag: ["Men"] };
+    expect(keys(filterOpenOrders(orders, { dimensions: allDimensions, selections, productsById, query: "" }))).toEqual(["A-1", "C-1"]);
   });
 
   it("ignores selections for dimensions that are switched off", () => {

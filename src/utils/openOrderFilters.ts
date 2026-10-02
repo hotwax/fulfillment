@@ -29,11 +29,6 @@ export const OPEN_ORDER_FILTER_DIMENSIONS: OpenOrderFilterDimension[] = [
     id: "productTag",
     label: "Product tags",
     valuesOf: (order, productsById) => productValues(order, productsById, "tags")
-  },
-  {
-    id: "productCategory",
-    label: "Product categories",
-    valuesOf: (order, productsById) => productValues(order, productsById, "productCategories")
   }
 ];
 
