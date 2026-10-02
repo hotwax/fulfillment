@@ -58,6 +58,11 @@ const fulfillmentSchema = defineSchema({
       productName: "text",
       parentProductName: "text",
       internalName: "text",
+      // The product identifier settings can pick these, so nothing reads them by name.
+      groupId: "text",
+      groupName: "text",
+      title: "text",
+      primaryProductCategoryName: "text",
       sku: "text",
       productTypeId: "text",
       mainImageUrl: "text",
@@ -70,7 +75,7 @@ const fulfillmentSchema = defineSchema({
 
 export const fulfillmentDb = defineAppDb({
   suffix: "FulfillmentDB",
-  version: 3,
+  version: 4,
   schema: mergeSchemas(commonSchema.pick(["shipmentMethodTypes"]), fulfillmentSchema)
 });
 

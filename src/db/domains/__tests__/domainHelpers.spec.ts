@@ -95,6 +95,15 @@ describe("hydrationOrder", () => {
   });
 });
 
+describe("product rows", () => {
+  it("keep every field the product identifier settings can pick", () => {
+    const doc = { productId: "10033", internalName: "WP07-28-Black", groupId: "10032", groupName: "V_aeon-capri", title: "Product 28 / Black.", primaryProductCategoryName: "Browse Root" };
+    const [row] = projectRows([doc], fulfillmentDb.entities.products, 1);
+
+    expect(row).toMatchObject(doc);
+  });
+});
+
 describe("order item keys", () => {
   it("keeps one row per ship group when an order item is allocated to two of them", () => {
     const entity = fulfillmentDb.entities.orderItems;
