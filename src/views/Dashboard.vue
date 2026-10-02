@@ -21,7 +21,7 @@
             </ion-button>
             <ion-popover trigger="fill-rate-info" trigger-action="click">
               <ion-content class="ion-padding">
-                {{ translate("Orders packed out of the orders packed or rejected today.") }}
+                {{ translate("The percentage of orders packed rather than rejected today.") }}
               </ion-content>
             </ion-popover>
           </ion-item>
