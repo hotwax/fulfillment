@@ -98,6 +98,11 @@
                       <ion-badge color="dark" class="kit-badge" v-if="orderUtil.isKit(item)">{{ translate("Kit") }}</ion-badge>
                     </div>
                     <p>{{ commonUtil.getFeatures(getProduct(item.productId).productFeatures) }}</p>
+                    <p v-if="isUnavailableElsewhere(order, item)">
+                      <ion-badge color="danger">
+                        {{ translate("Not available anywhere else") }}
+                      </ion-badge>
+                    </p>
                   </ion-label>
                 </ion-item>
               </div>
@@ -116,7 +121,7 @@
                       <ion-icon :icon="closeCircleOutline" @click.stop="removeRejectionReason($event, item, order)" />
                     </ion-chip>
                   </template>
-                  <template v-else-if="isEntierOrderRejectionEnabled(order)">
+                  <template v-else-if="isEntierOrderRejectionEnabled(order) || rejectionOutcome(order) === 'whole'">
                     <ion-chip outline color="danger">
                       <ion-label> {{ getRejectionReasonDescription(rejectEntireOrderReasonId) ? getRejectionReasonDescription(rejectEntireOrderReasonId) : translate('Reject to avoid order split (no variance)') }}</ion-label>
                     </ion-chip>
@@ -173,7 +178,10 @@
 
             <div class="mobile-only">
               <ion-item>
-                <ion-button fill="clear" @click.stop="packOrder(order)">{{ translate("Pack using default packaging") }}</ion-button>
+                <ion-button fill="clear" :disabled="rejectionOutcome(order) === 'checking'" @click.stop="packOrder(order)">
+                  <ion-spinner v-if="rejectionOutcome(order) === 'checking'" slot="start" name="crescent" />
+                  {{ translate("Pack using default packaging") }}
+                </ion-button>
                 <ion-button slot="end" fill="clear" color="medium" @click.stop="packagingPopover">
                   <ion-icon slot="icon-only" :icon="ellipsisVerticalOutline" />
                 </ion-button>
@@ -182,7 +190,13 @@
 
             <div class="actions">
               <div>
-                <ion-button :color="order.hasAllRejectedItem ? 'danger' : ''" @click.stop="packOrder(order)">{{ translate(order.hasAllRejectedItem ? "Reject" : order.hasRejectedItem ? "Save and Pack" : "Pack") }}</ion-button>
+                <ion-button :color="order.hasAllRejectedItem || rejectionOutcome(order) === 'whole' ? 'danger' : ''" :disabled="rejectionOutcome(order) === 'checking'" @click.stop="packOrder(order)">
+                  <ion-spinner v-if="rejectionOutcome(order) === 'checking'" slot="start" name="crescent" />
+                  {{ translate(order.hasAllRejectedItem || rejectionOutcome(order) === 'whole' ? "Reject" : order.hasRejectedItem ? "Save and Pack" : "Pack") }}
+                </ion-button>
+                <ion-note v-if="rejectionNote(order)" class="ion-margin-start" :color="rejectionOutcome(order) === 'whole' ? 'danger' : undefined">
+                  {{ rejectionNote(order) }}
+                </ion-note>
               </div>
 
               <div class="desktop-only">
@@ -257,10 +271,13 @@ import { useUtilStore } from "@/store/util";
 import { useStockStore } from "@/store/stock";
 import { useProductStore as useProductStore } from "@/store/productStore";
 import Actions from "@/authorization/actions";
+import { useOnePackageReroute } from "@/composables/useOnePackageReroute";
 
 const userStore = useUserStore();
 const orderStore = useOrderStore();
 const carrierStore = useCarrierStore();
+const onePackageReroute = useOnePackageReroute();
+const { isUnavailableElsewhere, rejectionNote, rejectionOutcome } = onePackageReroute;
 
 const picklists = ref([] as any);
 const defaultShipmentBoxType = ref({} as any);
@@ -683,6 +700,14 @@ const reportIssue = async (order: any, itemsToReject: any) => {
   } else {
     message = translate(", and other products are identified as unfulfillable. These order items will be unassigned from this store and sent to be rebrokered.", { productName, products: itemsToReject.length - 1, space: "<br /><br />" });
   }
+
+  // When more than one other location can ship the whole order, reject all of it instead of splitting it.
+  await onePackageReroute.resolveStockCheck(order);
+  const isWholeOrder = rejectionOutcome(order) === "whole";
+  if(isWholeOrder) {
+    message = onePackageReroute.wholeOrderMessage(order, itemsToReject, ordersCount);
+  }
+
   const alert = await alertController
     .create({
       header: translate("Report an issue"),
@@ -694,12 +719,24 @@ const reportIssue = async (order: any, itemsToReject: any) => {
         text: translate("Report"),
         role: "confirm",
         handler: async () => {
+          if(isWholeOrder) {
+            await rejectWholeOrder(order);
+
+            return;
+          }
           await initiatePackOrder(order, "report");
         }
       }]
     });
 
   return alert.present();
+};
+
+const rejectWholeOrder = async (order: any) => {
+  const { rejectedOrderItems } = getUpdatedOrderDetail(order, "report");
+  if(await onePackageReroute.rejectWholeOrder(order, rejectedOrderItems)) {
+    await fetchOrderAndPickerInformation();
+  }
 };
 
 const findInProgressOrders = async () => {
@@ -754,6 +791,8 @@ const updateRejectReason = (updatedReason: string, item: any, order: any) => {
   order.hasRejectedItem = true;
   order.hasAllRejectedItem = isEntierOrderRejectionEnabled(order) || order.items.every((item: any) => item.rejectReason);
   useOrderStore().updateInProgressOrder(order);
+  // The card shows what reporting will do before the associate reports.
+  void onePackageReroute.startStockCheck(order);
 };
 
 const rejectKitComponent = (order: any, item: any, componentProductId: string) => {
