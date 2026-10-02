@@ -47,7 +47,8 @@ export const orderItemsDomain = defineSyncDomain({
   syncClass: "A",
   table: "orderItems",
 
-  async sync(ctx: SyncContext, args: { facilityId?: string } = {}) {
+  // With `only`, just the facility's own orders, uncapped, so its pass ends with every one of them done.
+  async sync(ctx: SyncContext, args: { facilityId?: string; only?: boolean } = {}) {
     const db = getFulfillmentDb(ctx.omsInstance);
     const orders = await db.table<DbRow, DbKey>("orders").where("stage").equals(ORDER_STAGE.OPEN).toArray();
     if(!orders.length) {return 0;}
@@ -59,13 +60,15 @@ export const orderItemsDomain = defineSyncDomain({
     });
 
     const due = orders.filter((order) => {
+      if(args.only && order.facilityId !== args.facilityId) {return false;}
       const key = canonicalKey(shipGroupOf(order));
       const version = Number(order.syncedAt) || 0;
 
       return (newestItemSync.get(key) ?? -1) < version && fetchedForVersion.get(key) !== version;
     });
 
-    const pass = hydrationOrder(due, args.facilityId).slice(0, ORDERS_PER_PASS);
+    const ordered = hydrationOrder(due, args.facilityId);
+    const pass = args.only ? ordered : ordered.slice(0, ORDERS_PER_PASS);
     await runWithConcurrency(pass, ITEM_FETCH_CONCURRENCY, (order) => syncItemsOf(db, ctx, order));
 
     return pass.length;

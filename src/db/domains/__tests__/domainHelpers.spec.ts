@@ -1,6 +1,8 @@
 import { defineEntity } from "@common/db/schema/defineEntity";
 import { canonicalKey, entityKeyOf, projectRows } from "@common/db/storage/projection";
+import { activationKey } from "@common/db/sync/syncRegistry";
 import { describe, expect, it } from "vitest";
+import { OPEN_ORDERS_DOMAIN, ORDER_ITEMS_DOMAIN, PRODUCTS_DOMAIN, liveOrderDomains } from "@/db/domains";
 import { mergeProductDocs } from "@/db/domains/productsDomain";
 import { changedRows, chunk, hydrationOrder, runWithConcurrency } from "@/db/domains/rowSync";
 import { fulfillmentDb } from "@/db/fulfillmentDb";
@@ -111,5 +113,25 @@ describe("order item keys", () => {
     const rows = projectRows([{ ...item, shipGroupSeqId: "00001" }, { ...item, shipGroupSeqId: "00002" }], entity, 1);
 
     expect(new Set(rows.map((row) => canonicalKey(entityKeyOf(row, entity)!))).size).toBe(2);
+  });
+});
+
+describe("liveOrderDomains", () => {
+  it("runs the facility on screen's own items and products before the rest of the queue's", () => {
+    const domains = liveOrderDomains("BROOKLYN");
+
+    expect(domains.map((domain) => [domain.name, domain.args])).toEqual([
+      [OPEN_ORDERS_DOMAIN, undefined],
+      [ORDER_ITEMS_DOMAIN, { facilityId: "BROOKLYN", only: true }],
+      [PRODUCTS_DOMAIN, { facilityId: "BROOKLYN" }],
+      [ORDER_ITEMS_DOMAIN, { facilityId: "BROOKLYN" }],
+      [PRODUCTS_DOMAIN, undefined]
+    ]);
+    // Each activation keeps its own clock, so the facility's passes don't stop the queue's from running.
+    expect(new Set(domains.map(activationKey)).size).toBe(domains.length);
+  });
+
+  it("has one pass each without a facility", () => {
+    expect(liveOrderDomains().map((domain) => domain.name)).toEqual([OPEN_ORDERS_DOMAIN, ORDER_ITEMS_DOMAIN, PRODUCTS_DOMAIN]);
   });
 });

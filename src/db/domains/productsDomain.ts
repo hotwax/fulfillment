@@ -1,13 +1,16 @@
 // Read from Solr, the one source that returns card data, identifiers, features and tags in one record.
 
 import { workerPost } from "@common/core/workerRemoteApi";
-import { projectRows } from "@common/db/storage/projection";
+import type { BaseDB } from "@common/db/storage/baseDb";
+import { canonicalKey, projectRows } from "@common/db/storage/projection";
 import { defineSyncDomain } from "@common/db/sync/defineSyncDomain";
 import type { DbKey, DbRow, SyncContext } from "@common/db/types";
 import { fulfillmentDb, getFulfillmentDb } from "../fulfillmentDb";
 import { chunk } from "./rowSync";
 
 export const PRODUCTS_DOMAIN = "products";
+// Where the worker announces a facility whose own items and products pass finished, so the Open page knows its fill is done.
+export const LIVE_ORDERS_CHANNEL = "fulfillment-live-orders";
 
 const PRODUCT_TTL_MS = 30 * 60 * 1000;
 const PRODUCT_BATCH_SIZE = 50;
@@ -15,6 +18,13 @@ const UNIONED_FIELDS = ["tags"];
 
 // So a product Solr doesn't return isn't re-queried every tick.
 const lastQueriedAt = new Map<string, number>();
+
+let liveOrdersChannel: BroadcastChannel | null = null;
+function announceFacilitySynced(facilityId: string): void {
+  if(typeof BroadcastChannel === "undefined") {return;}
+  liveOrdersChannel ??= new BroadcastChannel(LIVE_ORDERS_CHANNEL);
+  liveOrdersChannel.postMessage({ type: "facility-synced", facilityId, at: Date.now() });
+}
 
 const isEmpty = (value: unknown) => value === undefined || value === null || value === "" || (Array.isArray(value) && !value.length);
 
@@ -59,40 +69,49 @@ function productQuery(productIds: string[]) {
   };
 }
 
+async function syncProducts(db: BaseDB, ctx: SyncContext, productIds: string[]): Promise<number> {
+  if(!productIds.length) {return 0;}
+  const now = Date.now();
+  const stored = await db.table<DbRow, string>("products").bulkGet(productIds);
+  const due = productIds.filter((productId, index) => {
+    const row = stored[index];
+    const isFresh = row && now - (Number(row.syncedAt) || 0) < PRODUCT_TTL_MS;
+    const askedRecently = now - (lastQueriedAt.get(productId) ?? 0) < PRODUCT_TTL_MS;
+
+    return !isFresh && !askedRecently;
+  });
+
+  let written = 0;
+  for(const batch of chunk(due, PRODUCT_BATCH_SIZE)) {
+    const response = await workerPost(ctx, "admin/search/query", productQuery(batch));
+    batch.forEach((productId) => lastQueriedAt.set(productId, now));
+    const docs = response?.response?.response?.docs ?? response?.response?.docs ?? [];
+    const rows = projectRows(mergeProductDocs(docs), fulfillmentDb.entities.products, Date.now());
+    if(rows.length) {await db.table("products").bulkPut(rows);}
+    written += rows.length;
+  }
+
+  return written;
+}
+
 export const productsDomain = defineSyncDomain({
   name: PRODUCTS_DOMAIN,
   label: "Products",
   syncClass: "A",
   table: "products",
 
-  async sync(ctx: SyncContext) {
+  // With a facility, only the products its orders' items reference.
+  async sync(ctx: SyncContext, args: { facilityId?: string } = {}) {
     const db = getFulfillmentDb(ctx.omsInstance);
+    const shipGroups = args.facilityId
+      ? new Set((await db.table<DbRow, DbKey>("orders").where("facilityId").equals(args.facilityId).primaryKeys()).map(canonicalKey))
+      : undefined;
     const referenced = new Set<string>();
     await db.table<DbRow, DbKey>("orderItems").each((item) => {
-      if(item.productId) {referenced.add(String(item.productId));}
+      if(item.productId && (!shipGroups || shipGroups.has(canonicalKey([String(item.orderId), String(item.shipGroupSeqId)])))) {referenced.add(String(item.productId));}
     });
-    if(!referenced.size) {return 0;}
-
-    const productIds = [...referenced];
-    const now = Date.now();
-    const stored = await db.table<DbRow, string>("products").bulkGet(productIds);
-    const due = productIds.filter((productId, index) => {
-      const row = stored[index];
-      const isFresh = row && now - (Number(row.syncedAt) || 0) < PRODUCT_TTL_MS;
-      const askedRecently = now - (lastQueriedAt.get(productId) ?? 0) < PRODUCT_TTL_MS;
-
-      return !isFresh && !askedRecently;
-    });
-
-    let written = 0;
-    for(const batch of chunk(due, PRODUCT_BATCH_SIZE)) {
-      const response = await workerPost(ctx, "admin/search/query", productQuery(batch));
-      batch.forEach((productId) => lastQueriedAt.set(productId, now));
-      const docs = response?.response?.response?.docs ?? response?.response?.docs ?? [];
-      const rows = projectRows(mergeProductDocs(docs), fulfillmentDb.entities.products, Date.now());
-      if(rows.length) {await db.table("products").bulkPut(rows);}
-      written += rows.length;
-    }
+    const written = await syncProducts(db, ctx, [...referenced]);
+    if(args.facilityId) {announceFacilitySynced(args.facilityId);}
 
     return written;
   }

@@ -48,7 +48,7 @@ import { computed, onMounted, onUnmounted, ref, watch } from "vue";
 import { translate, emitter, logger, useNotificationStore, useAuth, i18n } from "@common";
 import { Settings } from "luxon";
 import { init } from "@module-federation/runtime";
-import { startLiveOrdersSync, syncMasterFacilities } from "@/db/liveOrdersSync";
+import { focusLiveOrders, startLiveOrdersSync, syncMasterFacilities } from "@/db/liveOrdersSync";
 import { useUserStore } from "@/store/user";
 import { useProductStore } from "@/store/productStore";
 import router from './router';
@@ -142,7 +142,7 @@ onMounted(async () => {
 
     if (useAuth().isAuthenticated.value && currentProductStore?.productStoreId) {
       // A restored session skips postLogin, so the live order sync starts here too.
-      void startLiveOrdersSync(useProductStore().getFacilities);
+      void startLiveOrdersSync(useProductStore().getFacilities, useProductStore().getCurrentFacility?.facilityId);
 
       await useProductStore().fetchProductStoreSettings(currentProductStore.productStoreId).catch((error) => logger.error(error));
 
@@ -160,6 +160,10 @@ const facilityIdsKey = () => {
 };
 watch(facilityIdsKey, () => {
   void syncMasterFacilities(useProductStore().getFacilities);
+});
+// The sync follows the facility being worked in, so a switch made elsewhere has its orders in by the time Open shows them.
+watch(() => useProductStore().getCurrentFacility?.facilityId, (facilityId) => {
+  if(facilityId) {void focusLiveOrders(facilityId);}
 });
 
 onUnmounted(() => {

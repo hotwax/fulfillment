@@ -1,14 +1,18 @@
 import { commonUtil, logger } from "@common";
 import { ensureDbReady, projectRows, setupAppDbSync } from "@common/db";
 import { reactive } from "vue";
-import { OPEN_ORDERS_DOMAIN, ORDER_ITEMS_DOMAIN, liveOrderDomains } from "./domains";
+import { LIVE_ORDERS_CHANNEL, OPEN_ORDERS_DOMAIN, ORDER_ITEMS_DOMAIN, PRODUCTS_DOMAIN, liveOrderDomains } from "./domains";
 import { fulfillmentDb } from "./fulfillmentDb";
 import fulfillmentSyncWorkerUrl from "./fulfillmentSync.worker.ts?worker&url";
 
 export const liveOrdersStatus = reactive({
   running: false,
   // The last open orders sync whose items are in too.
-  lastSyncAt: 0
+  lastSyncAt: 0,
+  // This session's first open orders sync.
+  firstSyncAt: 0,
+  // When each facility's own items and products pass last finished.
+  facilitySyncedAt: {} as Record<string, number>
 });
 
 let activeOms = "";
@@ -24,11 +28,21 @@ const appDbSync = setupAppDbSync({
   getWorkerUrl: () => new URL(fulfillmentSyncWorkerUrl, import.meta.url),
   onStatus: (status) => {
     if(status.type !== "sync-end") {return;}
-    if(status.domain === OPEN_ORDERS_DOMAIN) {openOrdersSyncedAt = Date.now();}
+    // The worker's clock, as the facility announcements use.
+    if(status.domain === OPEN_ORDERS_DOMAIN) {
+      openOrdersSyncedAt = Number(status.at) || Date.now();
+      liveOrdersStatus.firstSyncAt ||= openOrdersSyncedAt;
+    }
     if(status.domain === ORDER_ITEMS_DOMAIN) {liveOrdersStatus.lastSyncAt = openOrdersSyncedAt;}
   }
 });
 const syncOwner = appDbSync.createSyncDomainOwner("liveOpenOrders");
+
+if(typeof BroadcastChannel !== "undefined") {
+  new BroadcastChannel(LIVE_ORDERS_CHANNEL).addEventListener("message", ({ data }) => {
+    if(data?.type === "facility-synced" && liveOrdersStatus.running) {liveOrdersStatus.facilitySyncedAt[data.facilityId] = data.at;}
+  });
+}
 
 // Returns whether the set of facilities changed.
 async function writeMasterFacilities(facilities: any[]): Promise<boolean> {
@@ -60,8 +74,8 @@ async function start(facilities: any[]): Promise<void> {
   await appDbSync.syncNow().catch((error) => logger.error("Failed the first live order sync", error));
 }
 
-// Later calls only refresh the facility master list.
-export async function startLiveOrdersSync(facilities: any[]): Promise<void> {
+// Later calls only refresh the facility master list. The facility, when known, gets its items and products first.
+export async function startLiveOrdersSync(facilities: any[], facilityId?: string): Promise<void> {
   if(starting) {
     await starting;
     await syncMasterFacilities(facilities);
@@ -69,6 +83,7 @@ export async function startLiveOrdersSync(facilities: any[]): Promise<void> {
     return;
   }
 
+  if(facilityId) {focusedFacilityId = facilityId;}
   liveOrdersStatus.running = true;
   starting = start(facilities).catch((error) => {
     logger.error("Failed to start the live order sync", error);
@@ -77,10 +92,13 @@ export async function startLiveOrdersSync(facilities: any[]): Promise<void> {
   await starting;
 }
 
-// The Open page's facility gets its items first.
+// The Open page's facility gets its items and products first. A newly focused one gets them now, rather than on the next tick.
 export async function focusLiveOrders(facilityId?: string): Promise<void> {
+  const changed = facilityId !== focusedFacilityId;
   focusedFacilityId = facilityId;
-  if(appDbSync.syncService()) {await appDbSync.activateSyncDomains(liveOrderDomains(facilityId), syncOwner);}
+  if(!appDbSync.syncService()) {return;}
+  await appDbSync.activateSyncDomains(liveOrderDomains(facilityId), syncOwner);
+  if(changed && facilityId) {await refreshLiveOrders([ORDER_ITEMS_DOMAIN, PRODUCTS_DOMAIN]);}
 }
 
 export async function syncMasterFacilities(facilities: any[]): Promise<void> {
@@ -111,6 +129,8 @@ export async function removeOpenOrdersLocally(items: Array<{ orderId: string; sh
 export async function stopLiveOrdersSync(): Promise<void> {
   liveOrdersStatus.running = false;
   liveOrdersStatus.lastSyncAt = 0;
+  liveOrdersStatus.firstSyncAt = 0;
+  liveOrdersStatus.facilitySyncedAt = {};
   openOrdersSyncedAt = 0;
   starting = null;
   await appDbSync.deactivateSyncDomains(syncOwner).catch((error) => logger.error("Failed to stop the live order sync", error));

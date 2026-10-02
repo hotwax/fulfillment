@@ -5,7 +5,8 @@
     <ion-header :translucent="true">
       <ion-toolbar>
         <ion-menu-button menu="start" slot="start" />
-        <ion-title v-if="!filteredOrders.length">{{ filteredOrders.length }} {{ translate('orders') }}</ion-title>
+        <ion-title v-if="!filteredOrders.length && !loadState.loaded">{{ translate("Loading orders") }}</ion-title>
+        <ion-title v-else-if="!filteredOrders.length">{{ filteredOrders.length }} {{ translate('orders') }}</ion-title>
         <ion-title v-else>{{ visibleOrders.length }} {{ translate('of') }} {{ filteredOrders.length }} {{ translate('orders') }}</ion-title>
 
         <ion-buttons slot="end">
@@ -19,6 +20,7 @@
             <ion-icon :icon="optionsOutline" />
           </ion-menu-button>
         </ion-buttons>
+        <ion-progress-bar v-if="!loadState.loaded" :type="loadState.progress === undefined ? 'indeterminate' : 'determinate'" :value="loadState.progress" />
       </ion-toolbar>
     </ion-header>
 
@@ -69,13 +71,19 @@
                   <ion-thumbnail slot="start" v-image-preview="getProduct(item.productId)" :key="getProduct(item.productId)?.mainImageUrl">
                     <DxpShopifyImg :src="getProduct(item.productId).mainImageUrl" :key="getProduct(item.productId).mainImageUrl" size="small" />
                   </ion-thumbnail>
-                  <ion-label>
+                  <ion-label v-if="getProduct(item.productId).productId || loadState.loaded">
                     <p class="overline">{{ commonUtil.getProductIdentificationValue(productIdentificationPref.secondaryId, getProduct(item.productId)) }}</p>
                     <div>
                       {{ commonUtil.getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(item.productId)) ? commonUtil.getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(item.productId)) : getProduct(item.productId).productName }}
                       <ion-badge class="kit-badge" color="dark" v-if="orderUtil.isKit(item)">{{ translate("Kit") }}</ion-badge>
                     </div>
                     <p>{{ commonUtil.getFeatures(getProduct(item.productId).productFeatures) }}</p>
+                  </ion-label>
+                  <!-- Until the product is in. -->
+                  <ion-label v-else>
+                    <p class="overline"><ion-skeleton-text animated /></p>
+                    <ion-skeleton-text animated />
+                    <p><ion-skeleton-text animated /></p>
                   </ion-label>
                 </ion-item>
               </div>
@@ -115,7 +123,7 @@
           </ion-card>
         </TransitionGroup>
       </div>
-      <div v-if="isLoading" class="ion-padding ion-text-center">
+      <div v-if="!visibleOrders.length && !loadState.loaded" class="ion-padding ion-text-center">
         <ion-spinner name="crescent"></ion-spinner>
       </div>
       <ion-fab v-else-if="visibleOrders.length" class="mobile-only" vertical="bottom" horizontal="end" slot="fixed">
@@ -131,7 +139,7 @@
 </template>
 
 <script setup lang="ts">
-import { IonBadge, IonButton, IonButtons, IonCard, IonCheckbox, IonChip, IonContent, IonFab, IonFabButton, IonHeader, IonIcon, IonItem, IonLabel, IonMenuButton, IonNote, IonPage, IonSearchbar, IonSkeletonText, IonSpinner, IonThumbnail, IonTitle, IonToolbar, alertController, modalController, onIonViewWillEnter, popoverController } from "@ionic/vue";
+import { IonBadge, IonButton, IonButtons, IonCard, IonCheckbox, IonChip, IonContent, IonFab, IonFabButton, IonHeader, IonIcon, IonItem, IonLabel, IonMenuButton, IonNote, IonPage, IonProgressBar, IonSearchbar, IonSkeletonText, IonSpinner, IonThumbnail, IonTitle, IonToolbar, alertController, modalController, onIonViewWillEnter, popoverController } from "@ionic/vue";
 import { computed, nextTick, ref } from "vue";
 import { onBeforeRouteLeave } from "vue-router";
 import { caretDownOutline, chevronUpOutline, cubeOutline, listOutline, notificationsOutline, optionsOutline, pricetagOutline, printOutline } from "ionicons/icons";
@@ -175,7 +183,8 @@ const currentFacility = computed(() => useAppProductStore().getCurrentFacility);
 const currentProductStore = computed(() => useAppProductStore().getCurrentProductStore);
 const productIdentificationPref = computed(() => useAppProductStore().getProductIdentificationPref);
 
-const { hydrated, allOrders, filteredOrders, visibleOrders, facets, dimensions, shipmentMethodLabels } = useLiveOpenOrders({
+// Until the facility's fill is done, an empty local queue doesn't mean the facility has no orders.
+const { allOrders, filteredOrders, visibleOrders, facets, dimensions, shipmentMethodLabels, loadState } = useLiveOpenOrders({
   facilityId: computed(() => currentFacility.value?.facilityId),
   productStoreId: computed(() => currentProductStore.value?.productStoreId),
   query: searchQuery,
@@ -183,8 +192,6 @@ const { hydrated, allOrders, filteredOrders, visibleOrders, facets, dimensions, 
   pickSize: computed(() => Number(openOrders.value.query.viewSize) || Number(import.meta.env.VITE_VIEW_SIZE))
 });
 
-// Until this session's first sync is in, an empty local queue doesn't mean the facility has no orders.
-const isLoading = computed(() => !hydrated.value || (!allOrders.value.length && liveOrdersStatus.running && !liveOrdersStatus.lastSyncAt));
 // Orders cached by an earlier session stay stale until this session has synced.
 const isStale = () => !liveOrdersStatus.lastSyncAt || Date.now() - liveOrdersStatus.lastSyncAt > STALE_AFTER_MS;
 // A dimension with no values yet (for example tags before products load) stays hidden.

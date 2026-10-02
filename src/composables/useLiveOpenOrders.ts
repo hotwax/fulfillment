@@ -2,8 +2,9 @@ import { type DbRow, ensureDbReady } from "@common/db";
 import { type Ref, computed, markRaw, onUnmounted, ref, shallowRef, watch } from "vue";
 import { deviceSettings } from "@/db/deviceSettings";
 import { ORDER_STAGE, fulfillmentDb, orderKeyOf } from "@/db/fulfillmentDb";
-import { focusLiveOrders } from "@/db/liveOrdersSync";
+import { focusLiveOrders, liveOrdersStatus } from "@/db/liveOrdersSync";
 import { useProductStore } from "@/store/product";
+import { liveOrdersLoad } from "@/utils/liveOrdersLoad";
 import { type FilterSelections, OPEN_ORDER_FILTER_DIMENSIONS, filterOpenOrders, openOrderFacets } from "@/utils/openOrderFilters";
 
 interface LiveOpenOrdersOptions {
@@ -158,5 +159,23 @@ export function useLiveOpenOrders(options: LiveOpenOrdersOptions) {
   const facets = computed(() => openOrderFacets(allOrders.value, filterOptions.value));
   const visibleOrders = computed(() => filteredOrders.value.slice(0, Math.max(0, Number(options.pickSize.value) || 0)));
 
-  return { hydrated, allOrders, filteredOrders, visibleOrders, facets, dimensions, shipmentMethodLabels };
+  // How far the facility's fill has come. A sync that never started leaves nothing to wait for.
+  const loadState = computed(() => {
+    if(!hydrated.value) {return { loaded: false };}
+    const productStoreId = options.productStoreId.value;
+    const facilityId = options.facilityId.value;
+    const firstSyncAt = liveOrdersStatus.firstSyncAt;
+    const productIds = new Set(allOrders.value.flatMap((order) => order.items.map((item: any) => String(item.productId))));
+
+    return liveOrdersLoad({
+      synced: !!firstSyncAt || !liveOrdersStatus.running,
+      facilityPassed: !!facilityId && !!firstSyncAt && (liveOrdersStatus.facilitySyncedAt[facilityId] ?? 0) >= firstSyncAt,
+      orders: orderRows.value.filter((row) => !productStoreId || !row.productStoreId || row.productStoreId === productStoreId).length,
+      ordersWithItems: allOrders.value.length,
+      products: productIds.size,
+      productsLoaded: [...productIds].filter((productId) => productsById.value.has(productId)).length
+    });
+  });
+
+  return { hydrated, allOrders, filteredOrders, visibleOrders, facets, dimensions, shipmentMethodLabels, loadState };
 }
