@@ -140,7 +140,7 @@
       </div>
 
       <ion-list>
-        <div v-for="picker in pickers" :key="picker.partyId" class="list-item">
+        <div v-for="picker in pickers" :key="picker.partyId" class="list-item" @click="openPickerOrders(picker)">
           <ion-item lines="none">
             <ion-avatar slot="start">
               <DxpShopifyImg />
@@ -174,18 +174,24 @@
 
 <script setup lang="ts">
 import { DxpShopifyImg, commonUtil, translate } from "@common";
-import { IonAvatar, IonButton, IonCard, IonContent, IonHeader, IonIcon, IonItem, IonLabel, IonList, IonMenuButton, IonPage, IonPopover, IonProgressBar, IonSpinner, IonTitle, IonToolbar, onIonViewWillEnter } from "@ionic/vue";
+import { IonAvatar, IonButton, IonCard, IonContent, IonHeader, IonIcon, IonItem, IonLabel, IonList, IonMenuButton, IonPage, IonPopover, IonProgressBar, IonSpinner, IonTitle, IonToolbar, modalController, onIonViewWillEnter } from "@ionic/vue";
 import { informationCircleOutline, mailOpenOutline, mailUnreadOutline, storefrontOutline } from "ionicons/icons";
 import { DateTime } from "luxon";
 import { computed, watch } from "vue";
+import PickerOrdersModal from "@/components/PickerOrdersModal.vue";
 import { useStorePerformance } from "@/composables/useStorePerformance";
 import router from "@/router";
 import { useProductStore } from "@/store/productStore";
-import { formatDuration } from "@/utils/storePerformance";
+import { type PickerPerformance, formatDuration } from "@/utils/storePerformance";
 
 const productStore = useProductStore();
 const currentFacility = computed(() => productStore.getCurrentFacility);
 const { loading, now, allocatedCount, packedCount, rejectedCount, rate, openOrderIds, inProgressOrderIds, oldestPending, closesAt, pickers, mostPicked, fastestPacker, progress, loadPerformance } = useStorePerformance();
+
+const openPickerOrders = async (picker: PickerPerformance) => {
+  const modal = await modalController.create({ component: PickerOrdersModal, componentProps: { picker } });
+  await modal.present();
+};
 
 onIonViewWillEnter(loadPerformance);
 watch(() => currentFacility.value?.facilityId, loadPerformance);

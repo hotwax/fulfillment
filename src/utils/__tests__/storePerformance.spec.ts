@@ -16,10 +16,12 @@ describe("pickerPerformance", () => {
     { shipmentId: "S4", primaryOrderId: "O4", partyId: "P2", groupName: "Brooklyn picking", picklistDate: DateTime.fromISO("2026-10-01T17:00:00").toMillis() }
   ];
   const packed = [
-    { shipmentId: "S1", statusDate: at("09:20") },
-    { shipmentId: "S3", statusDate: at("10:05") },
-    { shipmentId: "S4", statusDate: at("08:00") },
-    { shipmentId: "S9", statusDate: at("11:00") }
+    { shipmentId: "S1", primaryOrderId: "O1", statusDate: at("09:20") },
+    // Packed again later: still one shipment, packed at the first time.
+    { shipmentId: "S1", primaryOrderId: "O1", statusDate: at("09:40") },
+    { shipmentId: "S3", primaryOrderId: "O3", statusDate: at("10:05") },
+    { shipmentId: "S4", primaryOrderId: "O4", statusDate: at("08:00") },
+    { shipmentId: "S9", primaryOrderId: "O9", statusDate: at("11:00") }
   ];
   const rejections = [{ orderId: "O2" }, { orderId: "O2" }, { orderId: "O7" }];
 
@@ -27,9 +29,17 @@ describe("pickerPerformance", () => {
     const rows = pickerPerformance(picklists, packed, rejections, today);
 
     expect(rows).toEqual([
-      { partyId: "P1", name: "Swati Pandey", picked: 2, packed: 1, rejected: 1, avgPackMs: 20 * 60 * 1000 },
-      { partyId: "P2", name: "Brooklyn picking", picked: 1, packed: 2, rejected: 0, avgPackMs: (5 + 15 * 60) * 60 * 1000 / 2 },
-      { partyId: "", name: "", picked: 0, packed: 1, rejected: 1, avgPackMs: undefined }
+      { partyId: "P1", name: "Swati Pandey", picked: 2, packed: 1, packedShipments: [{ shipmentId: "S1", orderId: "O1", packedDate: at("09:20") }], rejected: 1, avgPackMs: 20 * 60 * 1000 },
+      {
+        partyId: "P2",
+        name: "Brooklyn picking",
+        picked: 1,
+        packed: 2,
+        packedShipments: [{ shipmentId: "S3", orderId: "O3", packedDate: at("10:05") }, { shipmentId: "S4", orderId: "O4", packedDate: at("08:00") }],
+        rejected: 0,
+        avgPackMs: (5 + 15 * 60) * 60 * 1000 / 2
+      },
+      { partyId: "", name: "", picked: 0, packed: 1, packedShipments: [{ shipmentId: "S9", orderId: "O9", packedDate: at("11:00") }], rejected: 1, avgPackMs: undefined }
     ]);
   });
 });
