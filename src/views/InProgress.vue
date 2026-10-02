@@ -701,7 +701,7 @@ const reportIssue = async (order: any, itemsToReject: any) => {
     message = translate(", and other products are identified as unfulfillable. These order items will be unassigned from this store and sent to be rebrokered.", { productName, products: itemsToReject.length - 1, space: "<br /><br />" });
   }
 
-  // The card already shows the outcome; when more than one other location can ship the whole order, reject all of it instead of splitting.
+  // When more than one other location can ship the whole order, reject all of it instead of splitting it.
   await onePackageReroute.resolveStockCheck(order);
   const isWholeOrder = rejectionOutcome(order) === "whole";
   if(isWholeOrder) {
@@ -791,7 +791,7 @@ const updateRejectReason = (updatedReason: string, item: any, order: any) => {
   order.hasRejectedItem = true;
   order.hasAllRejectedItem = isEntierOrderRejectionEnabled(order) || order.items.every((item: any) => item.rejectReason);
   useOrderStore().updateInProgressOrder(order);
-  // Shows on the card what reporting will do, before the associate reports.
+  // The card shows what reporting will do before the associate reports.
   void onePackageReroute.startStockCheck(order);
 };
 

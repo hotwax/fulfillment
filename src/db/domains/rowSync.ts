@@ -1,19 +1,10 @@
-/**
- * Pure helpers shared by the fulfillment sync domains. Free of Dexie so they are unit-testable.
- */
-
 import type { Entity } from "@common/db/schema/defineEntity";
 import { canonicalKey, entityKeyOf } from "@common/db/storage/projection";
 import type { DbRow } from "@common/db/types";
 
 const sameValue = (a: unknown, b: unknown) => a === b || JSON.stringify(a) === JSON.stringify(b);
 
-/**
- * Fresh rows that are new or whose stored fields changed since the row was stored.
- *
- * Unchanged rows are skipped on purpose: rewriting them would bump `syncedAt` on every tick,
- * wake every live query, and make the item and card layers treat the whole queue as changed.
- */
+// Rewriting unchanged rows would bump `syncedAt` on every tick and make the whole queue look changed.
 export function changedRows(fresh: DbRow[], existing: DbRow[], entity: Entity): DbRow[] {
   const existingByKey = new Map<string, DbRow>();
   for(const row of existing) {
@@ -38,7 +29,6 @@ export function chunk<T>(items: T[], size: number): T[][] {
   return chunks;
 }
 
-/** Run `task` over `items` with at most `limit` in flight. A failing task does not stop the others. */
 export async function runWithConcurrency<T>(items: T[], limit: number, task: (item: T) => Promise<void>): Promise<void> {
   let next = 0;
   const lanes = Array.from({ length: Math.min(limit, items.length) }, async () => {
@@ -54,10 +44,7 @@ export async function runWithConcurrency<T>(items: T[], limit: number, task: (it
   await Promise.all(lanes);
 }
 
-/**
- * Orders interleaved across facilities, each facility's oldest first: every facility's first
- * order, then every second order, and so on. The top of each facility's Open list fills first.
- */
+// Every facility's oldest order first, then every facility's second, so the top of each Open list fills first.
 export function hydrationOrder<T extends Record<string, unknown>>(orders: T[]): T[] {
   const byFacility = new Map<string, T[]>();
   for(const order of orders) {

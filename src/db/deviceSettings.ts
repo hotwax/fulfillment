@@ -1,9 +1,4 @@
-/**
- * Settings that belong to this device, persisted in IndexedDB until they get a server-side home.
- *
- * Kept in their own small database rather than the per-OMS fulfillment database, because logout
- * clears that one and these choices should survive a re-login on the same device.
- */
+// Its own database rather than the fulfillment one, which logout clears: these survive a re-login on this device.
 
 import { BaseDB, ensureDbReady } from "@common/db/storage/baseDb";
 import { reactive } from "vue";
@@ -51,11 +46,6 @@ async function saveSetting(settingId: string, value: unknown): Promise<void> {
   } catch (error) {
     console.warn(`[deviceSettings] Failed to save ${settingId}:`, error);
   }
-}
-
-export async function setLiveOpenOrdersEnabled(enabled: boolean): Promise<void> {
-  deviceSettings.liveOpenOrders = enabled;
-  await saveSetting(SETTINGS.LIVE_OPEN_ORDERS, enabled);
 }
 
 export async function setOpenOrderFilterDimension(dimensionId: string, enabled: boolean): Promise<void> {

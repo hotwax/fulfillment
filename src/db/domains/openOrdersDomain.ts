@@ -1,10 +1,4 @@
-/**
- * Class A domain: the open-orders bucket for every facility in the master list.
- *
- * A bounded snapshot, like accxui's shopifyPendingFulfillment domain: each pass re-reads the
- * bucket, prunes the open rows the server no longer returns and writes only rows that changed.
- * The bucket service has no updated-since filter, so there is no cursor to keep.
- */
+// The open bucket has no updated-since filter, so each pass re-reads it and prunes what the server no longer returns.
 
 import { pageAll } from "@common/core/workerRemoteApi";
 import type { BaseDB } from "@common/db/storage/baseDb";
@@ -21,13 +15,14 @@ const EXCLUDED_SHIPMENT_METHODS = "STOREPICKUP,POS_COMPLETED";
 
 const orderEntity = fulfillmentDb.entities.orders;
 
-function fetchOpenOrders(ctx: SyncContext, filters: Record<string, unknown>): Promise<any[]> {
+function fetchOpenOrders(ctx: SyncContext, facilityIds: string[]): Promise<any[]> {
   return pageAll({
     ctx,
     url: "oms/orders/salesOrders/open",
     collectionKey: "orders",
     params: {
-      ...filters,
+      facilityId: facilityIds.join(","),
+      facilityId_op: "in",
       shipmentMethodTypeId: EXCLUDED_SHIPMENT_METHODS,
       shipmentMethodTypeId_op: "in",
       shipmentMethodTypeId_not: "Y",
@@ -45,11 +40,7 @@ async function masterFacilityIds(db: BaseDB): Promise<string[]> {
   return (await db.table("userFacilities").toCollection().primaryKeys()).map(String);
 }
 
-/**
- * Make the open rows that match `inScope` equal the fetched set: delete the ones the server no
- * longer returns (with their items) and write only the rows that are new or changed.
- */
-function replaceOpenRows(db: BaseDB, rawRows: any[], inScope: (row: DbRow) => boolean): Promise<number> {
+function replaceOpenRows(db: BaseDB, rawRows: any[]): Promise<number> {
   if(isUnkeyableFetch(rawRows, orderEntity)) {
     console.warn(`[db] ${OPEN_ORDERS_DOMAIN}: fetched ${rawRows.length} orders but none could be keyed. Leaving the table unchanged.`);
 
@@ -59,7 +50,7 @@ function replaceOpenRows(db: BaseDB, rawRows: any[], inScope: (row: DbRow) => bo
   const keyOf = (row: DbRow) => entityKeyOf(row, orderEntity) as DbKey;
 
   return db.transaction("rw", ["orders", "orderItems"], async () => {
-    const existing = (await db.table<DbRow, DbKey>("orders").where("stage").equals(ORDER_STAGE.OPEN).toArray()).filter(inScope);
+    const existing = await db.table<DbRow, DbKey>("orders").where("stage").equals(ORDER_STAGE.OPEN).toArray();
 
     const staleKeys = diffStaleKeys(existing.map(keyOf), fresh.map(keyOf));
     if(staleKeys.length) {
@@ -86,21 +77,6 @@ export const openOrdersDomain = defineSyncDomain({
     // Without a master list there is nothing to scope the prune by, so leave the table alone.
     if(!facilityIds.length) {return 0;}
 
-    const rawRows = await fetchOpenOrders(ctx, { facilityId: facilityIds.join(","), facilityId_op: "in" });
-
-    return replaceOpenRows(db, rawRows, () => true);
-  },
-
-  // After an action on one order: re-read just that order and settle its open rows.
-  async refetchOne(ctx: SyncContext, pk: Record<string, unknown>) {
-    const orderId = pk?.orderId ? String(pk.orderId) : "";
-    if(!orderId) {return 0;}
-    const db = getFulfillmentDb(ctx.omsInstance);
-    const facilityIds = await masterFacilityIds(db);
-    if(!facilityIds.length) {return 0;}
-
-    const rawRows = await fetchOpenOrders(ctx, { orderId, facilityId: facilityIds.join(","), facilityId_op: "in" });
-
-    return replaceOpenRows(db, rawRows, (row) => row.orderId === orderId);
+    return replaceOpenRows(db, await fetchOpenOrders(ctx, facilityIds));
   }
 });

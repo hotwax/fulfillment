@@ -1,13 +1,3 @@
-/**
- * One-package reroute for the rejection flow on In Progress and Order detail. As soon as an
- * associate picks a rejection reason, the app checks which other locations can ship the order's
- * items, and the card shows the outcome before they report:
- * - more than one other location can ship the whole order: the entire order is rejected, and order
- *   routing places it again in one package
- * - otherwise: they fulfill what they have, and only the rejected units are unassigned
- * Items that no other location can ship get a badge.
- */
-
 import { api, commonUtil, emitter, logger, translate } from "@common";
 import { reactive } from "vue";
 import { useOrderStore } from "@/store/order";
@@ -27,27 +17,24 @@ import {
 } from "@/utils/onePackageReroute";
 import { orderUtil } from "@/utils/orderUtil";
 
-/** How long a check may take before the card falls back to the usual partial rejection. */
+// After this the card falls back to the usual partial rejection.
 const CHECK_TIMEOUT_MS = 4000;
-/** A check older than this runs again when the order is reported. */
 const CHECK_TTL_MS = 5 * 60 * 1000;
 
-export interface StockCheck {
+interface StockCheck {
   status: "checking" | "ready" | "failed";
   checkedAt: number;
   orderId: string;
   fromFacilityId: string;
-  /** Every approved item of the ship group, which the check covered. */
+  // Every approved item of the ship group, not only the shipment's.
   items: ShipGroupItem[];
-  /** Other locations that can ship every unit. */
   completeFacilityIds: string[];
-  /** Items no other location can ship, by orderItemSeqId. */
   unavailableElsewhere: string[];
 }
 
-export type RejectionOutcome = SplitDecision | "checking" | "unchecked";
+type RejectionOutcome = SplitDecision | "checking" | "unchecked";
 
-// Shared by In Progress and Order detail and keyed by shipment, so both show the same check.
+// Keyed by shipment and shared, so In Progress and Order detail show the same check.
 const stockChecks = reactive<Record<string, StockCheck>>({});
 const pendingChecks = new Map<string, Promise<StockCheck>>();
 
@@ -102,8 +89,7 @@ const fetchShippingInventory = async (productStoreId: string, productIds: string
 export function useOnePackageReroute() {
   const productStore = useProductStore();
 
-  // Checks run for shipping orders with at least one rejected item. Kits are left out: their stock
-  // is on the components, and the shippable inventory check reads the kit product.
+  // Kits are left out: their stock is on the components, and the inventory check reads the kit product.
   const checkContext = (order: any) => {
     const items = order?.items ?? [];
     if(!order?.hasRejectedItem || order.shipmentMethodTypeId === "STOREPICKUP" || !items.length) {return undefined;}
@@ -147,7 +133,6 @@ export function useOnePackageReroute() {
     };
   };
 
-  /** Starts the check for an order with a rejected item, or reuses a recent or running one. */
   const startStockCheck = (order: any): Promise<StockCheck | undefined> => {
     const context = checkContext(order);
     if(!context) {return Promise.resolve(undefined);}
@@ -176,7 +161,7 @@ export function useOnePackageReroute() {
     return check;
   };
 
-  /** The check to report against. A failed check stays failed, so the outcome matches what the card said. */
+  // A failed check stays failed, so reporting does what the card said.
   const resolveStockCheck = (order: any) => {
     const context = checkContext(order);
     const current = context && stockChecks[context.key];
@@ -190,10 +175,6 @@ export function useOnePackageReroute() {
     return context ? stockChecks[context.key] : undefined;
   };
 
-  /**
-   * What reporting will do, while the order has a rejected item that would otherwise split it:
-   * checking, whole, partial, or unchecked when the check failed.
-   */
   const rejectionOutcome = (order: any): RejectionOutcome | undefined => {
     const check = stockCheckFor(order);
     if(!check) {return undefined;}
@@ -212,7 +193,6 @@ export function useOnePackageReroute() {
     return decision;
   };
 
-  /** The note shown next to the pack button. */
   const rejectionNote = (order: any) => {
     const outcome = rejectionOutcome(order);
     const count = stockCheckFor(order)?.completeFacilityIds.length ?? 0;
@@ -232,7 +212,6 @@ export function useOnePackageReroute() {
     return check?.status === "ready" && check.unavailableElsewhere.includes(String(item.orderItemSeqId));
   };
 
-  /** The Report an issue message when the whole order will be rejected, and what to put back. */
   const wholeOrderMessage = (order: any, itemsToReject: any[], collateralOrderCount = 0) => {
     const productName = itemsToReject[0]?.productName;
     const pickedCount = unitCount((order.items ?? []).filter((item: any) => !item.rejectReason));
@@ -256,7 +235,6 @@ export function useOnePackageReroute() {
     return sentences.join("<br /><br />");
   };
 
-  /** Rejects the whole ship group at this store so routing places it again. Shows the loader and a toast. */
   const rejectWholeOrder = async (order: any, rejectedOrderItems: any[]) => {
     const context = checkContext(order);
     const check = stockCheckFor(order);

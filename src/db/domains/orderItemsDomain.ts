@@ -1,10 +1,5 @@
-/**
- * Items for the order ship groups in the `orders` table.
- *
- * The bucket services return order rows without items, so items come from each order's items
- * endpoint. Only orders that are new, or whose row was rewritten after their items were stored,
- * are fetched; an unchanged queue makes no item requests at all.
- */
+// The open bucket returns orders without items, so items come from each order's items endpoint,
+// fetched only for orders that are new or whose row was rewritten after their items were stored.
 
 import { unwrapCollection, workerGet } from "@common/core/workerRemoteApi";
 import type { BaseDB } from "@common/db/storage/baseDb";
@@ -17,21 +12,17 @@ import { hydrationOrder, runWithConcurrency } from "./rowSync";
 export const ORDER_ITEMS_DOMAIN = "orderItems";
 
 const ITEM_FETCH_CONCURRENCY = 6;
-// Orders fetched per pass. A large first sync fills in over several ticks, and products for each
-// pass load in the same tick, instead of every card waiting for the whole queue.
+// A large first sync fills in over several ticks instead of every card waiting for the whole queue.
 const ORDERS_PER_PASS = 150;
-// Only approved lines are open work. Completed and cancelled lines of the same ship group aren't picked.
 const OPEN_ITEM_STATUS = "ITEM_APPROVED";
 
 const itemEntity = fulfillmentDb.entities.orderItems;
 
 const shipGroupOf = (row: DbRow): [string, string] => [String(row.orderId), String(row.shipGroupSeqId)];
 
-// The order row version (its syncedAt) each ship group's items were last fetched for. Stops a ship
-// group whose items come back empty from being fetched again on every tick.
+// The order row version each ship group's items were fetched for, so empty results aren't refetched every tick.
 const fetchedForVersion = new Map<string, number>();
 
-/** Forget which ship groups' items were fetched. The items table is cleared when the sync stops, and this must go with it. */
 export function forgetItemFetches(): void {
   fetchedForVersion.clear();
 }
@@ -44,7 +35,7 @@ async function syncItemsOf(db: BaseDB, ctx: SyncContext, order: DbRow): Promise<
   const fresh = projectRows(rawItems, itemEntity, Date.now());
 
   await db.transaction("rw", ["orders", "orderItems"], async () => {
-    // The order may have left the queue while its items were in flight; don't keep orphans.
+    // The order may have left the queue while its items were in flight.
     if(!(await db.table("orders").get(shipGroup))) {return;}
     const existingKeys = await db.table<DbRow, DbKey>("orderItems").where("[orderId+shipGroupSeqId]").equals(shipGroup).primaryKeys();
     const staleKeys = diffStaleKeys(existingKeys, fresh.map((row) => entityKeyOf(row, itemEntity) as DbKey));
@@ -71,7 +62,6 @@ export const orderItemsDomain = defineSyncDomain({
       newestItemSync.set(key, Math.max(newestItemSync.get(key) ?? 0, Number(item.syncedAt) || 0));
     });
 
-    // Due: no items stored yet, or the order row was rewritten after its items were.
     const due = orders.filter((order) => {
       const key = canonicalKey(shipGroupOf(order));
       const version = Number(order.syncedAt) || 0;

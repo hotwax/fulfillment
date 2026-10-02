@@ -3,6 +3,7 @@ import { api, commonUtil, useEmbeddedAppStore, logger, translate, useSolrSearch 
 import { useUserStore } from '@/store/user'
 import Actions from "@/authorization/actions"
 import { resolveProductStoreSettings } from "@/utils/productStoreSettings"
+
 const defaultProductStoreSettings = resolveProductStoreSettings(import.meta.env.VITE_DEFAULT_PRODUCT_STORE_SETTINGS as string)
 
 export const useProductStore = defineStore('productStore', {

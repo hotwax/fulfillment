@@ -44,22 +44,22 @@
 
 <script setup lang="ts">
 import { IonApp, IonContent, IonHeader, IonIcon, IonItem, IonItemDivider, IonLabel, IonList, IonMenu, IonMenuToggle, IonRouterOutlet, IonSplitPane, IonTitle, IonToolbar, loadingController, toastController } from "@ionic/vue";
-import { computed, onMounted, onUnmounted, watch } from "vue";
+import { computed, onMounted, onUnmounted, ref, watch } from "vue";
 import { translate, emitter, logger, useNotificationStore, useAuth, i18n } from "@common";
 import { Settings } from "luxon";
 import { init } from "@module-federation/runtime";
+import { startLiveOrdersSync, syncMasterFacilities } from "@/db/liveOrdersSync";
 import { useUserStore } from "@/store/user";
 import { useProductStore } from "@/store/productStore";
 import router from './router';
 import { firebaseUtil } from "@/utils/firebaseUtil";
 import { useRegisterSW } from 'virtual:pwa-register/vue'
-import { startLiveOrdersSync, syncMasterFacilities } from "@/db/liveOrdersSync";
 
 const { needRefresh, updateServiceWorker } = useRegisterSW()
 
-// Holds the loader's creation promise rather than the loader, so a dismiss that arrives while the loader is still being created can still reach it.
-let loader: ReturnType<typeof loadingController.create> | null = null;
-// Incremented by every dismiss, so a present still waiting for its loader knows it was dismissed in the meantime.
+// Holds the loader's creation promise, so a dismiss that arrives while it is being created still reaches it.
+const loader = ref<any>(null);
+// Lets a present still waiting for its loader know it was dismissed meanwhile.
 let dismissCount = 0;
 
 const userProfile = computed(() => useUserStore().getUserProfile);
@@ -88,40 +88,31 @@ const selectedIndex = computed(() => {
   return menuItems.value.findIndex((item) => item.url === path || item.childRoutes?.includes(path) || item.childRoutes?.some((route: any) => path.includes(route)));
 });
 
-// The options arrive through the untyped event bus, so they cannot be typed narrower than any.
-const presentLoader = async (options: any = { message: "", backdropDismiss: false }) => {
-  if(options.message && loader) {
-    dismissLoader();
-  }
+const presentLoader = async (options = { message: "", backdropDismiss: false }) => {
+  if (options.message && loader.value) dismissLoader();
 
   const dismissCountBefore = dismissCount;
-  if(!loader) {
-    loader = loadingController.create({
+  if (!loader.value) {
+    loader.value = loadingController.create({
       message: options.message ? translate(options.message) : (options.backdropDismiss ? translate("Click the backdrop to dismiss.") : translate("Loading...")),
       translucent: true,
       backdropDismiss: options.backdropDismiss || false
     });
   }
-  const overlay = await loader;
-  if(dismissCount === dismissCountBefore) {
-    overlay.present();
-  }
+  const overlay = await loader.value;
+  if(dismissCount === dismissCountBefore) {overlay.present();}
 };
 
 const dismissLoader = () => {
-  if(!loader) {
-    return;
+  if (loader.value) {
+    const pendingLoader = loader.value;
+    loader.value = null;
+    dismissCount++;
+    // dismiss() leaves a loader that was never presented in the DOM.
+    pendingLoader.then(async (overlay: any) => {
+      if(!(await overlay.dismiss())) {overlay.remove();}
+    });
   }
-
-  const pendingLoader = loader;
-  loader = null;
-  dismissCount++;
-  // dismiss() waits for a present that is in progress, but leaves a loader that was never presented in the DOM.
-  pendingLoader.then(async (overlay) => {
-    if(!(await overlay.dismiss())) {
-      overlay.remove();
-    }
-  });
 };
 
 onMounted(async () => {
@@ -130,13 +121,13 @@ onMounted(async () => {
     remotes: [{ name: "fulfillment_extensions", entry: import.meta.env.VITE_REMOTE_ENTRY as string, type: "module" }]
   });
 
-  loader = loadingController.create({
+  loader.value = loadingController.create({
     message: translate("Loading..."),
     translucent: true,
     backdropDismiss: false
   });
 
-  emitter.on("presentLoader", presentLoader);
+  emitter.on("presentLoader", (options: any) => presentLoader(options));
   emitter.on("dismissLoader", dismissLoader);
 
   if (userProfile.value && userProfile.value.timeZone) {
@@ -161,7 +152,6 @@ onMounted(async () => {
     }
 });
 
-// Keep the facility master list in IndexedDB in step with the facilities the app resolved.
 // Before facilities load, the store holds `{}` rather than a list.
 const facilityIdsKey = () => {
   const facilities = useProductStore().getFacilities;
@@ -173,7 +163,7 @@ watch(facilityIdsKey, () => {
 });
 
 onUnmounted(() => {
-  emitter.off("presentLoader", presentLoader);
+  emitter.off("presentLoader", (options: any) => presentLoader(options));
   emitter.off("dismissLoader", dismissLoader);
 });
 

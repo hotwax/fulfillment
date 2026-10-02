@@ -1,6 +1,7 @@
 import { api, commonUtil, cookieHelper, i18n, logger, translate, useAuth, useNotificationStore, useEmbeddedAppStore } from "@common";
 import { defineStore } from "pinia"
 import { DateTime, Settings } from "luxon"
+import { startLiveOrdersSync, stopLiveOrdersSync } from "@/db/liveOrdersSync";
 import router from "@/router";
 import { useUtilStore } from "@/store/util";
 import { useProductStore } from "@/store/productStore";
@@ -12,7 +13,6 @@ import { useStockStore } from "@/store/stock";
 import { useCarrierStore } from "@/store/carrier";
 import { useOrderLookupStore } from "@/store/orderLookup";
 import { useProductStore as useProduct } from "@/store/product";
-import { startLiveOrdersSync, stopLiveOrdersSync } from "@/db/liveOrdersSync";
 
 interface UserState {
   permissions: any[]

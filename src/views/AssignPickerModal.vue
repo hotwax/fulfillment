@@ -62,7 +62,6 @@ import { deviceSettings } from "@/db/deviceSettings";
 import { OPEN_ORDERS_DOMAIN } from "@/db/domains";
 import { refreshLiveOrders, removeOpenOrdersLocally } from "@/db/liveOrdersSync";
 
-// `orders`: the live Open view's on-screen orders (the filtered set capped by the picklist size).
 const props = defineProps(["order", "orders"]);
 const orderStore = useOrderStore();
 const utilStore = useUtilStore();
@@ -96,18 +95,15 @@ const printPicklist = async () => {
   emitter.emit("presentLoader");
   let resp;
   const orderIdsToPick = [] as any;
-  const orderKeysToPick = [] as string[];
   const orderItems = [] as any;
 
   if (props.order) {
     props.order.items.map((item: any) => orderItems.push(item));
     orderIdsToPick.push(props.order.orderId);
-    if (props.order.orderKey) orderKeysToPick.push(props.order.orderKey);
   } else {
     (props.orders ?? openOrders.value.list).map((order: any) => {
       order.items.map((item: any) => orderItems.push(item));
       orderIdsToPick.push(order.orderId);
-      if (order.orderKey) orderKeysToPick.push(order.orderKey);
     });
   }
 
@@ -135,9 +131,9 @@ const printPicklist = async () => {
       closeModal({ picklistId: resp.data.picklistId, shipmentIds: resp.data.shipmentIds });
       commonUtil.showToast(translate("Picklist created successfully"));
 
-      if (deviceSettings.liveOpenOrders) {
+      if(deviceSettings.liveOpenOrders) {
         // Take the picked orders off the list now; the resync confirms against the server.
-        await removeOpenOrdersLocally(orderKeysToPick);
+        await removeOpenOrdersLocally(orderItems);
         void refreshLiveOrders([OPEN_ORDERS_DOMAIN]);
       }
 
@@ -145,9 +141,9 @@ const printPicklist = async () => {
         await orderStore.printPicklist(resp.data.picklistId);
       }
 
-      if (!deviceSettings.liveOpenOrders) {
+      if(!deviceSettings.liveOpenOrders) {
         await useOrderStore().findOpenOrders();
-        if (orderIdsToPick.length) {
+        if(orderIdsToPick.length) {
           const updatedOpenOrders = openOrders.value?.list.filter((openOrder: any) => !orderIdsToPick.includes(openOrder.orderId));
           const outdatedOpenOrderCount = openOrders.value.list.reduce((count: number, openOrder: any) => orderIdsToPick.includes(openOrder.orderId) ? count + 1 : count, 0);
           await useOrderStore().updateOpenOrderQuery({ ...openOrders.value.query, viewSize: updatedOpenOrders.length });

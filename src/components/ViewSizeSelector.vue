@@ -1,7 +1,6 @@
 <template>
-  <!-- Rendered outside the app's split pane: Ionic 8 treats any menu inside a visible split pane as a
-       side pane, which hides the button that opens it. Deferred, since ion-app isn't in the document
-       yet while the first page renders. -->
+  <!-- Outside the split pane, where Ionic 8 treats a menu as a side pane and hides its button.
+       Deferred: ion-app isn't in the document yet on the first render. -->
   <Teleport defer to="ion-app">
     <ion-menu v-bind="$attrs" type="overlay" side="end">
       <ion-header>
@@ -35,7 +34,7 @@ import router from "@/router";
 // The menu-id and content-id attributes belong on the teleported menu, not the component root.
 defineOptions({ inheritAttrs: false });
 
-// A page that counts its own orders (the live Open page) passes its total; others use the store's.
+// The live Open page counts its own orders.
 const props = defineProps<{ total?: number }>();
 
 const route = router.currentRoute.value;
@@ -52,7 +51,7 @@ const storedViewSize = computed(() => {
   return 0;
 });
 
-// The default size comes from the env as text ("10") while the options are numbers, so compare as numbers.
+// The env default arrives as text ("10").
 const viewSize = computed(() => Number(storedViewSize.value) || 0);
 
 const total = computed(() => {

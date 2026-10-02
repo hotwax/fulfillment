@@ -1,21 +1,12 @@
-/**
- * Main-thread control of the fulfillment sync.
- *
- * Runs the accxui app database sync (one worker running the polling harness) with the fulfillment
- * domains, keeps the facility master list in IndexedDB in step with the facilities Pinia resolved,
- * scopes the worker to the live order domains, and exposes the refreshes pages call after an action.
- *
- * When the worker can't start (for example inside a host that loads this app from another origin,
- * where browsers refuse a cross-origin worker script), the same registered domains run on the
- * main thread on the same cadence, called directly with the app's own token.
- */
+// When the worker can't start (for example a host that loads this app from another origin, where browsers
+// refuse a cross-origin worker script), the same domains run on the main thread on the same cadence.
 
 import { commonUtil, logger } from "@common";
-import { type DbKey, type DbRow, clearDatabaseTables, ensureDbReady, entityKeyOf, getSyncDomain, projectRows, registerDomains, setupAppDbSync } from "@common/db";
+import { clearDatabaseTables, ensureDbReady, getSyncDomain, projectRows, registerDomains, setupAppDbSync } from "@common/db";
 import { reactive } from "vue";
 import { deviceSettings, loadDeviceSettings } from "./deviceSettings";
 import { FULFILLMENT_SYNC_DOMAINS, LIVE_ORDERS_INTERVAL_MS, LIVE_ORDER_DOMAINS, OPEN_ORDERS_DOMAIN, resetLiveOrderDomains } from "./domains";
-import { ORDER_STAGE, fulfillmentDb, orderKeyOf } from "./fulfillmentDb";
+import { fulfillmentDb } from "./fulfillmentDb";
 import fulfillmentSyncWorkerUrl from "./fulfillmentSync.worker.ts?worker&url";
 
 // A worker that loads posts its first status within moments; one that never answers didn't load.
@@ -84,10 +75,7 @@ function startMainThreadLoop(): void {
   mainThreadTimer = setInterval(() => void runOnMainThread(domainNames), LIVE_ORDERS_INTERVAL_MS);
 }
 
-/**
- * Make the IndexedDB master list match the facilities the app resolved. Returns whether it
- * changed, so callers resync only when the set of facilities really moved.
- */
+// Returns whether the set of facilities changed.
 async function writeMasterFacilities(facilities: any[]): Promise<boolean> {
   const db = fulfillmentDb.raw();
   // Pinia hands out reactive proxies, which IndexedDB can't clone. Before facilities load, the store holds `{}`.
@@ -105,7 +93,6 @@ async function writeMasterFacilities(facilities: any[]): Promise<boolean> {
   return true;
 }
 
-/** Resolves when the worker answers, or once it has stayed silent too long to be loading. */
 function workerStartTimeout(): Promise<"timeout"> {
   return new Promise((resolve) => {
     const startedAt = Date.now();
@@ -139,10 +126,7 @@ async function start(facilities: any[]): Promise<void> {
   await appDbSync.syncNow().catch((error) => logger.error("Failed the first live order sync", error));
 }
 
-/**
- * Start the live sync for the logged-in session. Safe to call more than once: later calls only
- * refresh the facility master list.
- */
+// Later calls only refresh the facility master list.
 export async function startLiveOrdersSync(facilities: any[]): Promise<void> {
   await loadDeviceSettings();
   if(!deviceSettings.liveOpenOrders) {return;}
@@ -163,13 +147,11 @@ export async function startLiveOrdersSync(facilities: any[]): Promise<void> {
   await starting;
 }
 
-/** Call when Pinia's facilities change. Resyncs only when the set of facilities changed. */
 export async function syncMasterFacilities(facilities: any[]): Promise<void> {
   if(!starting || liveOrdersStatus.mode === "off") {return;}
   if(await writeMasterFacilities(facilities)) {await refreshLiveOrders();}
 }
 
-/** Re-read the open bucket now, then fill items and products for anything new. */
 export async function refreshLiveOrders(domainNames: string[] = LIVE_ORDER_DOMAINS.map((domain) => domain.name)): Promise<void> {
   liveOrdersStatus.syncing = true;
   try {
@@ -185,23 +167,17 @@ export async function refreshLiveOrders(domainNames: string[] = LIVE_ORDER_DOMAI
   }
 }
 
-/** Take orders out of the local queue at once, ahead of the confirming resync. `orderKeys` are the Open view's keys. */
-export async function removeOpenOrdersLocally(orderKeys: string[]): Promise<void> {
-  if(!orderKeys.length || liveOrdersStatus.mode === "off") {return;}
-  const removed = new Set(orderKeys);
+// Ahead of the confirming resync.
+export async function removeOpenOrdersLocally(items: Array<{ orderId: string; shipGroupSeqId: string }>): Promise<void> {
+  if(!items.length || liveOrdersStatus.mode === "off") {return;}
+  const keys = items.map((item) => [item.orderId, item.shipGroupSeqId]);
   const db = fulfillmentDb.raw();
   await db.transaction("rw", ["orders", "orderItems"], async () => {
-    const rows = await db.table<DbRow, DbKey>("orders").where("stage").equals(ORDER_STAGE.OPEN).toArray();
-    const keys = rows
-      .filter((row) => removed.has(String(orderKeyOf(row.orderId, row.shipGroupSeqId))))
-      .map((row) => entityKeyOf(row, fulfillmentDb.entities.orders) as DbKey);
-    if(!keys.length) {return;}
     await db.table("orders").bulkDelete(keys);
-    await db.table("orderItems").where("[orderId+shipGroupSeqId]").anyOf(keys as any[]).delete();
+    await db.table("orderItems").where("[orderId+shipGroupSeqId]").anyOf(keys).delete();
   });
 }
 
-/** Stop syncing and clear this OMS's tables. Used on logout and when the live list is switched off. */
 export async function stopLiveOrdersSync(): Promise<void> {
   if(mainThreadTimer) {
     clearInterval(mainThreadTimer);
@@ -211,12 +187,10 @@ export async function stopLiveOrdersSync(): Promise<void> {
   liveOrdersStatus.mode = "off";
   liveOrdersStatus.lastSyncAt = 0;
   starting = null;
-  // The main-thread fallback's bookkeeping. A worker's goes with the worker.
   resetLiveOrderDomains();
   if(activeOms || wasRunning) {
     try {
       await appDbSync.deactivateSyncDomains(syncOwner);
-      // Terminates the worker and clears the tables of the instance the sync started for.
       await appDbSync.stopAppDbSync();
     } catch (error) {
       logger.error("Failed to stop the live order sync", error);

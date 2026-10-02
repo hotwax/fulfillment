@@ -772,7 +772,7 @@ const openRejectReasonPopover = async (ev: Event, item: any, currentOrder: any) 
     });
     currentOrder.hasRejectedItem = true;
     currentOrder.hasAllRejectedItem = isEntierOrderRejectionEnabled(currentOrder) || currentOrder.items.every((item: any) => item.rejectReason);
-    // Shows on the page what reporting will do, before the associate reports.
+    // The page shows what reporting will do before the associate reports.
     void onePackageReroute.startStockCheck(currentOrder);
   }
 };
@@ -993,7 +993,7 @@ const reportIssue = async (currentOrder: any, itemsToReject: any) => {
     message = translate(", and other products are identified as unfulfillable. These order items will be unassigned from this store and sent to be rebrokered.", { productName, products: itemsToReject.length - 1, space: "<br /><br />" });
   }
 
-  // The page already shows the outcome; when more than one other location can ship the whole order, reject all of it instead of splitting.
+  // When more than one other location can ship the whole order, reject all of it instead of splitting it.
   await onePackageReroute.resolveStockCheck(currentOrder);
   const isWholeOrder = rejectionOutcome(currentOrder) === "whole";
   if(isWholeOrder) {
@@ -1464,7 +1464,7 @@ onIonViewDidEnter(async () => {
   } else {
     await useOrderStore().getCompletedOrder({ orderId: props.orderId, shipmentId: props.shipmentId });
   }
-  // The order could not be fetched, so the page shows that instead of loading its carrier, invoice and payment details.
+  // The order could not be fetched.
   if(!order.value) {
     return;
   }

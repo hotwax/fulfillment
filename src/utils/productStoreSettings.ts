@@ -1,13 +1,7 @@
-/**
- * The product store settings this app reads: where each lands in the product store's `settings`
- * state and its value when the store has none saved.
- *
- * The state keys mirror the state shape in `store/productStore.ts`, so the list lives in code.
- * VITE_DEFAULT_PRODUCT_STORE_SETTINGS only overrides defaults. An env file that lacks a setting
- * (older env files had no PRDT_IDEN_PREF) can then no longer stop it from loading or saving.
- */
+// In code because the state keys mirror `store/productStore.ts`. The env only overrides defaults, so an env
+// file that lacks a setting (older ones had no PRDT_IDEN_PREF) can't stop it from loading or saving.
 
-export interface ProductStoreSettingDefinition {
+interface ProductStoreSettingDefinition {
   stateKey: string;
   value: any;
 }
@@ -24,11 +18,7 @@ export const PRODUCT_STORE_SETTINGS: Record<string, ProductStoreSettingDefinitio
   AFFECT_QOH_ON_REJ: { stateKey: "affectQoh", value: "N" }
 };
 
-/**
- * The settings definitions, with the env's defaults applied. Accepts the structured env form
- * ({ "PRDT_IDEN_PREF": { "stateKey": ..., "value": ... } }) and the older flat form
- * ({ "FULFILL_FORCE_SCAN": false }), where booleans stand for Y/N.
- */
+// Accepts the structured env form and the older flat one ({ "FULFILL_FORCE_SCAN": false }), where booleans stand for Y/N.
 export function resolveProductStoreSettings(rawEnv?: string): Record<string, ProductStoreSettingDefinition> {
   let fromEnv: Record<string, any> = {};
   try {

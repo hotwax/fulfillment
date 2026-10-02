@@ -1,11 +1,3 @@
-/**
- * The Open view of the local `orders` entity: open rows for the current facility and product
- * store, joined with their items and products, filtered by the enabled dimensions.
- *
- * Each order view object is reused for as long as its row, items and products are unchanged, so
- * a sync that touches one order hands Vue the same objects for every other card.
- */
-
 import { type DbRow, ensureDbReady } from "@common/db";
 import { type Ref, computed, markRaw, onUnmounted, ref, shallowRef, watch } from "vue";
 import { deviceSettings } from "@/db/deviceSettings";
@@ -18,13 +10,12 @@ interface LiveOpenOrdersOptions {
   productStoreId: Ref<string | undefined>;
   query: Ref<string>;
   selections: Ref<FilterSelections>;
-  /** The picklist size: how many of the filtered orders the page shows and picks. */
   pickSize: Ref<number>;
 }
 
 const orderKeyOfRow = (row: DbRow) => String(orderKeyOf(row.orderId, row.shipGroupSeqId));
 
-function toOrderView(order: any, items: DbRow[], version: string) {
+function toOrderView(order: any, items: DbRow[]) {
   return markRaw({
     category: "open",
     orderKey: orderKeyOfRow(order),
@@ -33,15 +24,9 @@ function toOrderView(order: any, items: DbRow[], version: string) {
     orderDate: order.orderDate,
     shipGroupSeqId: order.shipGroupSeqId,
     shipmentMethodTypeId: order.shipmentMethodTypeId,
-    facilityId: order.facilityId,
-    facilityName: order.facilityName,
-    productStoreId: order.productStoreId,
-    customerId: order.billToPartyId,
     customerName: [order.firstName, order.lastName].filter(Boolean).join(" "),
-    itemCount: order.itemCount,
-    // Picklist creation reads the ship method and facility from the items.
-    items: items.map((item) => ({ ...item, shipmentMethodTypeId: order.shipmentMethodTypeId, facilityId: order.facilityId })),
-    version
+    // Picklist creation reads the ship method from the items.
+    items: items.map((item) => ({ ...item, shipmentMethodTypeId: order.shipmentMethodTypeId }))
   });
 }
 
@@ -53,7 +38,7 @@ export function useLiveOpenOrders(options: LiveOpenOrdersOptions) {
   const hydrated = ref(false);
 
   let subscriptions: Array<{ unsubscribe: () => void }> = [];
-  // Bumped on every subscribe and on unmount, so a subscribe still opening the database knows it was replaced.
+  // So a subscribe still opening the database knows it was replaced.
   let generation = 0;
   const unsubscribe = () => {
     subscriptions.forEach((subscription) => subscription.unsubscribe());
@@ -69,8 +54,7 @@ export function useLiveOpenOrders(options: LiveOpenOrdersOptions) {
 
     const onError = (error: unknown) => console.error("[useLiveOpenOrders] live query failed:", error);
     try {
-      // Open and version-check the database before any live query: the check can rebuild the
-      // database, and a live query may only read.
+      // The version check can rebuild the database, and a live query may only read.
       await ensureDbReady(fulfillmentDb.raw());
     } catch (error) {
       onError(error);
@@ -100,8 +84,7 @@ export function useLiveOpenOrders(options: LiveOpenOrdersOptions) {
   const productsById = computed(() => new Map(productRows.value.map((row) => [String(row.productId), row as any])));
   const productVersions = computed(() => new Map(productRows.value.map((row) => [String(row.productId), Number(row.syncedAt) || 0])));
 
-  // The card helpers (images, identifiers, kit checks) read the Pinia product cache. Push each
-  // product there when its stored version changes.
+  // The card helpers (images, identifiers, kit checks) read the Pinia product cache.
   const pushedVersions = new Map<string, number>();
   watch(productRows, (rows) => {
     const changed = rows.filter((row) => pushedVersions.get(String(row.productId)) !== row.syncedAt);
@@ -123,7 +106,7 @@ export function useLiveOpenOrders(options: LiveOpenOrdersOptions) {
     return grouped;
   });
 
-  // Order views from the previous pass, reused while their version is unchanged.
+  // Reused while unchanged, so a sync that touches one order hands Vue the same objects for every other card.
   let viewCache = new Map<string, { version: string; view: any }>();
 
   const allOrders = computed(() => {
@@ -142,7 +125,7 @@ export function useLiveOpenOrders(options: LiveOpenOrdersOptions) {
         ...items.map((item) => `${item.orderItemSeqId}:${item.syncedAt}:${productVersions.value.get(String(item.productId)) ?? 0}`)
       ].join("|");
       const cached = viewCache.get(key);
-      const view = cached && cached.version === version ? cached.view : toOrderView(row, items, version);
+      const view = cached && cached.version === version ? cached.view : toOrderView(row, items);
       nextCache.set(key, { version, view });
       views.push(view);
     }

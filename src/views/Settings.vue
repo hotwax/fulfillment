@@ -199,6 +199,7 @@ import { IonAvatar, IonButton, IonCard, IonCardContent, IonCardHeader, IonCardTi
 import { computed, ref } from "vue";
 import { openOutline } from "ionicons/icons";
 import { commonUtil, DxpShopifyImg, emitter, firebaseMessaging,logger, translate, useNotificationStore, useAuth } from "@common";
+import { deviceSettings, loadDeviceSettings, setOpenOrderFilterDimension } from "@/db/deviceSettings";
 import { useProductStore } from "@/store/productStore";
 import { useUserStore } from "@/store/user";
 
@@ -216,7 +217,6 @@ import { useOrderStore } from "@/store/order";
 import router from "@/router";
 import { firebaseUtil } from "@/utils/firebaseUtil"
 import Actions from "@/authorization/actions"
-import { deviceSettings, loadDeviceSettings, setOpenOrderFilterDimension } from "@/db/deviceSettings"
 import { OPEN_ORDER_FILTER_DIMENSIONS } from "@/utils/openOrderFilters"
 
 const userStore = useUserStore();

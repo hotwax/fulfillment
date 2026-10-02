@@ -163,18 +163,18 @@
 
 <script setup lang="ts">
 import { IonBadge, IonButton, IonButtons, IonCard, IonChip, IonCheckbox, IonContent, IonFab, IonFabButton, IonHeader, IonIcon, IonInfiniteScroll, IonInfiniteScrollContent, IonItem, IonLabel, IonMenuButton, IonNote, IonPage, IonSearchbar, IonSkeletonText, IonSpinner, IonThumbnail, IonTitle, IonToolbar, alertController, modalController, onIonViewWillEnter, popoverController } from "@ionic/vue";
-import { TransitionGroup, computed, nextTick, ref, shallowRef, watch } from "vue";
+import { computed, nextTick, ref, shallowRef, watch } from "vue";
 import { onBeforeRouteLeave } from "vue-router";
 import { caretDownOutline, chevronUpOutline, cubeOutline, listOutline, notificationsOutline, optionsOutline, pricetagOutline, printOutline } from "ionicons/icons";
+import { useLiveOpenOrders } from "@/composables/useLiveOpenOrders";
+import { deviceSettings, loadDeviceSettings } from "@/db/deviceSettings";
+import { liveOrdersStatus, refreshLiveOrders } from "@/db/liveOrdersSync";
+import type { FilterSelections } from "@/utils/openOrderFilters";
 import AssignPickerModal from "@/views/AssignPickerModal.vue";
 import { commonUtil, DxpShopifyImg, emitter, logger, moduleFederationUtil, useSolrSearch, translate, useNotificationStore } from "@common";
 import ViewSizeSelector from "@/components/ViewSizeSelector.vue";
 import OrderActionsPopover from "@/components/OrderActionsPopover.vue";
 import { orderUtil } from "@/utils/orderUtil";
-import { useLiveOpenOrders } from "@/composables/useLiveOpenOrders";
-import { deviceSettings, loadDeviceSettings } from "@/db/deviceSettings";
-import { liveOrdersStatus, refreshLiveOrders } from "@/db/liveOrdersSync";
-import type { FilterSelections } from "@/utils/openOrderFilters";
 
 import { useOrderStore } from "@/store/order";
 import { useProductStore } from "@/store/product";
@@ -187,8 +187,7 @@ import Actions from "@/authorization/actions";
 
 // Picking from data this old risks orders that already left the queue.
 const STALE_AFTER_MS = 5 * 60 * 1000;
-// Once the user has scrolled this far, new orders that sort above their view wait until they
-// are back at the top, so the cards they are reading never move under them.
+// Scrolled past this, new orders above the view wait until the user is back at the top.
 const HOLD_INSERTS_BELOW_PX = 48;
 
 const userStore = useUserStore();
@@ -214,7 +213,6 @@ const currentFacility = computed(() => useAppProductStore().getCurrentFacility);
 const currentProductStore = computed(() => useAppProductStore().getCurrentProductStore);
 const productIdentificationPref = computed(() => useAppProductStore().getProductIdentificationPref);
 
-// Live open orders: the Open view of the local orders entity.
 const isLive = computed(() => deviceSettings.liveOpenOrders);
 const liveQuery = ref("");
 const liveSelections = ref<FilterSelections>({});
@@ -243,23 +241,21 @@ const expandedKitKeys = ref(new Set<string>());
 const ordersTotal = computed(() => isLive.value ? liveAllOrders.value.length : openOrders.value.total);
 const animateCards = computed(() => isLive.value && animationsReady.value);
 const isLiveLoading = computed(() => !liveHydrated.value || (liveOrdersStatus.mode !== "off" && !liveOrdersStatus.lastSyncAt && !liveAllOrders.value.length));
-// Orders cached by an earlier session count as stale until this session has synced.
+// Orders cached by an earlier session stay stale until this session has synced.
 const isLiveDataStale = () => isLive.value && (!liveOrdersStatus.lastSyncAt || Date.now() - liveOrdersStatus.lastSyncAt > STALE_AFTER_MS);
 
 const displayedOrders = computed(() => isLive.value
   ? liveVisibleOrders.value.filter((order: any) => !heldOrderKeys.value.has(order.orderKey))
   : getOpenOrders());
 
-// Enabled dimensions that have something to filter by. One with no values yet (for example tags
-// before product data loads) stays hidden instead of showing an empty row.
+// A dimension with no values yet (for example tags before products load) stays hidden.
 const filterableDimensions = computed(() => liveDimensions.value.filter((dimension: any) => liveFacets.value[dimension.id]?.length));
 
 const shipmentMethodLabel = (shipmentMethodTypeId: string) => shipmentMethodLabels.value.get(shipmentMethodTypeId) || getShipmentMethodDesc(shipmentMethodTypeId) || shipmentMethodTypeId;
 const filterValueLabel = (dimensionId: string, value: string) => dimensionId === "shipmentMethod" ? shipmentMethodLabel(value) : value;
 const isFilterSelected = (dimensionId: string, value: string) => (liveSelections.value[dimensionId] ?? []).includes(value);
 
-// Changes the user makes (filters, search, picklist size) swap the list at once. Motion is for
-// changes that arrive from the server, so the user can see what moved without asking for it.
+// Motion is for changes that arrive from the server; the user's own changes swap the list at once.
 const applyWithoutMotion = (change: () => void) => {
   animationsReady.value = false;
   change();
@@ -268,11 +264,8 @@ const applyWithoutMotion = (change: () => void) => {
 
 watch([liveQuery, pickSize], () => applyWithoutMotion(() => undefined), { flush: "sync" });
 
-// A new ion-card is inline and unstyled until Ionic sets it up, and its inner components keep
-// settling for a frame or two after that, so the list can't measure how far the cards below it
-// move, and they would jump as it reaches its real size. Instead the new card lays out hidden and
-// out of the flow until its height holds. Then it takes its place, the cards below glide down from
-// where they were, and it fades in behind them.
+// A new ion-card keeps resizing until Ionic has set it up, so it lays out hidden and out of the flow until
+// its height holds. Then the cards below glide down from where they were and it fades in.
 const ENTER_MS = 260;
 const ENTER_EASING = "cubic-bezier(0.2, 0.7, 0.2, 1)";
 const STAGED_PROPERTIES = ["position", "left", "right", "visibility"];
@@ -280,7 +273,7 @@ const enteringAnimations = new WeakMap<Element, Animation[]>();
 const prefersReducedMotion = () => window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
 const nextFrame = () => new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
 
-// Waits for the card to keep one height for two frames in a row, for at most ten frames.
+// The same height for two frames in a row, for at most ten frames.
 const waitForSteadyHeight = async (card: HTMLElement) => {
   let height = card.getBoundingClientRect().height;
   for(let frame = 0, steadyFrames = 0; frame < 10 && steadyFrames < 2; frame++) {
@@ -293,7 +286,7 @@ const waitForSteadyHeight = async (card: HTMLElement) => {
 
 const collapseEnteringCard = (el: Element) => {
   if(!animateCards.value || prefersReducedMotion()) {return;}
-  // Laid out at the list's width, so it wraps as it will in place, without moving anything below.
+  // At the list's width, so it wraps as it will in place.
   Object.assign((el as HTMLElement).style, { position: "absolute", left: "0px", right: "0px", visibility: "hidden", opacity: "0" });
 };
 
@@ -301,10 +294,9 @@ const expandEnteringCard = async (el: Element, done: () => void) => {
   const card = el as HTMLElement;
   if(card.style.visibility !== "hidden") {return done();}
 
-  // The card and the Ionic components inside it render on Ionic's schedule; wait until they have.
   await Promise.all([card, ...card.querySelectorAll("*")].map((node: any) => node.componentOnReady?.()));
   await waitForSteadyHeight(card);
-  // Removed while waiting: it leaves without ever showing.
+  // Removed while waiting.
   if(!card.isConnected || card.classList.contains("order-leave-active")) {return done();}
 
   const below: HTMLElement[] = [];
@@ -314,7 +306,7 @@ const expandEnteringCard = async (el: Element, done: () => void) => {
   const topsBefore = below.map((node) => node.getBoundingClientRect().top);
   STAGED_PROPERTIES.forEach((property) => card.style.removeProperty(property));
 
-  // Started from their old places in the same task, so they never paint at the new ones first.
+  // Started in the same task, so they never paint at their new places first.
   const glides = below.map((node, index) => {
     const offset = topsBefore[index] - node.getBoundingClientRect().top;
 
@@ -330,27 +322,25 @@ const expandEnteringCard = async (el: Element, done: () => void) => {
   };
 };
 
-// The card is leaving: stop its entry where it is, so one that never showed stays hidden.
+// A card that never showed stays hidden as it leaves.
 const stopEnteringCard = (el: Element) => {
   enteringAnimations.get(el)?.forEach((animation) => animation.cancel());
   enteringAnimations.delete(el);
 };
 
 const toggleFilter = (dimensionId: string, value: string) => applyWithoutMotion(() => {
-  const selected = new Set(liveSelections.value[dimensionId] ?? []);
-  if (selected.has(value)) selected.delete(value);
-  else selected.add(value);
-  liveSelections.value = { ...liveSelections.value, [dimensionId]: [...selected] };
+  const selected = liveSelections.value[dimensionId] ?? [];
+  liveSelections.value = { ...liveSelections.value, [dimensionId]: selected.includes(value) ? selected.filter((selectedValue) => selectedValue !== value) : [...selected, value] };
 });
 
 const kitKey = (order: any, item: any) => `${order.orderKey || order.orderId}-${item.orderItemSeqId}`;
 const isKitExpanded = (order: any, item: any) => isLive.value ? expandedKitKeys.value.has(kitKey(order, item)) : item.showKitComponents;
 
 const toggleKitComponents = (order: any, item: any) => {
-  if (!isLive.value) return fetchKitComponents(item);
+  if(!isLive.value) {return fetchKitComponents(item);}
   const key = kitKey(order, item);
   const expanded = new Set(expandedKitKeys.value);
-  if (expanded.has(key)) {
+  if(expanded.has(key)) {
     expanded.delete(key);
   } else {
     expanded.add(key);
@@ -359,25 +349,26 @@ const toggleKitComponents = (order: any, item: any) => {
   expandedKitKeys.value = expanded;
 };
 
-// The first card at least partly in view. New orders that sort before it land above the user's view.
+// New orders that sort before the first card in view land above the user's view.
 const firstVisibleOrderKey = (): string | undefined => {
   const contentEl = contentRef.value?.$el as HTMLElement | undefined;
-  if (!contentEl) return undefined;
+  if(!contentEl) {return undefined;}
   const top = contentEl.getBoundingClientRect().top;
-  for (const card of contentEl.querySelectorAll<HTMLElement>("[data-order-key]")) {
-    if (card.getBoundingClientRect().bottom > top) return card.dataset.orderKey;
+  for(const card of contentEl.querySelectorAll<HTMLElement>("[data-order-key]")) {
+    if(card.getBoundingClientRect().bottom > top) {return card.dataset.orderKey;}
   }
+
   return undefined;
 };
 
 watch(() => liveVisibleOrders.value.map((order: any) => order.orderKey as string), (nextKeys, previousKeys) => {
   const present = new Set(nextKeys);
   const held = new Set([...heldOrderKeys.value].filter((key) => present.has(key)));
-  if (animationsReady.value && previousKeys && scrollTop.value > HOLD_INSERTS_BELOW_PX) {
+  if(animationsReady.value && previousKeys && scrollTop.value > HOLD_INSERTS_BELOW_PX) {
     const previous = new Set(previousKeys);
     const anchorIndex = nextKeys.indexOf(firstVisibleOrderKey() ?? "");
     nextKeys.forEach((key, index) => {
-      if (index < anchorIndex && !previous.has(key)) held.add(key);
+      if(index < anchorIndex && !previous.has(key)) {held.add(key);}
     });
   }
   heldOrderKeys.value = held;
@@ -387,13 +378,13 @@ watch(() => liveVisibleOrders.value.map((order: any) => order.orderKey as string
 const firstPaintReady = computed(() => liveHydrated.value && (liveAllOrders.value.length > 0 || liveOrdersStatus.lastSyncAt > 0));
 watch([firstPaintReady, () => currentFacility.value?.facilityId], ([ready, facilityId], previous) => {
   animationsReady.value = false;
-  if (facilityId !== previous?.[1]) heldOrderKeys.value = new Set();
-  if (ready) nextTick(() => requestAnimationFrame(() => { animationsReady.value = true; }));
+  if(facilityId !== previous?.[1]) {heldOrderKeys.value = new Set();}
+  if(ready) {nextTick(() => requestAnimationFrame(() => { animationsReady.value = true; }));}
 }, { immediate: true });
 
 const onContentScroll = (event: any) => {
   scrollTop.value = event?.detail?.scrollTop ?? 0;
-  if (scrollTop.value <= HOLD_INSERTS_BELOW_PX && heldOrderKeys.value.size) heldOrderKeys.value = new Set();
+  if(scrollTop.value <= HOLD_INSERTS_BELOW_PX && heldOrderKeys.value.size) {heldOrderKeys.value = new Set();}
   enableScrolling();
 };
 
@@ -404,7 +395,8 @@ const updateOpenQuery = (payload: any) => {
 const getErrorMessage = () => {
   const query = isLive.value ? liveQuery.value : searchedQuery.value;
   const hasFilters = isLive.value ? Object.values(liveSelections.value).some((values) => values.length) : commonUtil.hasActiveFilters(openOrders.value.query);
-  if (isLive.value && !query && hasFilters) return translate("No orders match the selected filters.");
+  if(isLive.value && !query && hasFilters) {return translate("No orders match the selected filters.");}
+
   return query ? (hasFilters ? translate("No results found for . Try using different filters.", { searchedQuery: query }) : translate("No results found for . Try searching In Progress or Completed tab instead. If you still can't find what you're looking for, try switching stores.", { searchedQuery: query, lineBreak: "<br />" })) : translate("doesn't have any outstanding orders right now.", { facilityName: currentFacility.value?.facilityName });
 };
 
@@ -469,8 +461,7 @@ const fetchKitComponents = async (orderItem: any) => {
 };
 
 const assignPickers = async () => {
-  // Never pick from an old copy of the queue: bring it up to date first.
-  if (isLiveDataStale()) {
+  if(isLiveDataStale()) {
     emitter.emit("presentLoader");
     try {
       await refreshLiveOrders();
@@ -478,7 +469,7 @@ const assignPickers = async () => {
     } finally {
       emitter.emit("dismissLoader");
     }
-    // The refresh failed, so the orders on screen may already have left the queue.
+    // The refresh failed, so the orders on screen may have left the queue.
     if(isLiveDataStale()) {
       commonUtil.showToast(translate("Failed to create picklist for orders"));
 
@@ -488,7 +479,7 @@ const assignPickers = async () => {
 
   const assignPickerModal = await modalController.create({
     component: AssignPickerModal,
-    // Live: pick exactly the orders on screen, the filtered set capped by the picklist size.
+    // Live: exactly the orders on screen.
     componentProps: isLive.value ? { orders: displayedOrders.value } : {}
   });
   return assignPickerModal.present();
@@ -555,10 +546,7 @@ const updateQueryString = async (queryString: string) => {
 };
 
 // The live list only needs the new picklist size; the legacy list refetches from the server.
-const applyOpenQuery = async (openOrdersQuery: any) => {
-  if (isLive.value) await useOrderStore().updateOpenOrderQuery({ ...openOrdersQuery });
-  else await useOrderStore().updateOpenQuery({ ...openOrdersQuery });
-};
+const applyOpenQuery = (openOrdersQuery: any) => isLive.value ? useOrderStore().updateOpenOrderQuery({ ...openOrdersQuery }) : useOrderStore().updateOpenQuery({ ...openOrdersQuery });
 
 const updateOrderQuery = async (size: any) => {
   const openOrdersQuery = JSON.parse(JSON.stringify(openOrders.value.query));
@@ -600,8 +588,6 @@ const recycleOutstandingOrders = async () => {
 
           if (!commonUtil.hasError(resp)) {
             commonUtil.showToast(translate("Rejecting has been started. All outstanding orders will be rejected shortly."));
-            // The rejection runs as a background job; each sync removes the orders it has finished.
-            if (isLive.value) void refreshLiveOrders();
           } else {
             throw resp.data;
           }
@@ -636,7 +622,7 @@ const fetchProductStock = (productId: string) => {
 onIonViewWillEnter(async () => {
   isScrollingEnabled.value = false;
   await loadDeviceSettings();
-  if (isLive.value) {
+  if(isLive.value) {
     await initialiseOrderQuery();
   } else {
     isLoadingOrders.value = true;
@@ -669,9 +655,7 @@ onBeforeRouteLeave(() => {
   }
 }
 
-/* Live list updates: removed orders fade out while the rest glide into place. New orders fade in
-   from script (expandEnteringCard) while the cards below glide down, since their size isn't known
-   until Ionic sets them up. */
+/* New orders are animated from script (expandEnteringCard). */
 .order-list {
   position: relative;
 }
