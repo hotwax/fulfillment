@@ -1,6 +1,7 @@
 import { createRouter, createWebHistory } from '@ionic/vue-router';
 import { RouteRecordRaw } from 'vue-router';
 import Completed from '@/views/Completed.vue'
+import Dashboard from "@/views/Dashboard.vue"
 import InProgress from '@/views/InProgress.vue'
 import OpenOrders from "@/views/OpenOrders.vue"
 import Settings from "@/views/Settings.vue"
@@ -19,7 +20,7 @@ import Notifications from '@/views/Notifications.vue'
 import CreateTransferOrder from '@/views/CreateTransferOrder.vue';
 import ShipTransferOrder from '@/views/ShipTransferOrder.vue';
 
-import { businessOutline, mailUnreadOutline, mailOpenOutline, checkmarkDoneOutline, settingsOutline } from "ionicons/icons";
+import { businessOutline, mailUnreadOutline, mailOpenOutline, checkmarkDoneOutline, settingsOutline, statsChartOutline } from "ionicons/icons";
 import OrderLookup from '@/views/OrderLookup.vue';
 import OrderLookupDetail from '@/views/OrderLookupDetail.vue';
 import Rejections from '@/views/Rejections.vue';
@@ -41,6 +42,17 @@ const routes: Array<RouteRecordRaw> = [
     redirect: '/open'
   },
   {
+    path: "/dashboard",
+    name: "Dashboard",
+    component: Dashboard,
+    beforeEnter: authGuard,
+    meta: {
+      title: "Dashboard",
+      icon: statsChartOutline,
+      menuIndex: 1
+    }
+  },
+  {
     path: '/open',
     name: 'OpenOrders',
     component: OpenOrders,
@@ -49,7 +61,7 @@ const routes: Array<RouteRecordRaw> = [
       permissionId: Actions.APP_OPEN_ORDERS_VIEW,
       title: "Open",
       icon: mailUnreadOutline,
-      menuIndex: 1,
+      menuIndex: 2,
       childRoutes: ["/open/"]
     }
   },
@@ -62,7 +74,7 @@ const routes: Array<RouteRecordRaw> = [
       permissionId: Actions.APP_IN_PROGRESS_ORDERS_VIEW,
       title: "In Progress",
       icon: mailOpenOutline,
-      menuIndex: 2,
+      menuIndex: 3,
       childRoutes: ["/in-progress/"]
     }
   },
@@ -75,7 +87,7 @@ const routes: Array<RouteRecordRaw> = [
       permissionId: Actions.APP_COMPLETED_ORDERS_VIEW,
       title: "Completed",
       icon: checkmarkDoneOutline,
-      menuIndex: 3,
+      menuIndex: 4,
       childRoutes: ["/completed/"]
     }
   },
@@ -88,7 +100,7 @@ const routes: Array<RouteRecordRaw> = [
       permissionId: Actions.APP_TRANSFER_ORDERS_VIEW,
       title: "Transfer Orders",
       icon: businessOutline,
-      menuIndex: 4,
+      menuIndex: 5,
       childRoutes: ["/transfer-order-details", "/create-transfer-order", "/ship-transfer-order"]
     }
   },
@@ -156,7 +168,7 @@ const routes: Array<RouteRecordRaw> = [
     meta: {
       title: "Settings",
       icon: settingsOutline,
-      menuIndex: 5
+      menuIndex: 6
     }
   },
 
@@ -168,7 +180,7 @@ const routes: Array<RouteRecordRaw> = [
     meta: {
       permissionId: Actions.APP_REJECTION_REASONS_VIEW,
       title: "Rejection reasons",
-      menuIndex: 6,
+      menuIndex: 7,
       groupMenuName: "Organization",
       childRoutes: ["/rejection-reasons/"]
     }
@@ -181,7 +193,7 @@ const routes: Array<RouteRecordRaw> = [
     meta: {
       permissionId: Actions.APP_ORDER_LOOKUP_VIEW,
       title: "Order Lookup",
-      menuIndex: 8,
+      menuIndex: 9,
       groupMenuName: "Organization",
       childRoutes: ["/order-lookup/"]
     }
@@ -204,7 +216,7 @@ const routes: Array<RouteRecordRaw> = [
     meta: {
       permissionId: Actions.APP_CARRIERS_VIEW,
       title: "Carriers & Shipment Methods",
-      menuIndex: 7,
+      menuIndex: 8,
       groupMenuName: "Organization",
       childRoutes: ["/carrier-details"]
     }

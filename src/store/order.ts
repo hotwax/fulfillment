@@ -97,10 +97,6 @@ export const useOrderStore = defineStore("order", {
     }
   },
   actions: {
-    setOpenOrders(payload: any) {
-      this.open.list = payload.list
-      this.open.total = payload.total
-    },
     setOpenQuery(payload: any) {
       this.open.query = payload
     },
@@ -158,25 +154,6 @@ export const useOrderStore = defineStore("order", {
     },
     setCurrent(payload: any) {
       this.current = payload
-    },
-    async findOpenOrders() {
-      emitter.emit("presentLoader")
-
-      const openOrderQuery = JSON.parse(JSON.stringify(this.open.query))
-      openOrderQuery.groupBy = "orderItemShipGroupIdentifier"
-
-      const { orders, total } = await this.searchOpenOrders({ openOrderQuery })
-
-      const productIds = [
-        ...new Set(orders.flatMap((order: any) => order.items.map((item: any) => item.productId)))
-      ] as string[]
-      useProduct().fetchProducts({ productIds })
-
-      openOrderQuery.viewSize = orders.length
-      this.setOpenQuery({ ...openOrderQuery })
-      this.setOpenOrders({ list: orders, total: total })
-
-      emitter.emit("dismissLoader")
     },
     async searchOpenOrders(payload: any) {
       const openOrderQuery = payload.openOrderQuery
@@ -443,6 +420,13 @@ export const useOrderStore = defineStore("order", {
 
       const { orders } = await this.searchOpenOrders({ openOrderQuery })
       const order = orders[0]
+      // Not at the current facility: the order detail page shows that the order could not be fetched.
+      if(!order) {
+        this.setCurrent(null)
+        emitter.emit("dismissLoader")
+
+        return
+      }
 
       const productIds = order.items.map((item: any) => item.productId)
       useProduct().fetchProducts({ productIds })
@@ -462,6 +446,12 @@ export const useOrderStore = defineStore("order", {
       const { orders: inProgressOrders } = await this.findShipments(inProgressQuery)
 
       let order = inProgressOrders[0]
+      if(!order) {
+        this.setCurrent(null)
+        emitter.emit("dismissLoader")
+
+        return
+      }
 
       order.category = "in-progress"
 
@@ -497,6 +487,12 @@ export const useOrderStore = defineStore("order", {
       const { orders: completedOrders } = await this.findShipments(completedOrderQuery)
 
       let order = completedOrders[0]
+      if(!order) {
+        this.setCurrent(null)
+        emitter.emit("dismissLoader")
+
+        return
+      }
 
       order.category = "completed"
 
@@ -908,13 +904,6 @@ export const useOrderStore = defineStore("order", {
       delete data.telecomNumber
       return { data };
     },
-    async updateOpenOrders(payload: any) {
-      this.setOpenOrders({ list: payload?.orders, total: payload?.total })
-    },
-    async updateOpenQuery(payload: any) {
-      this.setOpenQuery(payload)
-      await this.findOpenOrders()
-    },
     async updateOpenOrderQuery(payload: any) {
       this.setOpenQuery(payload)
     },
@@ -944,9 +933,6 @@ export const useOrderStore = defineStore("order", {
     },
     async updateCompletedOrderIndex(payload: any) {
       this.setCompletedQuery(payload)
-    },
-    async updateOpenOrderIndex(payload: any) {
-      this.setOpenQuery(payload)
     },
     async updateCurrent(order: any) {
       this.setCurrent(order)

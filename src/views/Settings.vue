@@ -103,6 +103,20 @@
           </ion-item>
         </ion-card>
 
+        <ion-card>
+          <ion-card-header>
+            <ion-card-title>
+              {{ translate("Open order filters") }}
+            </ion-card-title>
+          </ion-card-header>
+          <ion-card-content>
+            {{ translate("Choose which filters appear on the Open page. Applies to this device.") }}
+          </ion-card-content>
+          <ion-item v-for="dimension in OPEN_ORDER_FILTER_DIMENSIONS" :key="dimension.id" lines="none">
+            <ion-toggle label-placement="start" :checked="deviceSettings.openOrderFilterDimensions.includes(dimension.id)" @ionChange="setOpenOrderFilterDimension(dimension.id, $event.detail.checked)">{{ translate(dimension.label) }}</ion-toggle>
+          </ion-item>
+        </ion-card>
+
         <ion-card v-if="notificationPrefs.length">
           <ion-card-header>
             <ion-card-title>
@@ -185,6 +199,7 @@ import { IonAvatar, IonButton, IonCard, IonCardContent, IonCardHeader, IonCardTi
 import { computed, ref } from "vue";
 import { openOutline } from "ionicons/icons";
 import { commonUtil, DxpShopifyImg, emitter, firebaseMessaging,logger, translate, useNotificationStore, useAuth } from "@common";
+import { deviceSettings, setOpenOrderFilterDimension } from "@/db/deviceSettings";
 import { useProductStore } from "@/store/productStore";
 import { useUserStore } from "@/store/user";
 
@@ -202,6 +217,7 @@ import { useOrderStore } from "@/store/order";
 import router from "@/router";
 import { firebaseUtil } from "@/utils/firebaseUtil"
 import Actions from "@/authorization/actions"
+import { OPEN_ORDER_FILTER_DIMENSIONS } from "@/utils/openOrderFilters"
 
 const userStore = useUserStore();
 
