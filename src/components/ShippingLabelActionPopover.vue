@@ -39,6 +39,7 @@ const orderStore = useOrderStore();
   };
   
   const voidShippingLabel = async (order: any) => {
+    let voided = false;
     try {
       await orderStore.voidShipmentLabel({
         shipmentId: order.shipmentId,
@@ -47,10 +48,11 @@ const orderStore = useOrderStore();
   
       commonUtil.showToast(translate("Shipping label voided successfully."));
       await useOrderStore().updateShipmentPackageDetail(order);
+      voided = true;
     } catch (err) {
       logger.error("Failed to void shipping label", err);
       commonUtil.showToast(translate("Failed to void shipping label"));
     }
-    popoverController.dismiss();
+    popoverController.dismiss({ voided });
   };
   </script>
