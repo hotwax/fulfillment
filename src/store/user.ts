@@ -23,7 +23,8 @@ interface UserState {
   timeZones: any[],
   localeOptions: any,
   locale: string,
-  oms: any
+  oms: any,
+  appVersion: string | undefined
 }
 
 export const useUserStore = defineStore("user", {
@@ -37,7 +38,10 @@ export const useUserStore = defineStore("user", {
     timeZones: [],
     localeOptions: import.meta.env.VITE_LOCALES ? JSON.parse(import.meta.env.VITE_LOCALES) : { "en-US": "English" },
     locale: 'en-US',
-    oms: ""
+    oms: "",
+    // The app version this deployment is pinned to. undefined = not resolved yet, "" = no version
+    // configured, "vX.Y.Z" = pinned. Resolved from the OMS by useAuth().fetchAppVersion() on Login.
+    appVersion: undefined as string | undefined
   }),
   getters: {
     getTimeZones: (state) => state.timeZones,
@@ -49,6 +53,9 @@ export const useUserStore = defineStore("user", {
     },
     getUserProfile(state: UserState) {
       return state.current
+    },
+    getAppVersion(state: UserState) {
+      return state.appVersion
     },
     getUserPreferenceState(state: UserState) {
       return state.preference
@@ -93,6 +100,18 @@ export const useUserStore = defineStore("user", {
         if (this.current.timeZone) {
           Settings.defaultZone = this.current.timeZone;
         }
+
+        if(this.current.locale) {
+          const localeOptions = Object.keys(this.localeOptions)
+          // If exact locale is not found, try to match the first two characters i.e primary code
+          const matchingLocale = localeOptions.find((option: string) => option === this.current.locale) ||
+            localeOptions.find((option: string) => option.slice(0, 2) === this.current.locale.slice(0, 2))
+
+          if(matchingLocale) {
+            i18n.global.locale.value = matchingLocale
+            this.locale = matchingLocale
+          }
+        }
       } catch (error: any) {
         const errorMessage = translate("Failed to fetch user profile information");
         commonUtil.showToast(errorMessage);
@@ -102,50 +121,41 @@ export const useUserStore = defineStore("user", {
       }
     },
     async fetchPermissions() {
-      const permissionId = import.meta.env.VITE_APP_PERMISSION_ID;
-      const serverPermissions = [] as any;
-
-      // TODO Make it configurable from the environment variables.
-      // Though this might not be an server specific configuration, 
-      // we will be adding it to environment variable for easy configuration at app level
-      const viewSize = 50;
-
-      let viewIndex = 0;
+      const permissionId = import.meta.env.VITE_APP_PERMISSION_ID
+      const serverPermissions = [] as string[]
+      const viewSize = 200
+      let viewIndex = 0
 
       try {
-        let resp;
+        let resp
         do {
           resp = await api({
-            url: "getPermissions",
-            method: "post",
-            baseURL: commonUtil.getOmsURL(),
-            data: { viewIndex, viewSize }
+            url: "admin/user/permissions",
+            method: "get",
+            params: { viewIndex, viewSize }
           }) as any
 
           if (resp.status === 200 && resp.data.docs?.length && !commonUtil.hasError(resp)) {
-            serverPermissions.push(...resp.data.docs.map((permission: any) => permission.permissionId));
-            viewIndex++;
+            serverPermissions.push(...resp.data.docs.map((permission: any) => permission.permissionId))
+            viewIndex++
           } else {
-            resp = null;
+            resp = null
           }
-        } while (resp);
+        } while (resp)
 
-        // Checking if the user has permission to access the app
-        // If there is no configuration, the permission check is not enabled
-        if (permissionId) {
-          const hasAppPermission = serverPermissions.includes(permissionId);
-          if (!hasAppPermission) {
-            const permissionError = "You do not have permission to access the app.";
-            commonUtil.showToast(translate(permissionError));
-            logger.error("error", permissionError);
-            return Promise.reject(new Error(permissionError));
+        if(permissionId) {
+          const hasPermission = serverPermissions.includes(permissionId)
+          if(!hasPermission) {
+            const permissionError = "You do not have permission to access the app."
+            await commonUtil.showToast(translate(permissionError))
+            logger.error("error", permissionError)
+            return Promise.reject(new Error(permissionError))
           }
         }
 
-        // Update the state with the fetched permissions
-        this.permissions = serverPermissions;
+        this.permissions = serverPermissions
       } catch (error: any) {
-        return Promise.reject(error);
+        return Promise.reject(error)
       }
     },
 
@@ -242,9 +252,13 @@ export const useUserStore = defineStore("user", {
 
         const facilityId = router.currentRoute.value.query.facilityId
         if (facilityId) {
-          const facility = this.current.facilities.find((facility: any) => facility.facilityId === facilityId);
+          const facility = productStore.getFacilities?.find((facility: any) => facility.facilityId === facilityId);
           if (facility) {
             productStore.currentFacility = facility
+            const orderId = router.currentRoute.value.query.orderId
+            if (orderId) {
+              localStorage.setItem("requestedPagePath", `/transfer-order-details/${orderId}/open`)
+            }
           } else {
             commonUtil.showToast(translate("Redirecting to home page due to incorrect information being passed."))
           }
@@ -278,6 +292,8 @@ export const useUserStore = defineStore("user", {
       useRejectionStore().$reset();
       useStockStore().$reset();
       useTransferOrderStore().$reset();
+      // appVersion is preserved across this reset by useAuth().logout() (it's deployment config, not
+      // session state), so a plain $reset() is fine here.
       this.$reset();
       useUtilStore().$reset();
     }

@@ -34,7 +34,7 @@
   </ion-content>
 
   <ion-fab vertical="bottom" horizontal="end" slot="fixed">
-    <ion-fab-button :disabled="!userStore.hasPermission('ORD_TRANSFER_ORDER_CANCEL') || !isEligibleToCloseTOItems()" @click="confirmSave">
+    <ion-fab-button :disabled="!userStore.hasPermission(Actions.APP_TRANSFER_ORDER_CANCEL) || !isEligibleToCloseTOItems()" @click="confirmSave">
       <ion-icon :icon="saveOutline" />
     </ion-fab-button>
   </ion-fab>
@@ -50,6 +50,7 @@ import { useUserStore } from "@/store/user";
 import { useTransferOrderStore } from "@/store/transferorder";
 import { useProductStore } from "@/store/product";
 import { useProductStore as useAppProductStore } from "@/store/productStore";
+import Actions from "@/authorization/actions";
 
 const userStore = useUserStore();
 const getProductIdentificationValue = commonUtil.getProductIdentificationValue;

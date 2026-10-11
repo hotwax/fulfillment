@@ -12,7 +12,7 @@
           <ion-button @click="viewNotifications()">
             <ion-icon slot="icon-only" :icon="notificationsOutline" :color="(unreadNotificationsStatus && notifications.length) ? 'primary' : ''" />
           </ion-button>
-          <ion-button :disabled="!userStore.hasPermission('COMMON_ADMIN OR STOREFULFILLMENT_ADMIN') || !openOrders.total || isRejecting" fill="clear" color="danger" @click="recycleOutstandingOrders()">
+          <ion-button :disabled="!userStore.hasPermission(Actions.APP_RECYCLE_ORDER) || !openOrders.total || isRejecting" fill="clear" color="danger" @click="recycleOutstandingOrders()">
             {{ translate("Reject all") }}
           </ion-button>
           <ion-menu-button menu="view-size-selector-open" :disabled="!openOrders.total">
@@ -64,45 +64,43 @@
               </div>
             </div>
 
-            <div v-for="item in order.items" :key="order.orderId + item.orderItemSeqId" class="order-line-item">
-              <div class="order-item">
-                <div class="product-info">
+            <div v-for="item in order.items" :key="order.orderId + item.orderItemSeqId" class="order-item">
+              <div class="product-info">
+                <ion-item lines="none">
+                  <ion-thumbnail slot="start" v-image-preview="getProduct(item.productId)" :key="getProduct(item.productId)?.mainImageUrl">
+                    <DxpShopifyImg :src="getProduct(item.productId).mainImageUrl" :key="getProduct(item.productId).mainImageUrl" size="small" />
+                  </ion-thumbnail>
+                  <ion-label>
+                    <p class="overline">{{ commonUtil.getProductIdentificationValue(productIdentificationPref.secondaryId, getProduct(item.productId)) }}</p>
+                    <div>
+                      {{ commonUtil.getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(item.productId)) ? commonUtil.getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(item.productId)) : getProduct(item.productId).productName }}
+                      <ion-badge class="kit-badge" color="dark" v-if="orderUtil.isKit(item)">{{ translate("Kit") }}</ion-badge>
+                    </div>
+                    <p>{{ commonUtil.getFeatures(getProduct(item.productId).productFeatures) }}</p>
+                  </ion-label>
+                </ion-item>
+              </div>
+              <div class="product-metadata">
+                <ion-button v-if="orderUtil.isKit(item)" fill="clear" size="small" @click.stop="fetchKitComponents(item)">
+                  <ion-icon v-if="item.showKitComponents" color="medium" slot="icon-only" :icon="chevronUpOutline" />
+                  <ion-icon v-else color="medium" slot="icon-only" :icon="listOutline" />
+                </ion-button>
+                <ion-note v-if="getProductStock(item.productId).qoh">{{ getProductStock(item.productId).qoh }} {{ translate('pieces in stock') }}</ion-note>
+                <ion-button fill="clear" v-else size="small" @click.stop="fetchProductStock(item.productId)">
+                  <ion-icon color="medium" slot="icon-only" :icon="cubeOutline" />
+                </ion-button>
+              </div>
+              <div v-if="item.showKitComponents" class="kit-components">
+                <template v-if="!getProduct(item.productId)?.productComponents">
                   <ion-item lines="none">
-                    <ion-thumbnail slot="start" v-image-preview="getProduct(item.productId)" :key="getProduct(item.productId)?.mainImageUrl">
-                      <DxpShopifyImg :src="getProduct(item.productId).mainImageUrl" :key="getProduct(item.productId).mainImageUrl" size="small" />
-                    </ion-thumbnail>
-                    <ion-label>
-                      <p class="overline">{{ commonUtil.getProductIdentificationValue(productIdentificationPref.secondaryId, getProduct(item.productId)) }}</p>
-                      <div>
-                        {{ commonUtil.getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(item.productId)) ? commonUtil.getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(item.productId)) : getProduct(item.productId).productName }}
-                        <ion-badge class="kit-badge" color="dark" v-if="orderUtil.isKit(item)">{{ translate("Kit") }}</ion-badge>
-                      </div>
-                      <p>{{ commonUtil.getFeatures(getProduct(item.productId).productFeatures) }}</p>
-                    </ion-label>
+                    <ion-skeleton-text animated style="height: 80%;" />
                   </ion-item>
-                </div>
-                <div class="product-metadata">
-                  <ion-button v-if="orderUtil.isKit(item)" fill="clear" size="small" @click.stop="fetchKitComponents(item)">
-                    <ion-icon v-if="item.showKitComponents" color="medium" slot="icon-only" :icon="chevronUpOutline" />
-                    <ion-icon v-else color="medium" slot="icon-only" :icon="listOutline" />
-                  </ion-button>
-                  <ion-note v-if="getProductStock(item.productId).qoh">{{ getProductStock(item.productId).qoh }} {{ translate('pieces in stock') }}</ion-note>
-                  <ion-button fill="clear" v-else size="small" @click.stop="fetchProductStock(item.productId)">
-                    <ion-icon color="medium" slot="icon-only" :icon="cubeOutline" />
-                  </ion-button>
-                </div>
-              </div>
-              <div v-if="item.showKitComponents && !getProduct(item.productId)?.productComponents" class="kit-components">
-                <ion-item lines="none">
-                  <ion-skeleton-text animated style="height: 80%;" />
-                </ion-item>
-                <ion-item lines="none">
-                  <ion-skeleton-text animated style="height: 80%;" />
-                </ion-item>
-              </div>
-              <div v-else-if="item.showKitComponents && getProduct(item.productId)?.productComponents" class="kit-components">
-                <ion-card v-for="(productComponent, index) in getProduct(item.productId).productComponents" :key="index">
                   <ion-item lines="none">
+                    <ion-skeleton-text animated style="height: 80%;" />
+                  </ion-item>
+                </template>
+                <template v-else>
+                  <ion-item v-for="(productComponent, index) in getProduct(item.productId).productComponents" :key="index" lines="none">
                     <ion-thumbnail slot="start" v-image-preview="getProduct(productComponent.productIdTo)" :key="getProduct(productComponent.productIdTo)?.mainImageUrl">
                       <DxpShopifyImg :src="getProduct(productComponent.productIdTo).mainImageUrl" :key="getProduct(productComponent.productIdTo).mainImageUrl" size="small" />
                     </ion-thumbnail>
@@ -112,7 +110,7 @@
                       <p>{{ commonUtil.getFeatures(getProduct(productComponent.productIdTo).productFeatures) }}</p>
                     </ion-label>
                   </ion-item>
-                </ion-card>
+                </template>
               </div>
             </div>
           </ion-card>
@@ -139,7 +137,7 @@
 
 <script setup lang="ts">
 import { IonBadge, IonButton, IonButtons, IonCard, IonChip, IonCheckbox, IonContent, IonFab, IonFabButton, IonHeader, IonIcon, IonInfiniteScroll, IonInfiniteScrollContent, IonItem, IonLabel, IonMenuButton, IonNote, IonPage, IonSearchbar, IonSkeletonText, IonSpinner, IonThumbnail, IonTitle, IonToolbar, alertController, modalController, onIonViewWillEnter, popoverController } from "@ionic/vue";
-import { computed, ref } from "vue";
+import { computed, ref, shallowRef } from "vue";
 import { onBeforeRouteLeave } from "vue-router";
 import { caretDownOutline, chevronUpOutline, cubeOutline, listOutline, notificationsOutline, optionsOutline, pricetagOutline, printOutline } from "ionicons/icons";
 import AssignPickerModal from "@/views/AssignPickerModal.vue";
@@ -156,6 +154,7 @@ import { useUtilStore } from "@/store/util";
 import { useUserStore } from "@/store/user";
 import { useProductStore as useAppProductStore } from "@/store/productStore";
 import router from "@/router";
+import Actions from "@/authorization/actions";
 
 const userStore = useUserStore();
 const carrierStore = useCarrierStore();
@@ -164,7 +163,7 @@ const shipmentMethods = ref([] as Array<any>);
 const searchedQuery = ref("");
 const isScrollingEnabled = ref(false);
 const isRejecting = ref(false);
-const productCategoryFilterExt = ref("" as any);
+const productCategoryFilterExt = shallowRef(null as any);
 const selectedShipmentMethods = ref([] as any);
 const isLoadingOrders = ref(false);
 
