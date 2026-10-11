@@ -116,7 +116,6 @@ export const useUserStore = defineStore("user", {
         const errorMessage = translate("Failed to fetch user profile information");
         commonUtil.showToast(errorMessage);
         console.error("error", error);
-        useAuth().clearAuth();
         return Promise.reject(new Error(errorMessage));
       }
     },
