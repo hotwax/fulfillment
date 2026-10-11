@@ -59,7 +59,7 @@ export default defineConfig(({ mode }) => {
   resolve: {
     alias: {
       '@': path.resolve(__dirname, 'src'),
-      '@common': path.resolve(__dirname, '../accxui/common')
+      '@common': path.resolve(__dirname, '../../common')
     },
   },
   server: {
