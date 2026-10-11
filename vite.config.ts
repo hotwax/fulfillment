@@ -4,6 +4,7 @@ import vue from '@vitejs/plugin-vue'
 import path from 'path'
 import { defineConfig, loadEnv } from 'vite'
 import { federation } from '@module-federation/vite'
+import { ideTraceVue } from 'chrome-ide-trace/vite'
 import { versionInfoUtil } from '../../common/utils/versionInfoUtil'
 import { commonEnvPlugin } from '../../common/vite/commonEnvPlugin'
 import pkg from './package.json'
@@ -18,6 +19,7 @@ export default defineConfig(({ mode }) => {
   // A version build (buildVersion vX.Y.Z in VITE_APP_VERSION_CONFIG) is self-contained under /vX.Y.Z/; an empty buildVersion is the root bootstrap.
   base: appBuild ? `/${appBuild}/` : '/',
   plugins: [
+    ideTraceVue(),
     commonEnvPlugin(),
     vue(),
     federation({
