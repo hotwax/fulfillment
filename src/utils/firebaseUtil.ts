@@ -5,7 +5,12 @@ const initialiseFirebaseMessaging = async () => {
   const notificationStore = useNotificationStore();
   if (notificationStore.isFirebaseInitialised) return;
 
-  const appFirebaseConfig = JSON.parse(import.meta.env.VITE_FIREBASE_CONFIG as any);
+  let appFirebaseConfig: any = null;
+  try {
+    appFirebaseConfig = import.meta.env.VITE_FIREBASE_CONFIG ? JSON.parse(import.meta.env.VITE_FIREBASE_CONFIG) : null;
+  } catch (e) {
+    appFirebaseConfig = null;
+  }
   const appFirebaseVapidKey = import.meta.env.VITE_FIREBASE_VAPID_KEY;
 
   if (appFirebaseConfig && appFirebaseConfig.apiKey && notificationStore.getAllNotificationPrefs?.length) {
