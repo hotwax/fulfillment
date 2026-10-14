@@ -320,18 +320,19 @@ export const useCarrierStore = defineStore("carrier", {
           facility.isChecked = false
           facility.fromDate = ""
         } else {
+          const fromDate = DateTime.now().toMillis()
           resp = await api({
             url: `/oms/facilities/${payload.facilityId}/parties`,
             method: "POST",
             data: {
               ...payload,
-              fromDate: DateTime.now().toMillis()
+              fromDate
             }
           });
           if (commonUtil.hasError(resp)) {
             throw resp.data;
           }
-          facility = { ...facility, ...payload, isChecked: true }
+          facility = { ...facility, ...payload, fromDate, isChecked: true }
         }
 
         if (!commonUtil.hasError(resp)) {
