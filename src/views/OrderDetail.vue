@@ -160,8 +160,8 @@
 
           <div v-else-if="category === 'completed'" class="mobile-only">
             <ion-item>
-              <ion-button :disabled="isProductStoreSettingEnabled('DISABLE_SHIPNOW') || order.hasMissingShipmentInfo || order.hasMissingPackageInfo || ((isTrackingRequiredForAnyShipmentPackage(order) && !order.trackingCode) && !userStore.hasPermission('COMMON_ADMIN'))" fill="clear">{{ translate("Ship Now") }}</ion-button>
-              <ion-button slot="end" fill="clear" color="medium" @click.stop="shippingPopover">
+              <ion-button :disabled="!canShipNow || order.hasMissingShipmentInfo || order.hasMissingPackageInfo || ((isTrackingRequiredForAnyShipmentPackage(order) && !order.trackingCode) && !userStore.hasPermission(Actions.APP_FORCE_SHIP_ORDER))" fill="clear" @click.stop="shipOrder(order)">{{ translate("Ship Now") }}</ion-button>
+              <ion-button slot="end" fill="clear" color="medium" @click.stop="shippingPopover(order, $event)">
                 <ion-icon slot="icon-only" :icon="ellipsisVerticalOutline" />
               </ion-button>
             </ion-item>
@@ -184,7 +184,7 @@
                   <ion-icon slot="start" :icon="bagCheckOutline" />
                   {{ translate("Shipped") }}
                 </ion-button>
-                <ion-button v-else :disabled="isProductStoreSettingEnabled('DISABLE_SHIPNOW') || order.hasMissingShipmentInfo || order.hasMissingPackageInfo || ((isTrackingRequiredForAnyShipmentPackage(order) && !order.trackingCode) && !userStore.hasPermission('COMMON_ADMIN'))" @click.stop="shipOrder(order)">
+                <ion-button v-else :disabled="!canShipNow || order.hasMissingShipmentInfo || order.hasMissingPackageInfo || ((isTrackingRequiredForAnyShipmentPackage(order) && !order.trackingCode) && !userStore.hasPermission(Actions.APP_FORCE_SHIP_ORDER))" @click.stop="shipOrder(order)">
                   <ion-icon slot="start" :icon="bagCheckOutline" />
                   {{ translate("Ship order") }}
                 </ion-button>
@@ -195,7 +195,7 @@
               </div>
             </div>
             <div class="desktop-only" v-if="category === 'completed'">
-              <ion-button :disabled="isProductStoreSettingEnabled('DISABLE_UNPACK') || !useUserStore().hasPermission('COMMON_ADMIN OR SF_UNLOCK_ORDER') || order.hasMissingShipmentInfo || order.hasMissingPackageInfo || !hasPackedShipments(order)" fill="outline" color="danger" @click.stop="unpackOrder(order)">{{ translate("Unpack") }}</ion-button>
+              <ion-button :disabled="!canUnpack || order.hasMissingShipmentInfo || order.hasMissingPackageInfo || !hasPackedShipments(order)" fill="outline" color="danger" @click.stop="unpackOrder(order)">{{ translate("Unpack") }}</ion-button>
             </div>
           </div>
         </ion-card>
@@ -267,13 +267,13 @@
               <ion-icon slot="end" :icon="cashOutline" />
             </ion-item>
             <ion-item>
-              <ion-select :disabled="!order.missingLabelImage || !useUserStore().hasPermission('ORDER_SHIPMENT_METHOD_UPDATE')" :label="translate('Carrier')" v-model="carrierPartyId" interface="popover" @ionChange="updateCarrierAndShippingMethod(carrierPartyId, shipmentMethodTypeId)" :selected-text="getSelectedCarrier(carrierPartyId)">
+              <ion-select :disabled="!order.missingLabelImage || !useUserStore().hasPermission(Actions.APP_ORDER_SHIPMENT_METHOD_UPDATE)" :label="translate('Carrier')" v-model="carrierPartyId" interface="popover" @ionChange="updateCarrierAndShippingMethod(carrierPartyId, shipmentMethodTypeId)" :selected-text="getSelectedCarrier(carrierPartyId)">
                 <ion-select-option v-for="carrier in filteredFacilityCarriers" :key="carrier.partyId" :value="carrier.partyId">{{ translate(carrier.groupName) }}</ion-select-option>
               </ion-select>
             </ion-item>
             <ion-item>
               <template v-if="carrierMethods && carrierMethods.length > 0">
-                <ion-select :disabled="!order.missingLabelImage || shipmentMethodTypeId === 'SHIP_TO_STORE' || !useUserStore().hasPermission('ORDER_SHIPMENT_METHOD_UPDATE')" :label="translate('Method')" v-model="shipmentMethodTypeId" interface="popover" @ionChange="updateCarrierAndShippingMethod(carrierPartyId, shipmentMethodTypeId)" :selected-text="getSelectedShipmentMethod(shipmentMethodTypeId)">
+                <ion-select :disabled="!order.missingLabelImage || shipmentMethodTypeId === 'SHIP_TO_STORE' || !useUserStore().hasPermission(Actions.APP_ORDER_SHIPMENT_METHOD_UPDATE)" :label="translate('Method')" v-model="shipmentMethodTypeId" interface="popover" @ionChange="updateCarrierAndShippingMethod(carrierPartyId, shipmentMethodTypeId)" :selected-text="getSelectedShipmentMethod(shipmentMethodTypeId)">
                   <ion-select-option v-for="method in carrierMethods" :key="method.partyId + method.shipmentMethodTypeId" :value="method.shipmentMethodTypeId">{{ translate(method.description) }}</ion-select-option>
                 </ion-select>
               </template>
@@ -314,7 +314,7 @@
             </ion-item>
           </ion-card>
 
-          <Component v-if="useUserStore().hasPermission('FF_INVOICING_STATUS_VIEW')" :is="orderInvoiceExt" :category="category" :order="order" :userProfile="userProfileWithFacilities" />
+          <Component v-if="useUserStore().hasPermission(Actions.APP_INVOICING_STATUS_VIEW)" :is="orderInvoiceExt" :category="category" :order="order" :userProfile="userProfileWithFacilities" />
         </div>
         
         <h4 class="ion-padding-top ion-padding-start" v-if="order.otherShipGroups?.length">{{ translate('Other shipments in this order') }}</h4>
@@ -388,7 +388,7 @@
 </template>
 
 <script setup lang="ts">
-import { IonBackButton, IonBadge, IonButton, IonCard, IonCheckbox, IonChip, IonContent, IonHeader, IonIcon, IonItem, IonLabel, IonNote, IonPage, IonRow, IonSkeletonText, IonTitle, IonToolbar, IonThumbnail, alertController, popoverController, modalController, onIonViewDidEnter } from "@ionic/vue";
+import { IonBackButton, IonBadge, IonButton, IonCard, IonCardHeader, IonCardSubtitle, IonCardTitle, IonCheckbox, IonChip, IonContent, IonHeader, IonIcon, IonItem, IonLabel, IonList, IonNote, IonPage, IonRow, IonSelect, IonSelectOption, IonSkeletonText, IonSpinner, IonTitle, IonToolbar, IonThumbnail, alertController, popoverController, modalController, onIonViewDidEnter } from "@ionic/vue";
 import { computed, defineProps, onMounted, ref, shallowRef } from "vue";
 import { addOutline, archiveOutline, bagCheckOutline, cashOutline, caretDownOutline, checkmarkCircleOutline, chevronUpOutline, closeCircleOutline, cubeOutline, documentTextOutline, ellipsisVerticalOutline, fileTrayOutline, gift, giftOutline, informationCircleOutline, listOutline, locateOutline, personAddOutline, pricetagOutline, ribbonOutline, trashBinOutline } from "ionicons/icons";
 import { cookieHelper, commonUtil, DxpShopifyImg, emitter, logger, moduleFederationUtil, translate } from "@common";
@@ -415,6 +415,7 @@ import OrderAdjustmentModal from "@/components/OrderAdjustmentModal.vue";
 import ShippingLabelActionPopover from "@/components/ShippingLabelActionPopover.vue";
 import TrackingCodeModal from "@/components/TrackingCodeModal.vue";
 import router from "@/router";
+import Actions from "@/authorization/actions";
 
 const props = defineProps(["category", "orderId", "shipGroupSeqId", "shipmentId"]);
 
@@ -464,6 +465,8 @@ const excludeOrderBrokerDays = computed(() => useProductStore().getSettings.excl
 const productStoreShipmentMethods = computed(() => useCarrierStore().getProductStoreShipmentMethods);
 const facilityCarriers = computed(() => useCarrierStore().getFacilityCarriers);
 const productStoreShipmentMethCount = computed(() => useProductStore().getProductStoreShipmentMethCount);
+const canShipNow = computed(() => userStore.hasPermission(Actions.APP_SHIP_ORDER));
+const canUnpack = computed(() => userStore.hasPermission(Actions.APP_UNPACK_ORDER));
 const filteredFacilityCarriers = computed(() => {
   if (initialShipmentMethodTypeId.value === 'SHIP_TO_STORE') {
     const allowedPartyIds = new Set(productStoreShipmentMethods.value
@@ -826,7 +829,20 @@ const shippingPopover = async (ev: Event) => {
     component: Popover,
     event: ev,
     translucent: true,
-    showBackdrop: false
+    showBackdrop: false,
+    componentProps: {
+      disablePrint: order.hasMissingShipmentInfo || order.hasMissingPackageInfo,
+      disableUnpack: !canUnpack.value || order.hasMissingShipmentInfo || order.hasMissingPackageInfo || !hasPackedShipments(order)
+    }
+  });
+
+  popover.onDidDismiss().then((result) => {
+    if (result.data) {
+      const { action } = result.data;
+      if (action === "printShippingLabel") regenerateShippingLabel(order);
+      else if (action === "printPackingSlip") printPackingSlip(order);
+      else if (action === "unpack") unpackOrder(order);
+    }
   });
   return popover.present();
 };

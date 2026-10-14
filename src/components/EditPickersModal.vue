@@ -62,6 +62,7 @@ const orderStore = useOrderStore();
 const utilStore = useUtilStore();
 import { DateTime } from "luxon";
 import { useUserStore } from "@/store/user";
+import Actions from "@/authorization/actions";
 
 const props = defineProps(["selectedPicklist"]);
 const userStore = useUserStore();
@@ -99,12 +100,6 @@ const findPickers = async (pickerIds?: Array<any>) => {
     query = `(${keyword.map((key) => `*${key}*`).join(" OR ")}) OR "${queryString.value}"^100`;
   }
 
-  const facilityFilter = [];
-
-  if (!userStore.hasPermission('FULFILLMENT_VIEW_ALL_PICKERS')) {
-    facilityFilter.push(`facilityIds:${currentFacility.value.facilityId}`);
-  }
-
   const payload = {
     json: {
       params: {
@@ -114,7 +109,8 @@ const findPickers = async (pickerIds?: Array<any>) => {
         qf: "firstName lastName groupName partyId externalId",
         sort: "firstName asc"
       },
-      filter: ["docType:EMPLOYEE", "statusId:PARTY_ENABLED", "WAREHOUSE_PICKER_role:true", ...facilityFilter, partyIdsFilter.length ? `partyId:(${partyIdsFilter})` : ""]
+      query,
+      filter: ["docType:EMPLOYEE", "statusId:PARTY_ENABLED", "WAREHOUSE_PICKER_role:true", partyIdsFilter.length ? `partyId:(${partyIdsFilter})` : ""]
     }
   };
 

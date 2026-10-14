@@ -12,7 +12,7 @@
           <ion-button @click="viewNotifications()">
             <ion-icon slot="icon-only" :icon="notificationsOutline" :color="(unreadNotificationsStatus && notifications.length) ? 'primary' : ''" />
           </ion-button>
-          <ion-button :disabled="!userStore.hasPermission('COMMON_ADMIN OR STOREFULFILLMENT_ADMIN') || !openOrders.total || isRejecting" fill="clear" color="danger" @click="recycleOutstandingOrders()">
+          <ion-button :disabled="!userStore.hasPermission(Actions.APP_RECYCLE_ORDER) || !openOrders.total || isRejecting" fill="clear" color="danger" @click="recycleOutstandingOrders()">
             {{ translate("Reject all") }}
           </ion-button>
           <ion-menu-button menu="view-size-selector-open" :disabled="!openOrders.total">
@@ -154,6 +154,7 @@ import { useUtilStore } from "@/store/util";
 import { useUserStore } from "@/store/user";
 import { useProductStore as useAppProductStore } from "@/store/productStore";
 import router from "@/router";
+import Actions from "@/authorization/actions";
 
 const userStore = useUserStore();
 const carrierStore = useCarrierStore();

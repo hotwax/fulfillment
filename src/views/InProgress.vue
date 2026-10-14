@@ -10,7 +10,7 @@
         <ion-title v-else>{{ inProgressOrders.query.viewSize }} {{ translate('of') }} {{ inProgressOrders.total }} {{ translate('orders') }}</ion-title>
 
         <ion-buttons slot="end">
-          <ion-button :disabled="!userStore.hasPermission('COMMON_ADMIN OR STOREFULFILLMENT_ADMIN') || !inProgressOrders.total || isRejecting" fill="clear" color="danger" @click="recycleInProgressOrders()">
+          <ion-button :disabled="!userStore.hasPermission(Actions.APP_RECYCLE_ORDER) || !inProgressOrders.total || isRejecting" fill="clear" color="danger" @click="recycleInProgressOrders()">
             {{ translate("Reject all") }}
           </ion-button>
           <ion-menu-button menu="view-size-selector-inprogress" :disabled="!inProgressOrders.total">
@@ -256,6 +256,7 @@ import { useUserStore } from "@/store/user";
 import { useUtilStore } from "@/store/util";
 import { useStockStore } from "@/store/stock";
 import { useProductStore as useProductStore } from "@/store/productStore";
+import Actions from "@/authorization/actions";
 
 const userStore = useUserStore();
 const orderStore = useOrderStore();
@@ -655,18 +656,6 @@ const packOrders = async () => {
             logger.error("Failed to pack orders", err);
           } finally {
             emitter.emit("dismissLoader");
-          }
-        }
-      }, {
-        text: translate("Recycle all"),
-        handler: async () => {
-          try {
-            await orderStore.recycleInProgressOrders({});
-
-            commonUtil.showToast(translate("All orders recycled successfully."));
-          } catch (err) {
-            commonUtil.showToast(translate("Failed to recycle all orders."));
-            console.error(err);
           }
         }
       }]
