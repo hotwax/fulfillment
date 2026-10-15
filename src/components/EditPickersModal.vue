@@ -192,8 +192,9 @@ const resetPicker = async () => {
       throw resp.data;
     }
   } catch (err) {
-    commonUtil.showToast(translate("Something went wrong, could not edit picker(s)"));
-    logger.error("Something went wrong, could not edit picker(s)");
+    const serverError = commonUtil.getErrorMessage(err, translate("Please contact administrator."));
+    logger.error("Something went wrong, could not edit picker(s)", serverError);
+    commonUtil.showToast(translate("Something went wrong, could not edit picker(s). {error}", { error: serverError }));
   }
 };
 

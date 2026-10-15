@@ -1,5 +1,5 @@
 import { defineStore } from "pinia"
-import { api, commonUtil, logger } from "@common";
+import { api, commonUtil, logger, translate } from "@common";
 
 import { useProductStore as useAppProductStore } from "@/store/productStore";
 import { useUserStore } from "@/store/user"
@@ -901,13 +901,16 @@ export const useUtilStore = defineStore("util", {
         }
 
         if (!commonUtil.hasError(response)) {
-          commonUtil.showToast("Configuration updated")
+          commonUtil.showToast(translate("Configuration updated"));
         } else {
-          commonUtil.showToast("Failed to update configuration")
+          const serverError = commonUtil.getErrorMessage(response, translate("Please contact administrator."));
+          logger.error("Failed to update configuration", serverError);
+          commonUtil.showToast(translate("Failed to update configuration. {error}", { error: serverError }));
         }
       } catch (error) {
-        commonUtil.showToast("Failed to update configuration")
-        logger.error("Error updating product store setting:", error)
+        const serverError = commonUtil.getErrorMessage(error, translate("Please contact administrator."));
+        logger.error("Failed to update configuration", serverError);
+        commonUtil.showToast(translate("Failed to update configuration. {error}", { error: serverError }));
       }
     }
   },

@@ -142,7 +142,7 @@
 import { IonBadge, IonBackButton, IonButton, IonButtons, IonCard, IonChip, IonContent, IonFooter, IonHeader, IonIcon, IonItem, IonInput, IonLabel, IonPage, IonSegment, IonSegmentButton, IonSpinner, IonThumbnail, IonTitle, IonToolbar, alertController, modalController, onIonViewDidLeave, onIonViewWillEnter } from "@ionic/vue";
 import { computed, ref } from "vue";
 import { barcodeOutline, pricetagOutline, printOutline, trashOutline } from "ionicons/icons";
-import { commonUtil, DxpShopifyImg, useEmbeddedAppStore, emitter, translate, useShopify } from "@common";
+import { commonUtil, DxpShopifyImg, useEmbeddedAppStore, emitter, logger, translate, useShopify } from "@common";
 import { useProductStore as useAppProductStore } from "@/store/productStore";
 import Scanner from "@/components/Scanner.vue";
 import { DateTime } from "luxon";
@@ -359,8 +359,9 @@ const rejectItems = async () => {
           commonUtil.showToast(translate("All order items are rejected"));
           router.replace("/transfer-orders");
         } catch (err) {
-          console.error(err);
-          commonUtil.showToast(translate("Failed to reject order"));
+          const serverError = commonUtil.getErrorMessage(err, translate("Please contact administrator."));
+          logger.error("Failed to reject order", serverError);
+          commonUtil.showToast(translate("Failed to reject order. {error}", { error: serverError }));
           await useTransferOrderStore().fetchTransferOrderDetail({ orderId: route.params.orderId });
         }
         emitter.emit("dismissLoader");
