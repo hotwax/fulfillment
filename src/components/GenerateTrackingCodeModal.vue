@@ -213,7 +213,6 @@ const confirmSave = async () => {
   if (selectedSegment.value !== "reject-order" && (order.carrierPartyId !== carrierPartyId.value || order.shipmentMethodTypeId !== shipmentMethodTypeId.value)) {
     const isUpdated = await updateCarrierAndShippingMethod(carrierPartyId.value, shipmentMethodTypeId.value);
     if (!isUpdated) {
-      commonUtil.showToast(translate("Failed to update shipment method detail."));
       return;
     }
   }
@@ -276,7 +275,9 @@ const updateCarrierAndShippingMethod = async (partyId: string, methodTypeId: str
 
     isTrackingRequired.value = trackingRequired === "N" ? false : true;
   } catch (error: any) {
-    logger.error("Failed to update carrier and method", error);
+    const serverError = commonUtil.getErrorMessage(error, translate("Please contact administrator."));
+    logger.error("Failed to update carrier and method", serverError);
+    commonUtil.showToast(translate("Failed to update shipment method detail. {error}", { error: serverError }));
     return false;
   }
 

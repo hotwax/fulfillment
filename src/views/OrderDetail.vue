@@ -611,8 +611,9 @@ const rejectEntireOrder = async (currentOrder: any, updateParameter?: string) =>
     commonUtil.showToast(translate("Order rejected successfully"));
     return true;
   } catch (err) {
-    logger.error("Failed to reject order", err);
-    commonUtil.showToast(translate("Failed to reject order"));
+    const serverError = commonUtil.getErrorMessage(err, translate("Please contact administrator."));
+    logger.error("Failed to reject order", serverError);
+    commonUtil.showToast(translate("Failed to reject order. {error}", {error : serverError}));
   } finally {
     emitter.emit("dismissLoader");
   }
@@ -718,8 +719,9 @@ const executePackOrder = async (currentOrder: any, updateParameter?: string, tra
   } catch (err: any) {
     if (toast) toast.dismiss();
     emitter.emit("dismissLoader");
-    commonUtil.showToast(translate("Failed to pack order"));
-    logger.error("Failed to pack order", err);
+    const serverError = commonUtil.getErrorMessage(err, translate("Please contact administrator."));
+    commonUtil.showToast(translate("Failed to pack order. {error}", {error: serverError}));
+    logger.error("Failed to pack order", serverError);
     return { isPacked: false, errors: err?.response?.data?.errors };
   } finally {
     emitter.emit("dismissLoader");
@@ -892,8 +894,9 @@ const addShipmentBox = async (currentOrder: any) => {
       throw resp.data;
     }
   } catch (err) {
-    commonUtil.showToast(translate("Failed to add box"));
-    logger.error("Failed to add box", err);
+    const serverError = commonUtil.getErrorMessage(err, translate("Please contact administrator."));
+    commonUtil.showToast(translate("Failed to add box. {error}", {error: serverError}));
+    logger.error("Failed to add box", serverError);
   }
   addingBoxForShipmentIds.value.splice(addingBoxForShipmentIds.value.indexOf(currentOrder.shipmentId), 1);
 };
@@ -1048,8 +1051,9 @@ const shipOrder = async (currentOrder: any) => {
       throw resp.data;
     }
   } catch (err) {
-    commonUtil.showToast(translate("Something went wrong, could not ship the order"));
-    logger.error("Failed to ship the order.", err);
+    const serverError = commonUtil.getErrorMessage(err, translate("Please contact administrator."));
+    commonUtil.showToast(translate("Failed to ship order. {error}", {error: serverError}));
+    logger.error("Failed to ship the order.", serverError);
   } finally {
     emitter.emit("dismissLoader");
   }
@@ -1198,8 +1202,9 @@ const unpackOrder = async(order: any) => {
               throw resp.data
             }
           } catch(err) {
-            logger.error('Failed to unpack the order', err)
-            commonUtil.showToast(translate('Failed to unpack the order'))
+            const serverError = commonUtil.getErrorMessage(err, translate("Please contact administrator."))
+            logger.error('Failed to unpack the order', serverError)
+            commonUtil.showToast(translate('Failed to unpack the order. {error}', {error: serverError}));
           }
         }
       }]
@@ -1298,8 +1303,9 @@ const updateCarrierAndShippingMethod = async (carrierPartyId: string, shipmentMe
     shipmentMethodTypeId = order.value.shipmentPackages?.[0].shipmentMethodTypeId;
 
     emitter.emit("dismissLoader");
-    logger.error('Failed to update carrier and method', err);
-    commonUtil.showToast(translate("Failed to update shipment method detail."));
+    const serverError = commonUtil.getErrorMessage(err, translate("Please contact administrator."));
+    logger.error('Failed to update carrier and method', serverError);
+    commonUtil.showToast(translate("Failed to update shipment method detail. {error}", {error: serverError}));
   }
 }
 

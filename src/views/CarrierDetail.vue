@@ -236,8 +236,9 @@ const updateProductStoreShipmentMethodInternal = async (shipmentMethod: any, mod
       commonUtil.showToast(translate(messages.successMessage));
       await carrierStore.checkAssociatedProductStoreShipmentMethods();
     } catch (err) {
-      commonUtil.showToast(translate(messages.errorMessage));
-      logger.error(err);
+      const serverError = commonUtil.getErrorMessage(err, translate("Please contact administrator."));
+      logger.error("Failed to update tracking code settings", serverError);
+      commonUtil.showToast(translate("Failed to update tracking code settings. {error}", { error: serverError }));
     }
   }
 };
