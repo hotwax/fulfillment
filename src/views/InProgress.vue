@@ -65,7 +65,7 @@
 
               <div class="order-metadata">
                 <ion-label>
-                  {{ getShipmentMethodDesc(order.shipmentMethodTypeId) }}
+                  {{ getShipmentMethodDesc(order.shipmentMethodTypeId) }}<span v-if="order.carrierService"> / {{ order.carrierService }}</span>
                   <p v-if="order.reservedDatetime">{{ translate("Last brokered") }} {{ getTime(order.reservedDatetime) }}</p>
                 </ion-label>
               </div>

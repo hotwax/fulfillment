@@ -59,7 +59,7 @@ export const useProductStore = defineStore('productStore', {
     isProductStoreSettingEnabled: (state) => (settingTypeEnumId: string) => {
       const stateKey = defaultProductStoreSettings[settingTypeEnumId]?.stateKey || settingTypeEnumId
       const value = state.settings[stateKey]
-      
+
       return value === true || value === "Y" || value === "true"
     },
     isExcludeOrderBrokerDaysEnabled(): boolean {
@@ -396,9 +396,9 @@ export const useProductStore = defineStore('productStore', {
         params: payload
       });
     },
-    async fetchProductStoreFacilities(): Promise<any> {
+    async fetchProductStoreFacilities(productStoreId?: string): Promise<any> {
       try {
-        const productStoreId = this.getCurrentProductStore?.productStoreId;
+        productStoreId = productStoreId || this.getCurrentProductStore?.productStoreId;
 
         if (!productStoreId) {
           logger.error('Product store ID not found');

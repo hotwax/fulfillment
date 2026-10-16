@@ -93,6 +93,43 @@
             <div v-else class="empty-state">
               <p>{{ translate('No data found') }}</p>
             </div>
+
+            <hr />
+            <h3 class="ion-padding-start">{{ translate('Shipping carrier configuration') }}</h3>
+
+            <ion-card class="store-default-card">
+              <ion-card-header>
+                <div>
+                  <ion-card-title>{{ translate('Store default configuration') }}</ion-card-title>
+                  <ion-card-subtitle v-if="storeDefaultConfigByProductStore[productStore.productStoreId]">
+                    {{ storeDefaultConfigSummary(storeDefaultConfigByProductStore[productStore.productStoreId]) }}
+                  </ion-card-subtitle>
+                  <ion-card-subtitle v-else>{{ translate('Not configured') }}</ion-card-subtitle>
+                </div>
+                <ion-button fill="clear" @click="openStoreDefaultConfigModal(productStore)">
+                  <ion-icon slot="icon-only" :icon="storeDefaultConfigByProductStore[productStore.productStoreId] ? createOutline : addCircleOutline" />
+                </ion-button>
+              </ion-card-header>
+            </ion-card>
+
+            <h4 class="ion-padding-start">{{ translate('Facility overrides') }}</h4>
+            <section v-if="carrierFacilitiesByProductStore[productStore.productStoreId]?.length">
+              <ion-card v-for="(facility, index) in carrierFacilitiesByProductStore[productStore.productStoreId]" :key="index">
+                <ion-card-header>
+                  <div>
+                    <ion-card-title>{{ facility.facilityName }}</ion-card-title>
+                    <ion-card-subtitle>{{ facility.facilityId }}</ion-card-subtitle>
+                  </div>
+                  <ion-button v-if="facility.isChecked" fill="clear" @click.stop="openFacilityConfigModal(facility, productStore)">
+                    <ion-icon slot="icon-only" :icon="createOutline" />
+                  </ion-button>
+                  <ion-checkbox :checked="facility.isChecked" @click="updateProductStoreCarrierFacilityAssociation($event, facility, productStore.productStoreId)" />
+                </ion-card-header>
+              </ion-card>
+            </section>
+            <div v-else class="empty-state">
+              <p>{{ translate('No data found') }}</p>
+            </div>
           </template>
         </template>
       </div>
@@ -108,9 +145,10 @@
 <script setup lang="ts">
 import { IonButton, IonBackButton, IonCard, IonCardHeader, IonCardSubtitle, IonCardTitle, IonCheckbox, IonChip, IonContent, IonFab, IonFabButton, IonHeader, IonIcon, IonItem, IonLabel, IonList, IonNote, IonPage, IonSegment, IonSegmentButton, IonTitle, IonToggle, IonToolbar, alertController, modalController } from "@ionic/vue";
 import { computed, onMounted, ref } from "vue";
-import { addCircleOutline, addOutline, peopleOutline, shieldCheckmarkOutline } from "ionicons/icons";
+import { addCircleOutline, addOutline, createOutline, peopleOutline, shieldCheckmarkOutline } from "ionicons/icons";
 import { commonUtil, emitter, logger, translate } from "@common";
 import CreateShipmentMethodModal from "@/components/CreateShipmentMethodModal.vue";
+import EditCarrierConfigModal from "@/components/EditCarrierConfigModal.vue";
 import ShipmentMethods from "@/components/ShipmentMethods.vue";
 import { useCarrierStore } from "@/store/carrier";
 import { useProductStore as useAppProductStore } from "@/store/productStore";
@@ -128,6 +166,8 @@ const productStores = computed(() => useAppProductStore().getAllProductStores);
 const shipmentMethods = computed(() => carrierStore.getShipmentMethods);
 const carrierShipmentMethodsByProductStore = computed(() => carrierStore.getCarrierShipmentMethodsByProductStore);
 const shipmentGatewayConfigs = computed(() => carrierStore.getShipmentGatewayConfigs);
+const carrierFacilitiesByProductStore = computed(() => carrierStore.getCarrierFacilitiesByProductStore);
+const storeDefaultConfigByProductStore = computed(() => carrierStore.getCarrierStoreDefaultConfigsByProductStore);
 
 const getGatewayConfigDescription = (shipmentGatewayConfigId: string) => {
   const config = shipmentGatewayConfigs.value[shipmentGatewayConfigId];
@@ -192,6 +232,54 @@ const updateCarrierFacilityAssociation = async (event: any, facility: any) => {
   event.preventDefault();
   event.stopImmediatePropagation();
   await carrierStore.updateCarrierFacilityAssociation(facility, currentCarrier.value.partyId);
+};
+
+const storeDefaultConfigSummary = (config: any) => {
+  return [config.weightUomId, config.labelSize, config.carrierAccountId].filter((value) => value).join(" · ") || translate("Configured");
+};
+
+const updateProductStoreCarrierFacilityAssociation = async (event: any, facility: any, productStoreId: string) => {
+  event.preventDefault();
+  event.stopImmediatePropagation();
+  await carrierStore.updateProductStoreCarrierFacilityAssociation(facility, currentCarrier.value.partyId, productStoreId);
+};
+
+const openStoreDefaultConfigModal = async (productStore: any) => {
+  const existing = storeDefaultConfigByProductStore.value[productStore.productStoreId];
+  const modal = await modalController.create({
+    component: EditCarrierConfigModal,
+    componentProps: {
+      config: existing ? JSON.parse(JSON.stringify(existing)) : {},
+      productStoreId: productStore.productStoreId,
+      carrierPartyId: currentCarrier.value.partyId,
+      facilityId: null,
+      title: translate('Store default configuration')
+    }
+  });
+  await modal.present();
+  const { data } = await modal.onWillDismiss();
+  if (data?.isUpdated) {
+    await carrierStore.fetchCarrierConfigs({ partyId: currentCarrier.value.partyId });
+  }
+};
+
+const openFacilityConfigModal = async (facility: any, productStore: any) => {
+  const existing = carrierStore.getCarrierConfigsByProductStore[productStore.productStoreId]?.[facility.facilityId];
+  const modal = await modalController.create({
+    component: EditCarrierConfigModal,
+    componentProps: {
+      config: existing ? JSON.parse(JSON.stringify(existing)) : {},
+      productStoreId: productStore.productStoreId,
+      carrierPartyId: currentCarrier.value.partyId,
+      facilityId: facility.facilityId,
+      title: facility.facilityName
+    }
+  });
+  await modal.present();
+  const { data } = await modal.onWillDismiss();
+  if (data?.isUpdated) {
+    await carrierStore.fetchCarrierConfigs({ partyId: currentCarrier.value.partyId });
+  }
 };
 
 const updateShipmentGatewayConfigId = async (shipmentMethod: any) => {
@@ -259,11 +347,14 @@ onMounted(async () => {
     carrierStore.fetchShipmentMethodTypes(),
     useAppProductStore().fetchAllProductStores(),
     carrierStore.fetchProductStoreShipmentMethods({ partyId: route.params.partyId as string }),
-    useAppProductStore().fetchAllFacilities()
+    useAppProductStore().fetchAllFacilities(),
+    carrierStore.fetchCarrierConfigs({ partyId: route.params.partyId as string })
   ]);
   await carrierStore.checkAssociatedShipmentMethods();
   await carrierStore.checkAssociatedProductStoreShipmentMethods();
   await carrierStore.fetchCarrierFacilities();
+  await carrierStore.fetchFacilitiesByProductStore(productStores.value);
+  carrierStore.checkAssociatedCarrierConfigFacilities();
   await carrierStore.fetchShipmentGatewayConfigs();
 
   emitter.emit("dismissLoader");

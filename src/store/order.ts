@@ -355,6 +355,7 @@ export const useOrderStore = defineStore("order", {
               items: orderUtil.removeKitComponents(shipment),
               missingLabelImage,
               trackingCode: shipmentPackageRouteSegDetails[0]?.trackingCode,
+              carrierService: shipmentPackageRouteSegDetails[0]?.carrierService,
             };
           });
         } else {
@@ -399,7 +400,7 @@ export const useOrderStore = defineStore("order", {
       orders = await this.fetchGiftCardActivationDetails({ isDetailsPage: false, currentOrders: orders })
 
 
-      this.setInProgressQuery({ ...inProgressQuery, viewSize: orders?.length})
+      this.setInProgressQuery({ ...inProgressQuery, viewSize: orders?.length })
       this.setInProgressOrders({ orders, total: inProgressTotal })
 
       emitter.emit("dismissLoader")
