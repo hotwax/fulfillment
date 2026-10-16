@@ -713,7 +713,7 @@ const executePackOrder = async (currentOrder: any, updateParameter?: string, tra
     } else {
       commonUtil.showToast(translate("Order packed successfully"));
     }
-    router.replace(`/completed/shipment-detail/${props.orderId}/${props.shipmentId}`);
+    window.location.href = `/completed/shipment-detail/${props.orderId}/${props.shipmentId}`;
     return { isPacked: true };
   } catch (err: any) {
     if (toast) toast.dismiss();
