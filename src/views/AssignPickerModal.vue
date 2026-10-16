@@ -53,19 +53,20 @@ import { IonButtons, IonButton, IonCheckbox, IonChip, IonContent, IonFab, IonFab
 import { computed, defineProps, onMounted, ref } from "vue";
 import { closeOutline, closeCircle, saveOutline } from "ionicons/icons";
 import { commonUtil, emitter, logger, translate, useSolrSearch } from "@common";
+import { OPEN_ORDERS_DOMAIN } from "@/db/domains";
+import { refreshLiveOrders, removeOpenOrdersLocally } from "@/db/liveOrdersSync";
 import { useUserStore as useDxpUserStore } from "@/store/user";
 import { useProductStore as useAppProductStore } from "@/store/productStore";
 import { useUtilStore } from "@/store/util";
 import { useOrderStore } from "@/store/order";
 import Actions from "@/authorization/actions";
 
-const props = defineProps(["order"]);
+const props = defineProps(["order", "orders"]);
 const orderStore = useOrderStore();
 const utilStore = useUtilStore();
 
 const userStore = useDxpUserStore();
 const currentFacility = computed(() => useAppProductStore().getCurrentFacility);
-const openOrders = computed(() => useOrderStore().getOpenOrders);
 const selectedPickers = ref([]) as any;
 const queryString = ref("");
 const pickers = ref([]) as any;
@@ -91,18 +92,7 @@ const selectPicker = (id: string) => {
 const printPicklist = async () => {
   emitter.emit("presentLoader");
   let resp;
-  const orderIdsToPick = [] as any;
-  const orderItems = [] as any;
-
-  if (props.order) {
-    props.order.items.map((item: any) => orderItems.push(item));
-    orderIdsToPick.push(props.order.orderId);
-  } else {
-    openOrders.value.list.map((order: any) => {
-      order.items.map((item: any) => orderItems.push(item));
-      orderIdsToPick.push(order.orderId);
-    });
-  }
+  const orderItems = (props.order ? [props.order] : props.orders).flatMap((order: any) => order.items);
 
   const payload = {
     packageName: "A",
@@ -127,17 +117,12 @@ const printPicklist = async () => {
     if (resp.status === 200 && !commonUtil.hasError(resp)) {
       closeModal({ picklistId: resp.data.picklistId, shipmentIds: resp.data.shipmentIds });
       commonUtil.showToast(translate("Picklist created successfully"));
+      // Take the picked orders off the list now; the resync confirms against the server.
+      await removeOpenOrdersLocally(orderItems);
+      void refreshLiveOrders([OPEN_ORDERS_DOMAIN]);
 
       if (resp.data.picklistId) {
         await orderStore.printPicklist(resp.data.picklistId);
-      }
-
-      await useOrderStore().findOpenOrders();
-      if (orderIdsToPick.length) {
-        const updatedOpenOrders = openOrders.value?.list.filter((openOrder: any) => !orderIdsToPick.includes(openOrder.orderId));
-        const outdatedOpenOrderCount = openOrders.value.list.reduce((count: number, openOrder: any) => orderIdsToPick.includes(openOrder.orderId) ? count + 1 : count, 0);
-        await useOrderStore().updateOpenOrderQuery({ ...openOrders.value.query, viewSize: updatedOpenOrders.length });
-        await useOrderStore().updateOpenOrders({ orders: updatedOpenOrders, total: openOrders.value.total - outdatedOpenOrderCount });
       }
     } else {
       throw resp.data;

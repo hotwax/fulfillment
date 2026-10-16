@@ -85,6 +85,11 @@
                     <ion-badge class="kit-badge" color="dark" v-if="orderUtil.isKit(item)">{{ translate("Kit") }}</ion-badge>
                   </div>
                   <p>{{ commonUtil.getFeatures(getProduct(item.productId).productFeatures) }}</p>
+                  <p v-if="category === 'in-progress' && isUnavailableElsewhere(order, item)">
+                    <ion-badge color="danger">
+                      {{ translate("Not available anywhere else") }}
+                    </ion-badge>
+                  </p>
                 </ion-label>
               </ion-item>
             </div>
@@ -96,7 +101,7 @@
                   <ion-icon :icon="closeCircleOutline" @click.stop="removeRejectionReason($event, item, order)" />
                 </ion-chip>
               </template>
-              <template v-else-if="isEntierOrderRejectionEnabled(order)">
+              <template v-else-if="isEntierOrderRejectionEnabled(order) || rejectionOutcome(order) === 'whole'">
                 <ion-chip outline color="danger">
                   <ion-label> {{ getRejectionReasonDescription(rejectEntireOrderReasonId) ? getRejectionReasonDescription(rejectEntireOrderReasonId) : translate('Reject to avoid order split (no variance)') }}</ion-label>
                 </ion-chip>
@@ -151,7 +156,10 @@
 
           <div v-if="category === 'in-progress'" class="mobile-only">
             <ion-item>
-              <ion-button fill="clear" @click="packOrder(order)">{{ translate("Pack using default packaging") }}</ion-button>
+              <ion-button fill="clear" :disabled="rejectionOutcome(order) === 'checking'" @click="packOrder(order)">
+                <ion-spinner v-if="rejectionOutcome(order) === 'checking'" slot="start" name="crescent" />
+                {{ translate("Pack using default packaging") }}
+              </ion-button>
               <ion-button slot="end" fill="clear" color="medium" @click="packagingPopover">
                 <ion-icon slot="icon-only" :icon="ellipsisVerticalOutline" />
               </ion-button>
@@ -170,10 +178,14 @@
           <div class="actions">
             <div>
               <template v-if="category === 'in-progress'">
-                <ion-button :color="order.hasAllRejectedItem ? 'danger' : ''" @click="packOrder(order)">
-                  <ion-icon slot="start" :icon="archiveOutline" />
-                  {{ translate(order.hasAllRejectedItem ? "Reject order" : order.hasRejectedItem ? "Save and Pack Order" : "Pack order") }}
+                <ion-button :color="order.hasAllRejectedItem || rejectionOutcome(order) === 'whole' ? 'danger' : ''" :disabled="rejectionOutcome(order) === 'checking'" @click="packOrder(order)">
+                  <ion-spinner v-if="rejectionOutcome(order) === 'checking'" slot="start" name="crescent" />
+                  <ion-icon v-else slot="start" :icon="archiveOutline" />
+                  {{ translate(order.hasAllRejectedItem || rejectionOutcome(order) === 'whole' ? "Reject order" : order.hasRejectedItem ? "Save and Pack Order" : "Pack order") }}
                 </ion-button>
+                <ion-note v-if="rejectionNote(order)" class="ion-margin-start" :color="rejectionOutcome(order) === 'whole' ? 'danger' : undefined">
+                  {{ rejectionNote(order) }}
+                </ion-note>
               </template>
               <ion-button v-else-if="category === 'open'" @click="assignPickers">
                 <ion-icon slot="start" :icon="personAddOutline" />
@@ -392,6 +404,7 @@ import { IonBackButton, IonBadge, IonButton, IonCard, IonCardHeader, IonCardSubt
 import { computed, defineProps, onMounted, ref, shallowRef } from "vue";
 import { addOutline, archiveOutline, bagCheckOutline, cashOutline, caretDownOutline, checkmarkCircleOutline, chevronUpOutline, closeCircleOutline, cubeOutline, documentTextOutline, ellipsisVerticalOutline, fileTrayOutline, gift, giftOutline, informationCircleOutline, listOutline, locateOutline, personAddOutline, pricetagOutline, ribbonOutline, trashBinOutline } from "ionicons/icons";
 import { cookieHelper, commonUtil, DxpShopifyImg, emitter, logger, moduleFederationUtil, translate } from "@common";
+import { useOnePackageReroute } from "@/composables/useOnePackageReroute";
 import { useProductStore } from "@/store/productStore";
 
 import { DateTime } from "luxon";
@@ -422,6 +435,8 @@ const props = defineProps(["category", "orderId", "shipGroupSeqId", "shipmentId"
 const userStore = useUserStore();
 const orderStore = useOrderStore();
 const carrierStore = useCarrierStore();
+const onePackageReroute = useOnePackageReroute();
+const { isUnavailableElsewhere, rejectionNote, rejectionOutcome } = onePackageReroute;
 
 const addingBoxForShipmentIds = ref([] as any);
 const isUpdatingCarrierDetail = ref(false);
@@ -757,6 +772,8 @@ const openRejectReasonPopover = async (ev: Event, item: any, currentOrder: any) 
     });
     currentOrder.hasRejectedItem = true;
     currentOrder.hasAllRejectedItem = isEntierOrderRejectionEnabled(currentOrder) || currentOrder.items.every((item: any) => item.rejectReason);
+    // The page shows what reporting will do before the associate reports.
+    void onePackageReroute.startStockCheck(currentOrder);
   }
 };
 
@@ -975,6 +992,14 @@ const reportIssue = async (currentOrder: any, itemsToReject: any) => {
   } else {
     message = translate(", and other products are identified as unfulfillable. These order items will be unassigned from this store and sent to be rebrokered.", { productName, products: itemsToReject.length - 1, space: "<br /><br />" });
   }
+
+  // When more than one other location can ship the whole order, reject all of it instead of splitting it.
+  await onePackageReroute.resolveStockCheck(currentOrder);
+  const isWholeOrder = rejectionOutcome(currentOrder) === "whole";
+  if(isWholeOrder) {
+    message = onePackageReroute.wholeOrderMessage(currentOrder, itemsToReject, ordersCount);
+  }
+
   const alert = await alertController
     .create({
       header: translate("Report an issue"),
@@ -986,12 +1011,24 @@ const reportIssue = async (currentOrder: any, itemsToReject: any) => {
         text: translate("Report"),
         role: "confirm",
         handler: async () => {
+          if(isWholeOrder) {
+            await rejectWholeOrder(currentOrder);
+
+            return;
+          }
           await initiatePackOrder(currentOrder, "report");
         }
       }]
     });
 
   return alert.present();
+};
+
+const rejectWholeOrder = async (currentOrder: any) => {
+  const { rejectedOrderItems } = await getUpdatedOrderDetail(currentOrder, "report");
+  if(await onePackageReroute.rejectWholeOrder(currentOrder, rejectedOrderItems)) {
+    router.push("/in-progress");
+  }
 };
 
 const getUpdatedOrderDetail = async (currentOrder: any, updateParameter?: string) => {
@@ -1426,6 +1463,10 @@ onIonViewDidEnter(async () => {
     await useOrderStore().getInProgressOrder({ orderId: props.orderId, shipmentId: props.shipmentId });
   } else {
     await useOrderStore().getCompletedOrder({ orderId: props.orderId, shipmentId: props.shipmentId });
+  }
+  // The order could not be fetched.
+  if(!order.value) {
+    return;
   }
   initialShipmentMethodTypeId.value = order.value?.shipmentMethodTypeId;
   await Promise.all([useUtilStore().fetchCarrierShipmentBoxTypes(), useCarrierStore().fetchFacilityCarriers(), useCarrierStore().fetchProductStoreShipmentMeths(), fetchOrderInvoicingStatus()]);

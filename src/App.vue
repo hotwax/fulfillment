@@ -48,6 +48,7 @@ import { computed, onMounted, onUnmounted, ref, watch } from "vue";
 import { translate, emitter, logger, useNotificationStore, useAuth, i18n } from "@common";
 import { Settings } from "luxon";
 import { init } from "@module-federation/runtime";
+import { focusLiveOrders, startLiveOrdersSync, syncMasterFacilities } from "@/db/liveOrdersSync";
 import { useUserStore } from "@/store/user";
 import { useProductStore } from "@/store/productStore";
 import router from './router';
@@ -56,7 +57,10 @@ import { useRegisterSW } from 'virtual:pwa-register/vue'
 
 const { needRefresh, updateServiceWorker } = useRegisterSW()
 
+// Holds the loader's creation promise, so a dismiss that arrives while it is being created still reaches it.
 const loader = ref<any>(null);
+// Lets a present still waiting for its loader know it was dismissed meanwhile.
+let dismissCount = 0;
 
 const userProfile = computed(() => useUserStore().getUserProfile);
 const allNotificationPrefs = computed(() => useNotificationStore().getAllNotificationPrefs);
@@ -87,20 +91,27 @@ const selectedIndex = computed(() => {
 const presentLoader = async (options = { message: "", backdropDismiss: false }) => {
   if (options.message && loader.value) dismissLoader();
 
+  const dismissCountBefore = dismissCount;
   if (!loader.value) {
-    loader.value = await loadingController.create({
+    loader.value = loadingController.create({
       message: options.message ? translate(options.message) : (options.backdropDismiss ? translate("Click the backdrop to dismiss.") : translate("Loading...")),
       translucent: true,
       backdropDismiss: options.backdropDismiss || false
     });
   }
-  loader.value.present();
+  const overlay = await loader.value;
+  if(dismissCount === dismissCountBefore) {overlay.present();}
 };
 
 const dismissLoader = () => {
   if (loader.value) {
-    loader.value.dismiss();
+    const pendingLoader = loader.value;
     loader.value = null;
+    dismissCount++;
+    // dismiss() leaves a loader that was never presented in the DOM.
+    pendingLoader.then(async (overlay: any) => {
+      if(!(await overlay.dismiss())) {overlay.remove();}
+    });
   }
 };
 
@@ -110,7 +121,7 @@ onMounted(async () => {
     remotes: [{ name: "fulfillment_extensions", entry: import.meta.env.VITE_REMOTE_ENTRY as string, type: "module" }]
   });
 
-  loader.value = await loadingController.create({
+  loader.value = loadingController.create({
     message: translate("Loading..."),
     translucent: true,
     backdropDismiss: false
@@ -130,12 +141,29 @@ onMounted(async () => {
   const currentProductStore: any = useProductStore().getCurrentProductStore;
 
     if (useAuth().isAuthenticated.value && currentProductStore?.productStoreId) {
+      // A restored session skips postLogin, so the live order sync starts here too.
+      void startLiveOrdersSync(useProductStore().getFacilities, useProductStore().getCurrentFacility?.facilityId);
+
       await useProductStore().fetchProductStoreSettings(currentProductStore.productStoreId).catch((error) => logger.error(error));
 
       if (allNotificationPrefs.value?.length) {
         await firebaseUtil.initialiseFirebaseMessaging();
       }
     }
+});
+
+// Before facilities load, the store holds `{}` rather than a list.
+const facilityIdsKey = () => {
+  const facilities = useProductStore().getFacilities;
+
+  return Array.isArray(facilities) ? facilities.map((facility: any) => facility.facilityId).join(",") : "";
+};
+watch(facilityIdsKey, () => {
+  void syncMasterFacilities(useProductStore().getFacilities);
+});
+// The sync follows the facility being worked in, so a switch made elsewhere has its orders in by the time Open shows them.
+watch(() => useProductStore().getCurrentFacility?.facilityId, (facilityId) => {
+  if(facilityId) {void focusLiveOrders(facilityId);}
 });
 
 onUnmounted(() => {
