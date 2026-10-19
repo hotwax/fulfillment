@@ -9,7 +9,7 @@
       <ion-title>{{ translate("Assign Pickers") }}</ion-title>
     </ion-toolbar>
     <ion-toolbar>
-      <ion-searchbar v-model="queryString" @keyup.enter="queryString = $event.target.value; findPickers()" />
+      <ion-searchbar v-model="queryString" />
     </ion-toolbar>
   </ion-header>
 
@@ -23,11 +23,7 @@
 
     <ion-list>
       <ion-list-header>{{ translate("Staff") }}</ion-list-header>
-      <div v-if="isLoading" class="empty-state">
-        <ion-spinner name="crescent" />
-        <ion-label>{{ translate("Fetching pickers") }}</ion-label>
-      </div>
-      <div class="empty-state" v-else-if="!pickers.length">{{ "No picker found" }}</div>
+      <div class="empty-state" v-if="!pickers.length">{{ isLoading ? translate("Fetching pickers") : "No picker found" }}</div>
       <div v-else>
         <ion-item v-for="(picker, index) in pickers" :key="index" @click="selectPicker(picker.id)">
           <ion-checkbox :checked="isPickerSelected(picker.id)">
@@ -50,10 +46,11 @@
 
 <script setup lang="ts">
 import { IonButtons, IonButton, IonCheckbox, IonChip, IonContent, IonFab, IonFabButton, IonHeader, IonIcon, IonItem, IonLabel, IonList, IonListHeader, IonRow, IonSearchbar, IonSpinner, IonTitle, IonToolbar, modalController } from "@ionic/vue";
-import { computed, defineProps, onMounted, ref } from "vue";
+import { computed, defineProps, ref } from "vue";
 import { closeOutline, closeCircle, saveOutline } from "ionicons/icons";
-import { commonUtil, emitter, logger, translate, useSolrSearch } from "@common";
+import { commonUtil, emitter, logger, translate, useLiveEntity } from "@common";
 import { OPEN_ORDERS_DOMAIN } from "@/db/domains";
+import { fulfillmentDb } from "@/db/fulfillmentDb";
 import { refreshLiveOrders, removeOpenOrdersLocally } from "@/db/appDbSync";
 import { useUserStore as useDxpUserStore } from "@/store/user";
 import { useProductStore as useAppProductStore } from "@/store/productStore";
@@ -69,8 +66,19 @@ const userStore = useDxpUserStore();
 const currentFacility = computed(() => useAppProductStore().getCurrentFacility);
 const selectedPickers = ref([]) as any;
 const queryString = ref("");
-const pickers = ref([]) as any;
-const isLoading = ref(false);
+
+// The staff come from the app database, which the sync keeps current, so the list is here as the modal opens.
+const pickerRows = useLiveEntity<any>(fulfillmentDb.tables.pickers);
+const isLoading = computed(() => !pickerRows.hydrated.value);
+const pickerName = (picker: any) => picker.groupName ? picker.groupName : (picker.firstName || picker.lastName) ? (picker.firstName ? picker.firstName : "") + (picker.lastName ? " " + picker.lastName : "") : picker.partyId;
+const pickers = computed(() => {
+  const keywords = queryString.value.trim().toLowerCase().split(/\s+/).filter(Boolean);
+
+  return pickerRows.records.value
+    .map((picker: any) => ({ name: pickerName(picker), id: picker.partyId, externalId: picker.externalId }))
+    .filter((picker: any) => keywords.every((keyword: string) => `${picker.name} ${picker.id} ${picker.externalId ?? ""}`.toLowerCase().includes(keyword)))
+    .slice(0, 50);
+});
 
 const isPickerSelected = (id: string) => {
   return selectedPickers.value.some((picker: any) => picker.id == id);
@@ -135,53 +143,6 @@ const printPicklist = async () => {
   emitter.emit("dismissLoader");
 };
 
-const findPickers = async () => {
-  isLoading.value = true;
-  let query: any = {};
-  pickers.value = [];
-
-  if (queryString.value.length > 0) {
-    const keyword = queryString.value.trim().split(" ");
-    query = `(${keyword.map((key) => `*${key}*`).join(" OR ")}) OR "${queryString.value}"^100`;
-  } else {
-    query = `*:*`;
-  }
-
-
-  const payload = {
-    json: {
-      params: {
-        rows: "50",
-        q: query,
-        defType: "edismax",
-        qf: "firstName lastName groupName partyId externalId",
-        sort: "firstName asc"
-      },
-      query,
-      filter: ["docType:EMPLOYEE", "statusId:PARTY_ENABLED", "WAREHOUSE_PICKER_role:true"]
-    }
-  };
-
-  try {
-    const resp = await useSolrSearch().runSolrQuery(payload);
-    if (resp.status === 200 && !commonUtil.hasError(resp)) {
-      pickers.value = resp.data.response.docs.map((picker: any) => ({
-        name: picker.groupName ? picker.groupName : (picker.firstName || picker.lastName) ? (picker.firstName ? picker.firstName : "") + (picker.lastName ? " " + picker.lastName : "") : picker.partyId,
-        id: picker.partyId,
-        externalId: picker.externalId
-      }));
-    } else {
-      throw resp.data;
-    }
-  } catch (err) {
-    logger.error("Failed to fetch the pickers information or there are no pickers available", err);
-  }
-  isLoading.value = false;
-};
-
-onMounted(async () => {
-  await findPickers();
-});
 </script>
 
 <style scoped>

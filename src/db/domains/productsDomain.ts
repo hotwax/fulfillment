@@ -110,6 +110,15 @@ export const productsDomain = defineSyncDomain({
     await db.table<DbRow, DbKey>("orderItems").each((item) => {
       if(item.productId && (!shipGroups || shipGroups.has(canonicalKey([String(item.orderId), String(item.shipGroupSeqId)])))) {referenced.add(String(item.productId));}
     });
+    // The In Progress and Completed pages show the products of the shipments too.
+    const shipments = args.facilityId
+      ? await db.table<DbRow, DbKey>("shipments").where("facilityId").equals(args.facilityId).toArray()
+      : await db.table<DbRow, DbKey>("shipments").toArray();
+    for(const row of shipments) {
+      for(const item of (row.shipment as any)?.items ?? []) {
+        if(item?.productId) {referenced.add(String(item.productId));}
+      }
+    }
     const written = await syncProducts(db, ctx, [...referenced]);
     if(args.facilityId) {announceFacilitySynced(args.facilityId);}
 

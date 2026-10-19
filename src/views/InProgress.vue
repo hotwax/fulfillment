@@ -1,6 +1,6 @@
 <template>
   <ion-page :key="router.currentRoute.value.path">
-    <ViewSizeSelector menu-id="view-size-selector-inprogress" content-id="view-size-selector" />
+    <ViewSizeSelector menu-id="view-size-selector-inprogress" content-id="view-size-selector" :total="filteredOrders.length" :view-size="pageSize" />
 
     <ion-header :translucent="true">
       <ion-menu-button menu="start" slot="start" />
@@ -21,8 +21,8 @@
     </ion-header>
 
     <ion-content ref="contentRef" :scroll-events="true" @ionScroll="enableScrolling()" id="view-size-selector">
-      <ion-searchbar class="searchbar" :placeholder="translate('Search orders')" v-model="inProgressOrders.query.queryString" @keyup.enter="updateQueryString($event.target.value)" />
-      <ion-radio-group v-if="picklists?.length" v-model="selectedPicklistId" @ionChange="updateSelectedPicklist($event.detail.value)">
+      <ion-searchbar class="searchbar" :placeholder="translate('Search orders')" v-model="queryString" />
+      <ion-radio-group v-if="picklists?.length" v-model="selectedPicklistId" @ionChange="resetPage()">
         <ion-row class="filters">
           <ion-item lines="none">
             <ion-radio label-placement="end" value="">
@@ -209,8 +209,12 @@
           </ion-infinite-scroll>
         </div>
       </div>
-      <div v-if="isLoadingOrders" class="ion-padding ion-text-center">
-        <ion-spinner name="crescent"></ion-spinner>
+      <div v-if="!isLoaded" class="results">
+        <ion-card v-for="index in 3" :key="index" class="order">
+          <ion-item lines="none"><ion-skeleton-text animated style="height: 28px;" /></ion-item>
+          <ion-item lines="none"><ion-skeleton-text animated style="height: 64px;" /></ion-item>
+          <ion-item lines="none"><ion-skeleton-text animated style="height: 64px;" /></ion-item>
+        </ion-card>
       </div>
       <template v-else-if="inProgressOrders.total">
         <ion-fab v-if="!isProductStoreSettingEnabled('FULFILL_FORCE_SCAN')" class="mobile-only" vertical="bottom" horizontal="end" slot="fixed">
@@ -243,7 +247,7 @@
 
 <script setup lang="ts">
 import { IonBadge, IonButton, IonButtons, IonCard, IonCheckbox, IonChip, IonContent, IonFab, IonFabButton, IonFooter, IonHeader, IonItem, IonIcon, IonInfiniteScroll, IonInfiniteScrollContent, IonLabel, IonMenuButton, IonNote, IonPage, IonRow, IonRadio, IonRadioGroup, IonSearchbar, IonSkeletonText, IonSpinner, IonThumbnail, IonTitle, IonToolbar, alertController, popoverController, modalController, onIonViewWillEnter } from "@ionic/vue";
-import { computed, ref } from "vue";
+import { computed, ref, watch } from "vue";
 import { addOutline, caretDownOutline, chevronUpOutline, checkmarkDoneOutline, closeCircleOutline, cubeOutline, ellipsisVerticalOutline, gift, giftOutline, listOutline, pencilOutline, optionsOutline, pricetagOutline, printOutline, trashBinOutline } from "ionicons/icons";
 import PackagingPopover from "@/views/PackagingPopover.vue";
 import { commonUtil, DxpShopifyImg, emitter, logger, translate } from "@common";
@@ -265,6 +269,11 @@ import { onBeforeRouteLeave } from "vue-router";
 import router from "@/router";
 import { useOrderStore } from "@/store/order";
 import { useCarrierStore } from "@/store/carrier";
+import { useLiveShipments } from "@/composables/useLiveShipments";
+import { hideShipmentsLocally, refreshLiveOrders } from "@/db/appDbSync";
+import { PICKLISTS_DOMAIN, SHIPMENTS_DOMAIN } from "@/db/domains";
+import { SHIPMENT_STAGE } from "@/db/fulfillmentDb";
+import { filterShipments } from "@/utils/shipmentView";
 import { useProductStore as useProduct } from "@/store/product";
 import { useUserStore } from "@/store/user";
 import { useUtilStore } from "@/store/util";
@@ -279,20 +288,42 @@ const carrierStore = useCarrierStore();
 const onePackageReroute = useOnePackageReroute();
 const { isUnavailableElsewhere, rejectionNote, rejectionOutcome } = onePackageReroute;
 
-const picklists = ref([] as any);
 const defaultShipmentBoxType = ref({} as any);
-const searchedQuery = ref("");
+const queryString = ref("");
 const addingBoxForShipmentIds = ref([] as any);
 const selectedPicklistId = ref("");
 const isScrollingEnabled = ref(false);
 const isRejecting = ref(false);
 const rejectEntireOrderReasonId = "REJ_AVOID_ORD_SPLIT";
-const isLoadingOrders = ref(false);
 
 const contentRef = ref();
 const infiniteScrollRef = ref();
 
-const inProgressOrders = computed(() => useOrderStore().getInProgressOrders);
+// The shipments are read from the app database, which the sync keeps current, so the page never fetches its own list.
+const currentFacilityId = computed(() => useProductStore().getCurrentFacility?.facilityId as string | undefined);
+const currentProductStoreId = computed(() => useProductStore().getCurrentProductStore?.productStoreId as string | undefined);
+const live = useLiveShipments({ facilityId: currentFacilityId, productStoreId: currentProductStoreId, stage: SHIPMENT_STAGE.IN_PROGRESS });
+const picklists = live.picklists;
+const isLoaded = live.loaded;
+const pageSize = ref(Number(import.meta.env.VITE_VIEW_SIZE) || 10);
+const viewIndex = ref(0);
+
+const filteredOrders = computed(() => filterShipments(live.shipments.value, { query: queryString.value, picklistId: selectedPicklistId.value }));
+const visibleOrders = computed(() => filteredOrders.value.slice(0, (viewIndex.value + 1) * pageSize.value));
+// Shaped as the page has always read it: the shipments, how many there are, and how many are showing.
+const inProgressOrders = computed(() => ({
+  list: live.shipments.value,
+  total: filteredOrders.value.length,
+  query: { viewSize: visibleOrders.value.length, viewIndex: viewIndex.value, queryString: queryString.value }
+}));
+
+// A new search or picklist starts again from the top.
+const resetPage = () => { viewIndex.value = 0; };
+watch(queryString, resetPage);
+// A picklist that has run out of shipments no longer filters.
+watch(picklists, (list) => {
+  if(selectedPicklistId.value && !list.some((picklist: any) => picklist.id === selectedPicklistId.value)) {selectedPicklistId.value = "";}
+});
 const rejectReasonOptions = computed(() => useUtilStore().getRejectReasonOptions);
 const userPreference = computed(() => useUserStore().getUserPreferenceState);
 const isProductStoreSettingEnabled = computed(() => (settingTypeEnumId: string) => useProductStore().isProductStoreSettingEnabled(settingTypeEnumId));
@@ -305,7 +336,7 @@ const currentFacility = computed(() => useProductStore().getCurrentFacility as a
 const getProduct = (productId: string) => useProduct().getProduct(productId);
 const boxTypeDesc = (boxTypeId: string) => useUtilStore().getShipmentBoxDesc(boxTypeId);
 const getProductStock = (productId: string) => useStockStore().getProductStock(productId);
-const getShipmentMethodDesc = (shipmentMethodId: string) => useUtilStore().getShipmentMethodDesc(shipmentMethodId);
+const getShipmentMethodDesc = (shipmentMethodId: string) => live.shipmentMethodLabels.value.get(shipmentMethodId) ?? useUtilStore().getShipmentMethodDesc(shipmentMethodId);
 
 const getTime = (time: any) => {
   return DateTime.fromMillis(time).toLocaleString(DateTime.DATETIME_MED);
@@ -335,13 +366,13 @@ const openRejectReasonPopover = async (ev: Event, item: any, order: any) => {
 
 const fetchKitComponents = async (orderItem: any) => {
   await useProduct().fetchProductComponents({ productId: orderItem.productId });
-  const updatedOrder = inProgressOrders.value.list.find((order: any) => order.orderId === orderItem.orderId && order.picklistBinId === orderItem.picklistBinId);
-  const updatedItem = updatedOrder.items.find((item: any) => item.orderItemSeqId === orderItem.orderItemSeqId);
+  const updatedOrder = inProgressOrders.value.list.find((order: any) => order.shipmentId === orderItem.shipmentId || (order.orderId === orderItem.orderId && order.picklistBinId === orderItem.picklistBinId));
+  const updatedItem = updatedOrder?.items.find((item: any) => item.orderItemSeqId === orderItem.orderItemSeqId);
+  if (!updatedItem) return;
   updatedItem.showKitComponents = orderItem.showKitComponents ? false : true;
   if (!updatedItem.kitComponents) {
     updatedItem.kitComponents = getProduct(updatedItem.productId).productComponents.map((productComponent: any) => productComponent.productIdTo);
   }
-  useOrderStore().updateInProgressOrder(updatedOrder);
 };
 
 const removeRejectionReason = async (ev: Event, item: any, order: any) => {
@@ -356,7 +387,6 @@ const removeRejectionReason = async (ev: Event, item: any, order: any) => {
   });
   order.hasRejectedItem = order.items.some((item: any) => item.rejectReason);
   order.hasAllRejectedItem = isEntierOrderRejectionEnabled(order) || order.items.every((item: any) => item.rejectReason);
-  useOrderStore().updateInProgressOrder(order);
 };
 
 const openShipmentBoxPopover = async (ev: Event, item: any, orderItemSeqId: number, order: any) => {
@@ -379,12 +409,10 @@ const openShipmentBoxPopover = async (ev: Event, item: any, orderItemSeqId: numb
 };
 
 const getErrorMessage = () => {
-  return searchedQuery.value ? (commonUtil.hasActiveFilters(inProgressOrders.value.query) ? translate("No results found for . Try using different filters.", { searchedQuery: searchedQuery.value }) : translate("No results found for . Try searching Open or Completed tab instead. If you still can't find what you're looking for, try switching stores.", { searchedQuery: searchedQuery.value, lineBreak: "<br />" })) : translate("doesn't have any orders in progress right now.", { facilityName: currentFacility.value?.facilityName });
+  return queryString.value ? (selectedPicklistId.value ? translate("No results found for . Try using different filters.", { searchedQuery: queryString.value }) : translate("No results found for . Try searching Open or Completed tab instead. If you still can't find what you're looking for, try switching stores.", { searchedQuery: queryString.value, lineBreak: "<br />" })) : translate("doesn't have any orders in progress right now.", { facilityName: currentFacility.value?.facilityName });
 };
 
-const getInProgressOrders = () => {
-  return JSON.parse(JSON.stringify(inProgressOrders.value.list)).splice(0, (inProgressOrders.value.query.viewIndex + 1) * (import.meta.env.VITE_VIEW_SIZE as any));
-};
+const getInProgressOrders = () => visibleOrders.value;
 
 const packagingPopover = async (ev: Event) => {
   const popover = await popoverController.create({
@@ -439,7 +467,9 @@ const rejectEntireOrder = async (order: any, updateParameter?: string) => {
       throw resp.data;
     }
 
-    await fetchOrderAndPickerInformation();
+    // Gone from the list now; the sync confirms it in the background.
+    hideShipmentsLocally([order.shipmentId]);
+    void refreshShipments();
     commonUtil.showToast(translate("Order rejected successfully"));
     return true;
   } catch (err) {
@@ -503,7 +533,9 @@ const executePackOrder = async (order: any, updateParameter?: string, trackingCo
       trackingCode: manualTrackingCode
     };
     await orderStore.packOrder(params);
-
+    // Packed: off the list at once, and the sync confirms it while the documents print.
+    hideShipmentsLocally([order.shipmentId]);
+    void refreshShipments();
 
     const updatedOrder = await useOrderStore().updateShipmentPackageDetail(order);
 
@@ -550,7 +582,6 @@ const executePackOrder = async (order: any, updateParameter?: string, trackingCo
     } else {
       commonUtil.showToast(translate("Order packed successfully"));
     }
-    await fetchOrderAndPickerInformation();
     return { isPacked: true };
   } catch (err: any) {
     if (toast) toast.dismiss();
@@ -566,7 +597,7 @@ const packOrders = async () => {
   const alert = await alertController
     .create({
       header: translate("Pack orders"),
-      message: translate("You are packing orders. Select additional documents that you would like to print.", { count: inProgressOrders.value.list.length, space: "<br /><br />" }),
+      message: translate("You are packing orders. Select additional documents that you would like to print.", { count: filteredOrders.value.length, space: "<br /><br />" }),
       inputs: [{
         name: "printShippingLabel",
         type: "checkbox",
@@ -588,7 +619,7 @@ const packOrders = async () => {
         role: "confirm",
         handler: async (data) => {
           emitter.emit("presentLoader");
-          const orderList = JSON.parse(JSON.stringify(inProgressOrders.value.list));
+          const orderList = JSON.parse(JSON.stringify(filteredOrders.value));
 
           let toast: any;
           const shipments = [] as any;
@@ -642,6 +673,8 @@ const packOrders = async () => {
             if (!packedShipmentIds.length) {
               throw resp.data;
             }
+            hideShipmentsLocally(packedShipmentIds);
+            void refreshShipments();
 
             if (data.length) {
               toast = await commonUtil.showToast(translate("Order packed successfully. Document generation in process"), { canDismiss: true, manualDismiss: true });
@@ -665,7 +698,6 @@ const packOrders = async () => {
             } else {
               commonUtil.showToast(translate("Order packed successfully"));
             }
-            await fetchOrderAndPickerInformation();
           } catch (err) {
             if (toast) toast.dismiss();
             emitter.emit("dismissLoader");
@@ -735,13 +767,13 @@ const reportIssue = async (order: any, itemsToReject: any) => {
 const rejectWholeOrder = async (order: any) => {
   const { rejectedOrderItems } = getUpdatedOrderDetail(order, "report");
   if(await onePackageReroute.rejectWholeOrder(order, rejectedOrderItems)) {
-    await fetchOrderAndPickerInformation();
+    hideShipmentsLocally([order.shipmentId]);
+    void refreshShipments();
   }
 };
 
-const findInProgressOrders = async () => {
-  await useOrderStore().findInProgressOrders();
-};
+// Asks the worker for a fresh pass over the shipments and picklists, rather than the page fetching them itself.
+const refreshShipments = () => refreshLiveOrders([SHIPMENTS_DOMAIN, PICKLISTS_DOMAIN]);
 
 const getUpdatedOrderDetail = (order: any, updateParameter?: string) => {
   const items = JSON.parse(JSON.stringify(order.items));
@@ -790,7 +822,6 @@ const updateRejectReason = (updatedReason: string, item: any, order: any) => {
   });
   order.hasRejectedItem = true;
   order.hasAllRejectedItem = isEntierOrderRejectionEnabled(order) || order.items.every((item: any) => item.rejectReason);
-  useOrderStore().updateInProgressOrder(order);
   // The card shows what reporting will do before the associate reports.
   void onePackageReroute.startStockCheck(order);
 };
@@ -808,7 +839,6 @@ const rejectKitComponent = (order: any, item: any, componentProductId: string) =
       orderItem.kitComponents = kitComponents;
     }
   });
-  useOrderStore().updateInProgressOrder(order);
 };
 
 const isEntierOrderRejectionEnabled = (order: any) => {
@@ -822,77 +852,6 @@ const updateBox = (updatedBox: string, item: any, order: any) => {
       orderItem.selectedBox = updatedBox;
     }
   });
-  useOrderStore().updateInProgressOrder(order);
-};
-
-const fetchPickersInformation = async () => {
-  let pageIndex = 0;
-  let resp;
-  const picklistInfo = {} as any;
-
-  try {
-    do {
-      const payload = {
-        originFacilityId: currentFacility.value?.facilityId,
-        statusId: "SHIPMENT_APPROVED",
-        shipmentMethodTypeId: "STOREPICKUP",
-        shipmentMethodTypeId_op: "equals",
-        shipmentMethodTypeId_not: "Y",
-        pageIndex,
-        pageSize: 50
-      };
-
-      resp = await orderStore.fetchPicklists(payload) as any;
-
-
-      if (!commonUtil.hasError(resp)) {
-        resp.data?.forEach((shipment: any) => {
-          if (shipment?.order?.statusId === "ORDER_APPROVED" && shipment?.order?.productStoreId === currentProductStore.value.productStoreId) {
-            shipment?.picklistShipment?.forEach((picklistShipment: any) => {
-              if (!picklistInfo[picklistShipment.picklistId]) {
-                const picklistRoles = picklistShipment?.picklist?.roles.filter((role: any) => !role.thruDate);
-                const pickerIds = (picklistRoles ?? []).map((role: any) => role?.partyId);
-
-                const pickersName = (picklistRoles ?? [])
-                  .map((role: any) => {
-                    if (role?.person) {
-                      return `${role.person.firstName} ${role.person.lastName}`;
-                    } else if (role?.partyGroup) {
-                      return role.partyGroup.groupName;
-                    }
-                    return null;
-                  })
-                  .filter(Boolean)
-                  .join(", ");
-
-                picklistInfo[picklistShipment.picklistId] = {
-                  ...picklistShipment.picklist,
-                  id: picklistShipment.picklistId,
-                  date: picklistShipment.picklist?.picklistDate
-                    ? DateTime.fromMillis(picklistShipment.picklist.picklistDate).toLocaleString(DateTime.TIME_SIMPLE)
-                    : null,
-                  pickersName,
-                  pickerIds
-                };
-              }
-            });
-          }
-        });
-
-        pageIndex++;
-      } else {
-        throw resp.data;
-      }
-    } while (resp.data.length >= 50);
-
-    picklists.value = Object.values(picklistInfo);
-    if (selectedPicklistId.value) {
-      const selectedPicklist = picklists.value.find((picklist: any) => picklist.id === selectedPicklistId.value);
-      selectedPicklistId.value = selectedPicklist ? selectedPicklist.id : "";
-    }
-  } catch (err) {
-    logger.error("Failed to fetch picklists", err);
-  }
 };
 
 const getPicklist = (id: string) => {
@@ -929,23 +888,12 @@ const loadMoreInProgressOrders = async (event: any) => {
   if (!(isScrollingEnabled.value && isInProgressOrderScrollable())) {
     await event.target.complete();
   }
-  const inProgressOrdersQuery = JSON.parse(JSON.stringify(inProgressOrders.value.query));
-  inProgressOrdersQuery.viewIndex++;
-  await useOrderStore().updateInProgressIndex({ ...inProgressOrdersQuery });
+  viewIndex.value++;
   event.target.complete();
 };
 
 const isInProgressOrderScrollable = () => {
-  return ((inProgressOrders.value.query.viewIndex + 1) * (import.meta.env.VITE_VIEW_SIZE as any)) < inProgressOrders.value.query.viewSize;
-};
-
-const updateSelectedPicklist = async (id: string) => {
-  const inProgressOrdersQuery = JSON.parse(JSON.stringify(inProgressOrders.value.query));
-  inProgressOrdersQuery.viewSize = import.meta.env.VITE_VIEW_SIZE;
-  inProgressOrdersQuery.selectedPicklist = id;
-  inProgressOrdersQuery.viewIndex = 0;
-
-  useOrderStore().updateInProgressQuery({ ...inProgressOrdersQuery });
+  return visibleOrders.value.length < filteredOrders.value.length;
 };
 
 const fetchDefaultShipmentBox = async () => {
@@ -1020,7 +968,7 @@ const addShipmentBox = async (order: any) => {
 
     if (!commonUtil.hasError(resp)) {
       commonUtil.showToast(translate("Box added successfully"));
-      await Promise.all([fetchPickersInformation(), findInProgressOrders()]);
+      await refreshShipments();
     } else {
       throw resp.data;
     }
@@ -1044,30 +992,11 @@ const getShipmentBoxTypes = (carrierPartyId: string) => {
   return carrierShipmentBoxTypes.value[carrierPartyId] ? carrierShipmentBoxTypes.value[carrierPartyId] : [];
 };
 
-const updateQueryString = async (query: string) => {
-  const inProgressOrdersQuery = JSON.parse(JSON.stringify(inProgressOrders.value.query));
-
-  inProgressOrdersQuery.viewSize = import.meta.env.VITE_VIEW_SIZE;
-  inProgressOrdersQuery.queryString = query;
-  await useOrderStore().updateInProgressQuery({ ...inProgressOrdersQuery });
-  searchedQuery.value = query;
+// The result size menu.
+const updateOrderQuery = (size?: any) => {
+  if(Number(size) > 0) {pageSize.value = Number(size);}
+  viewIndex.value = 0;
 };
-
-const updateOrderQuery = async (size?: any, queryStringValue?: any, hideLoader = false) => {
-  const inProgressOrdersQuery = JSON.parse(JSON.stringify(inProgressOrders.value.query));
-
-  size && (inProgressOrdersQuery.viewSize = size);
-  queryStringValue && (inProgressOrdersQuery.queryString = "");
-  inProgressOrdersQuery.viewIndex = 0;
-  inProgressOrdersQuery.selectedPicklist = selectedPicklistId.value;
-  await useOrderStore().updateInProgressQuery({ ...inProgressOrdersQuery, hideLoader });
-};
-
-const initialiseOrderQuery = async () => {
-  await updateOrderQuery(import.meta.env.VITE_VIEW_SIZE, "");
-};
-
-
 
 const updateShipmentBoxType = async (shipmentPackage: any, order: any, ev: CustomEvent) => {
   const shipmentBoxTypes = getShipmentBoxTypes(order.carrierPartyId);
@@ -1089,8 +1018,7 @@ const updateShipmentBoxType = async (shipmentPackage: any, order: any, ev: Custo
 
   if (result.data && shipmentPackage.shipmentBoxTypeId !== result.data) {
     shipmentPackage.shipmentBoxTypeId = result.data;
-    useOrderStore().updateInProgressOrder(order);
-  }
+    }
 };
 
 const recycleInProgressOrders = async () => {
@@ -1143,10 +1071,8 @@ const editPickers = async (selectedPicklist: any) => {
   });
 
   editPickersModal.onDidDismiss().then((result) => {
-    if (result.data?.editedPicklist && Object.keys(result.data?.editedPicklist).length) {
-      const editedPicklist = result.data.editedPicklist;
-      picklists.value = JSON.parse(JSON.stringify(picklists.value.map((picklist: any) => picklist.id === editedPicklist.id ? picklist = editedPicklist : picklist)));
-    }
+    // The pickers changed on the server, so the picklists are read again.
+    if (result.data?.editedPicklist && Object.keys(result.data?.editedPicklist).length) {void refreshShipments();}
   });
 
   return editPickersModal.present();
@@ -1217,29 +1143,15 @@ const openGiftCardActivationModal = async (item: any) => {
   modal.present();
 };
 
-const fetchOrderAndPickerInformation = async () => {
-  await fetchPickersInformation();
-  await updateOrderQuery(import.meta.env.VITE_VIEW_SIZE, "", true);
-};
-
-onIonViewWillEnter(async () => {
+onIonViewWillEnter(() => {
   isScrollingEnabled.value = false;
-  isLoadingOrders.value = true;
-  try {
-    await fetchPickersInformation();
-    await Promise.all([
-      useUtilStore().fetchRejectReasonOptions(),
-      initialiseOrderQuery()
-    ]);
-  } finally {
-    isLoadingOrders.value = false;
-  }
-
+  viewIndex.value = 0;
+  // Not awaited: the shipments are on screen already, and the reasons are only needed when one is picked.
+  void useUtilStore().fetchRejectReasonOptions();
   emitter.on("updateOrderQuery", updateOrderQuery);
 });
 
 onBeforeRouteLeave(() => {
-  useOrderStore().clearInProgressOrders();
   emitter.off("updateOrderQuery", updateOrderQuery);
 });
 </script>

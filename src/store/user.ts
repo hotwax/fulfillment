@@ -242,7 +242,7 @@ export const useUserStore = defineStore("user", {
         await productStore.fetchUserFacilities()
         await productStore.fetchFacilityPreference();
         // Not awaited, and started once the facility is known: the first sync fills its orders while the rest of the login runs.
-        void startLiveOrdersSync(productStore.getFacilities, productStore.getCurrentFacility?.facilityId)
+        void startLiveOrdersSync(productStore.getFacilities, productStore.getCurrentFacility?.facilityId, productStore.getCurrentProductStore?.productStoreId)
         await productStore.fetchProductStores()
         await productStore.fetchProductStorePreference();
         await productStore.fetchProductStoreDependencies(productStore.getCurrentProductStore.productStoreId)

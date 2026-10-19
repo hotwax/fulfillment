@@ -10,6 +10,12 @@ export const ORDER_STAGE = {
   OPEN: "open"
 } as const;
 
+// A shipment is in progress until it is packed, and completed until it ships.
+export const SHIPMENT_STAGE = {
+  IN_PROGRESS: "in-progress",
+  COMPLETED: "completed"
+} as const;
+
 export const orderKeyOf = (orderId: unknown, shipGroupSeqId: unknown): string | undefined =>
   orderId && shipGroupSeqId ? `${orderId}-${shipGroupSeqId}` : undefined;
 
@@ -44,6 +50,46 @@ const fulfillmentSchema = defineSchema({
     indexes: ["[orderId+shipGroupSeqId]"]
   }),
 
+  shipments: defineEntity({
+    primaryKey: "shipmentId",
+    fields: {
+      shipmentId: "text",
+      orderId: "text",
+      stage: "text",
+      facilityId: "text",
+      picklistId: "text",
+      statusId: "text",
+      productStoreId: "text",
+      orderDate: "date",
+      // The shipment as the API returned it, with its items, packages and route segments. The pages build their cards from it.
+      shipment: "structured"
+    },
+    indexes: ["stage", "facilityId", "picklistId"]
+  }),
+
+  pickers: defineEntity({
+    primaryKey: "partyId",
+    fields: {
+      partyId: "text",
+      firstName: "text",
+      lastName: "text",
+      groupName: "text",
+      externalId: "text"
+    }
+  }),
+
+  picklists: defineEntity({
+    primaryKey: "picklistId",
+    fields: {
+      picklistId: "text",
+      facilityId: "text",
+      picklistDate: "date",
+      // The picklist's pickers, as the API returned its roles.
+      roles: "structured"
+    },
+    indexes: ["facilityId"]
+  }),
+
   products: defineEntity({
     primaryKey: "productId",
     fields: {
@@ -68,8 +114,8 @@ const fulfillmentSchema = defineSchema({
 
 export const fulfillmentDb = defineAppDb({
   suffix: "FulfillmentDB",
-  // 5: the user's facilities go to the open orders domain as args, so the userFacilities table is gone.
-  version: 5,
+  // 7: pickers table. 6: shipments and picklists tables for the In Progress and Completed pages (5: the userFacilities table went, the user's facilities are args).
+  version: 7,
   schema: mergeSchemas(commonSchema.pick(["shipmentMethodTypes"]), fulfillmentSchema)
 });
 

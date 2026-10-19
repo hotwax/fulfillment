@@ -34,8 +34,8 @@ import router from "@/router";
 // The menu-id and content-id attributes belong on the teleported menu, not the component root.
 defineOptions({ inheritAttrs: false });
 
-// The live Open page counts its own orders.
-const props = defineProps<{ total?: number }>();
+// The live pages count their own orders and say how many are showing.
+const props = defineProps<{ total?: number; viewSize?: number }>();
 
 const route = router.currentRoute.value;
 
@@ -45,8 +45,8 @@ const title = computed(() => {
 });
 
 const storedViewSize = computed(() => {
+  if (props.viewSize !== undefined) return props.viewSize;
   if (route.name === "OpenOrders") return useOrderStore().getOpenOrders.query.viewSize;
-  if (route.name === "InProgress") return useOrderStore().getInProgressOrders.query.viewSize;
   if (route.name === "Completed") return useOrderStore().getCompletedOrders.query.viewSize;
   return 0;
 });
@@ -55,8 +55,7 @@ const storedViewSize = computed(() => {
 const viewSize = computed(() => Number(storedViewSize.value) || 0);
 
 const total = computed(() => {
-  if (route.name === "OpenOrders") return props.total ?? 0;
-  if (route.name === "InProgress") return useOrderStore().getInProgressOrders.total;
+  if (props.total !== undefined) return props.total;
   if (route.name === "Completed") return useOrderStore().getCompletedOrders.total;
   return 0;
 });

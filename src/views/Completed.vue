@@ -1,6 +1,6 @@
 <template>
   <ion-page :key="router.currentRoute.value.path">
-    <ViewSizeSelector menu-id="view-size-selector-completed" content-id="view-size-selector" />
+    <ViewSizeSelector menu-id="view-size-selector-completed" content-id="view-size-selector" :total="filteredOrders.length" :view-size="pageSize" />
 
     <ion-header :translucent="true">
       <ion-toolbar>
@@ -17,8 +17,8 @@
     </ion-header>
 
     <ion-content ref="contentRef" :scroll-events="true" @ionScroll="enableScrolling()" id="view-size-selector">
-      <ion-searchbar class="searchbar" :value="completedOrders.query.queryString" :placeholder="translate('Search orders')" @keyup.enter="updateQueryString($event.target.value)" />
-      <ion-radio-group v-if="carrierPartyIds?.length" v-model="selectedCarrierPartyId" @ionChange="updateSelectedCarrierPartyIds($event.detail.value)">
+      <ion-searchbar class="searchbar" :placeholder="translate('Search orders')" v-model="queryString" />
+      <ion-radio-group v-if="carrierPartyIds?.length" v-model="selectedCarrierPartyId" @ionChange="resetPage()">
         <ion-row class="filters">
           <ion-item lines="none">
             <ion-radio label-placement="end" value="">
@@ -39,7 +39,7 @@
 
       <div v-if="shipmentMethods?.length" class="filters">
         <ion-item lines="none" v-for="shipmentMethod in shipmentMethods" :key="shipmentMethod">
-          <ion-checkbox label-placement="end" :checked="completedOrders.query.selectedShipmentMethods.includes(shipmentMethod)" @ionChange="updateSelectedShipmentMethods(shipmentMethod)">
+          <ion-checkbox label-placement="end" :checked="selectedShipmentMethods.includes(shipmentMethod)" @ionChange="updateSelectedShipmentMethods(shipmentMethod)">
             <ion-label>
               {{ getShipmentMethodDesc(shipmentMethod) }}
             </ion-label>
@@ -71,7 +71,10 @@
                 <ion-label>
                   {{ getShipmentMethodDesc(order.shipmentMethodTypeId) }}
                   <p v-if="order.reservedDatetime">{{ translate("Last brokered") }} {{ getTime(order.reservedDatetime) }}</p>
-                  <p v-if="order.trackingCode">{{ translate("Tracking Code") }} {{ order.trackingCode }}</p>
+                  <template v-if="order.packageTrackings?.length > 1">
+                    <p v-for="tracking in order.packageTrackings" :key="tracking.packageName">{{ translate("Box") }} {{ tracking.packageName }}: {{ tracking.trackingCode }}</p>
+                  </template>
+                  <p v-else-if="order.trackingCode">{{ translate("Tracking Code") }} {{ order.trackingCode }}</p>
                 </ion-label>
               </div>
             </div>
@@ -163,8 +166,11 @@
           </ion-infinite-scroll>
         </div>
       </div>
-      <div v-if="isLoadingOrders" class="ion-padding ion-text-center">
-        <ion-spinner name="crescent"></ion-spinner>
+      <div v-if="!isLoaded" class="results">
+        <ion-card v-for="index in 3" :key="index" class="order">
+          <ion-item lines="none"><ion-skeleton-text animated style="height: 28px;" /></ion-item>
+          <ion-item lines="none"><ion-skeleton-text animated style="height: 64px;" /></ion-item>
+        </ion-card>
       </div>
       <ion-fab v-else-if="completedOrders.total" class="mobile-only" vertical="bottom" horizontal="end" slot="fixed">
         <ion-fab-button :disabled="!canShipNow || hasAnyMissingInfo() || (hasAnyShipmentTrackingInfoMissing() && !userStore.hasPermission(Actions.APP_FORCE_SHIP_ORDER))" @click="bulkShipOrders()">
@@ -217,6 +223,11 @@ import { DateTime } from "luxon";
 import HistoricalManifestModal from "@/components/HistoricalManifestModal.vue";
 import { useOrderStore } from "@/store/order";
 import { useCarrierStore } from "@/store/carrier";
+import { useLiveShipments } from "@/composables/useLiveShipments";
+import { hideShipmentsLocally, refreshLiveOrders } from "@/db/appDbSync";
+import { SHIPMENTS_DOMAIN } from "@/db/domains";
+import { SHIPMENT_STAGE } from "@/db/fulfillmentDb";
+import { filterShipments } from "@/utils/shipmentView";
 import { useProductStore as useProduct } from "@/store/product";
 import { useStockStore } from "@/store/stock";
 import { useUtilStore } from "@/store/util";
@@ -226,28 +237,66 @@ import Actions from "@/authorization/actions";
 const orderStore = useOrderStore();
 const carrierStore = useCarrierStore();
 
-const shipmentMethods = ref([] as Array<any>);
-const carrierPartyIds = ref([] as Array<any>);
-const searchedQuery = ref("");
+const queryString = ref("");
 const isScrollingEnabled = ref(false);
-const completedOrdersList = ref([] as any);
 const selectedCarrierPartyId = ref("");
 const carrierConfiguration = ref({} as any);
 const isGeneratingManifest = ref(false);
-const selectedShipmentMethods = ref([] as any);
-const isLoadingOrders = ref(false);
+const selectedShipmentMethods = ref([] as string[]);
 
 const contentRef = ref();
 const infiniteScrollRef = ref();
 
-const completedOrders = computed(() => useOrderStore().getCompletedOrders);
+// The packed shipments are read from the app database, which the sync keeps current, so the page never fetches its own list.
+const currentFacilityId = computed(() => useProductStore().getCurrentFacility?.facilityId as string | undefined);
+const currentProductStoreId = computed(() => useProductStore().getCurrentProductStore?.productStoreId as string | undefined);
+const live = useLiveShipments({ facilityId: currentFacilityId, productStoreId: currentProductStoreId, stage: SHIPMENT_STAGE.COMPLETED });
+const isLoaded = live.loaded;
+const pageSize = ref(Number(import.meta.env.VITE_VIEW_SIZE) || 10);
+const viewIndex = ref(0);
+
+// What the filters offer is what the shipments have.
+const shipmentMethods = computed(() => [...new Set(live.shipments.value.map((order: any) => order.shipmentMethodTypeId).filter(Boolean))] as string[]);
+const carrierPartyIds = computed(() => [...new Set(live.shipments.value.map((order: any) => order.carrierPartyId).filter(Boolean))] as string[]);
+
+const filteredOrders = computed(() => filterShipments(live.shipments.value, {
+  query: queryString.value,
+  carrierPartyId: selectedCarrierPartyId.value,
+  shipmentMethodTypeIds: selectedShipmentMethods.value
+}));
+const completedOrdersList = computed(() => filteredOrders.value.slice(0, (viewIndex.value + 1) * pageSize.value));
+// Shaped as the page has always read it: the shipments, how many there are, and how many are showing.
+const completedOrders = computed(() => ({
+  list: live.shipments.value,
+  total: filteredOrders.value.length,
+  query: { viewSize: completedOrdersList.value.length, viewIndex: viewIndex.value, queryString: queryString.value, selectedShipmentMethods: selectedShipmentMethods.value }
+}));
+
+const resetPage = () => { viewIndex.value = 0; };
+watch(queryString, resetPage);
+// A filter whose shipments have all gone no longer applies.
+watch(shipmentMethods, (methods) => { selectedShipmentMethods.value = selectedShipmentMethods.value.filter((method) => methods.includes(method)); });
+watch(carrierPartyIds, (carriers) => {
+  if(selectedCarrierPartyId.value && !carriers.includes(selectedCarrierPartyId.value)) {selectedCarrierPartyId.value = "";}
+  // The carrier names, for the filter chips.
+  if(carriers.length) {void useUtilStore().fetchPartyInformation(carriers);}
+}, { immediate: true });
+// Manifests are needed only once a carrier is chosen.
+watch(selectedCarrierPartyId, async (carrierPartyId) => {
+  if(!carrierPartyId) {return;}
+  await fetchConfiguredCarrierService([carrierPartyId]);
+  await fetchCarrierManifestInformation([carrierPartyId]);
+});
+
+// Asks the worker for a fresh pass over the shipments, rather than the page fetching them itself.
+const refreshShipments = () => refreshLiveOrders([SHIPMENTS_DOMAIN]);
+
 const getProduct = (productId: string) => useProduct().getProduct(productId);
 const getPartyName = (partyId: string) => useUtilStore().getPartyName(partyId);
-const getShipmentMethodDesc = (shipmentMethodId: string) => useUtilStore().getShipmentMethodDesc(shipmentMethodId);
+const getShipmentMethodDesc = (shipmentMethodId: string) => live.shipmentMethodLabels.value.get(shipmentMethodId) ?? useUtilStore().getShipmentMethodDesc(shipmentMethodId);
 const getProductStock = (productId: string) => useStockStore().getProductStock(productId);
 const productStoreShipmentMethCount = computed(() => useProductStore().getProductStoreShipmentMethCount);
 const isProductStoreSettingEnabled = computed(() => (settingTypeEnumId: string) => useProductStore().isProductStoreSettingEnabled(settingTypeEnumId));
-const currentProductStore = computed(() => useProductStore().getCurrentProductStore);
 const currentFacility = computed(() => useProductStore().getCurrentFacility);
 const productIdentificationPref = computed(() => useProductStore().getProductIdentificationPref);
 const canShipNow = computed(() => userStore.hasPermission(Actions.APP_SHIP_ORDER));
@@ -258,11 +307,11 @@ const getTime = (time: any) => {
 };
 
 const getErrorMessage = () => {
-  return searchedQuery.value ? (commonUtil.hasActiveFilters(completedOrders.value.query) ? translate("No results found for . Try using different filters.", { searchedQuery: searchedQuery.value }) : translate("No results found for . Try searching In Progress or Open tab instead. If you still can't find what you're looking for, try switching stores.", { searchedQuery: searchedQuery.value, lineBreak: "<br />" })) : translate("doesn't have any completed orders right now.", { facilityName: currentFacility.value?.facilityName });
+  return queryString.value ? ((selectedCarrierPartyId.value || selectedShipmentMethods.value.length) ? translate("No results found for . Try using different filters.", { searchedQuery: queryString.value }) : translate("No results found for . Try searching In Progress or Open tab instead. If you still can't find what you're looking for, try switching stores.", { searchedQuery: queryString.value, lineBreak: "<br />" })) : translate("doesn't have any completed orders right now.", { facilityName: currentFacility.value?.facilityName });
 };
 
 const hasAnyMissingInfo = () => {
-  return completedOrders.value.list.some((order: any) => {
+  return filteredOrders.value.some((order: any) => {
     return order.hasMissingShipmentInfo || order.hasMissingPackageInfo;
   });
 };
@@ -270,9 +319,8 @@ const hasAnyMissingInfo = () => {
 const fetchKitComponents = async (orderItem: any) => {
   await useProduct().fetchProductComponents({ productId: orderItem.productId });
   const updatedOrder = completedOrders.value.list.find((order: any) => order.shipmentId === orderItem.shipmentId);
-  const updatedItem = updatedOrder.items.find((item: any) => item.orderItemSeqId === orderItem.orderItemSeqId);
-  updatedItem.showKitComponents = orderItem.showKitComponents ? false : true;
-  completedOrdersList.value = JSON.parse(JSON.stringify(completedOrders.value.list)).slice(0, (completedOrders.value.query.viewIndex + 1) * (import.meta.env.VITE_VIEW_SIZE as any));
+  const updatedItem = updatedOrder?.items.find((item: any) => item.orderItemSeqId === orderItem.orderItemSeqId);
+  if(updatedItem) {updatedItem.showKitComponents = orderItem.showKitComponents ? false : true;}
 };
 
 const enableScrolling = () => {
@@ -292,30 +340,18 @@ const loadMoreCompletedOrders = async (event: any) => {
   if (!(isScrollingEnabled.value && isCompletedOrderScrollable())) {
     await event.target.complete();
   }
-  const completedOrdersQuery = JSON.parse(JSON.stringify(completedOrders.value.query));
-  completedOrdersQuery.viewIndex++;
-  await useOrderStore().updateCompletedOrderIndex({ ...completedOrdersQuery });
-  completedOrdersList.value = JSON.parse(JSON.stringify(completedOrders.value.list)).slice(0, (completedOrders.value.query.viewIndex + 1) * (import.meta.env.VITE_VIEW_SIZE as any));
+  viewIndex.value++;
   event.target.complete();
 };
 
 const isCompletedOrderScrollable = () => {
-  return ((completedOrders.value.query.viewIndex + 1) * (import.meta.env.VITE_VIEW_SIZE as any)) < completedOrders.value.query.viewSize;
+  return completedOrdersList.value.length < filteredOrders.value.length;
 };
 
-const initialiseOrderQuery = async () => {
-  const completedOrdersQuery = JSON.parse(JSON.stringify(completedOrders.value.query));
-  completedOrdersQuery.viewIndex = 0;
-  completedOrdersQuery.viewSize = import.meta.env.VITE_VIEW_SIZE;
-  if (selectedCarrierPartyId.value) completedOrdersQuery.selectedCarrierPartyId = selectedCarrierPartyId.value;
-  if (selectedShipmentMethods.value?.length) completedOrdersQuery.selectedShipmentMethods = selectedShipmentMethods.value;
-  await useOrderStore().updateCompletedQuery({ ...completedOrdersQuery });
-};
-
-const updateOrderQuery = async (size: any) => {
-  const completedOrdersQuery = JSON.parse(JSON.stringify(completedOrders.value.query));
-  completedOrdersQuery.viewSize = size;
-  await useOrderStore().updateCompletedQuery({ ...completedOrdersQuery });
+// The result size menu.
+const updateOrderQuery = (size: any) => {
+  if(Number(size) > 0) {pageSize.value = Number(size);}
+  viewIndex.value = 0;
 };
 
 const shipOrder = async (order: any) => {
@@ -325,8 +361,9 @@ const shipOrder = async (order: any) => {
 
     if (!commonUtil.hasError(resp)) {
       commonUtil.showToast(translate("Order shipped successfully"));
-      const completedOrdersQuery = JSON.parse(JSON.stringify(completedOrders.value.query));
-      await Promise.all([useOrderStore().updateCompletedQuery({ ...completedOrdersQuery }), fetchShipmentFacets()]);
+      // Shipped: off the list at once, and the sync confirms it.
+      hideShipmentsLocally([order.shipmentId]);
+      void refreshShipments();
     } else {
       throw resp.data;
     }
@@ -337,7 +374,7 @@ const shipOrder = async (order: any) => {
 };
 
 const bulkShipOrders = async () => {
-  const packedOrdersCount = completedOrders.value.list.filter((order: any) => {
+  const packedOrdersCount = filteredOrders.value.filter((order: any) => {
     return hasPackedShipments(order);
   }).length;
   const shipOrderAlert = await alertController
@@ -350,7 +387,7 @@ const bulkShipOrders = async () => {
       }, {
         text: translate("Ship"),
         handler: async () => {
-          let orderList = JSON.parse(JSON.stringify(completedOrders.value.list));
+          let orderList = JSON.parse(JSON.stringify(filteredOrders.value));
           orderList = orderList.filter((order: any) => order.statusId === "SHIPMENT_PACKED");
           const trackingRequiredOrders = orderList.filter((order: any) => isTrackingRequiredForAnyShipmentPackage(order));
           let trackingRequiredAndMissingCodeOrders = [] as any;
@@ -376,8 +413,8 @@ const bulkShipOrders = async () => {
               !trackingRequiredAndMissingCodeOrders.length
                 ? commonUtil.showToast(translate("Orders shipped successfully"))
                 : commonUtil.showToast(translate("out of cannot be shipped due to missing tracking codes.", { remainingOrders: trackingRequiredAndMissingCodeOrders.length, totalOrders: packedOrdersCount }));
-              const completedOrdersQuery = JSON.parse(JSON.stringify(completedOrders.value.query));
-              await Promise.all([useOrderStore().updateCompletedQuery({ ...completedOrdersQuery }), fetchShipmentFacets()]);
+              hideShipmentsLocally(shipmentIds);
+              void refreshShipments();
             } else {
               throw resp.data;
             }
@@ -414,64 +451,10 @@ const shippingPopover = async (order: any, ev: Event) => {
   return popover.present();
 };
 
-const fetchShipmentFacets = async () => {
-  const params = {
-    orderTypeId: "SALES_ORDER",
-    statusId: "SHIPMENT_PACKED",
-    shippedDateFrom: DateTime.now().startOf("day").toMillis(),
-    originFacilityId: currentFacility.value?.facilityId,
-    productStoreId: currentProductStore.value.productStoreId
-  };
-  try {
-    const resp = await orderStore.fetchShipmentFacets(params) as any;
-
-
-    if (!commonUtil.hasError(resp)) {
-      shipmentMethods.value = resp.data.shipmentMethodTypeIds;
-      carrierPartyIds.value = resp.data.carrierPartyIds;
-      await useUtilStore().fetchShipmentMethodTypeDesc(resp.data.shipmentMethodTypeIds);
-      await useUtilStore().fetchPartyInformation(resp.data.carrierPartyIds);
-      await fetchConfiguredCarrierService(resp.data.carrierPartyIds);
-      await fetchCarrierManifestInformation(resp.data.carrierPartyIds);
-    } else {
-      throw resp.data;
-    }
-  } catch (err) {
-    logger.error("Failed to fetch shipment methods", err);
-  }
-};
-
-const updateQueryString = async (queryString: string) => {
-  const completedOrdersQuery = JSON.parse(JSON.stringify(completedOrders.value.query));
-  completedOrdersQuery.viewSize = import.meta.env.VITE_VIEW_SIZE;
-  completedOrdersQuery.queryString = queryString;
-  await useOrderStore().updateCompletedQuery({ ...completedOrdersQuery });
-  searchedQuery.value = queryString;
-};
-
-const updateSelectedShipmentMethods = async (method: string) => {
-  const completedOrdersQuery = JSON.parse(JSON.stringify(completedOrders.value.query));
-  const updatedShipmentMethods = completedOrdersQuery.selectedShipmentMethods;
-  const index = updatedShipmentMethods.indexOf(method);
-  if (index < 0) {
-    updatedShipmentMethods.push(method);
-  } else {
-    updatedShipmentMethods.splice(index, 1);
-  }
-
-  completedOrdersQuery.viewSize = import.meta.env.VITE_VIEW_SIZE;
-  completedOrdersQuery.selectedShipmentMethods = updatedShipmentMethods;
-  selectedShipmentMethods.value = updatedShipmentMethods;
-
-  useOrderStore().updateCompletedQuery({ ...completedOrdersQuery });
-};
-
-const updateSelectedCarrierPartyIds = async (carrierPartyId: string) => {
-  const completedOrdersQuery = JSON.parse(JSON.stringify(completedOrders.value.query));
-  completedOrdersQuery.viewSize = import.meta.env.VITE_VIEW_SIZE;
-  completedOrdersQuery.selectedCarrierPartyId = carrierPartyId;
-
-  useOrderStore().updateCompletedQuery({ ...completedOrdersQuery });
+const updateSelectedShipmentMethods = (method: string) => {
+  const index = selectedShipmentMethods.value.indexOf(method);
+  selectedShipmentMethods.value = index < 0 ? [...selectedShipmentMethods.value, method] : selectedShipmentMethods.value.filter((selected) => selected !== method);
+  resetPage();
 };
 
 const unpackOrder = async (order: any) => {
@@ -491,7 +474,8 @@ const unpackOrder = async (order: any) => {
 
             if (resp.status == 200 && !commonUtil.hasError(resp)) {
               commonUtil.showToast(translate("Order unpacked successfully"));
-              await Promise.all([useOrderStore().findCompletedOrders(), fetchShipmentFacets()]);
+              hideShipmentsLocally([order.shipmentId]);
+              void refreshShipments();
             } else {
               throw resp.data;
             }
@@ -571,6 +555,7 @@ const regenerateShippingLabel = async (order: any) => {
 
 
   order.isGeneratingShippingLabel = false;
+  void refreshShipments();
 };
 
 const showShippingLabelErrorModal = async (order: any) => {
@@ -592,7 +577,7 @@ const isTrackingRequiredForAnyShipmentPackage = (order: any) => {
 };
 
 const hasAnyShipmentTrackingInfoMissing = () => {
-  return completedOrders.value.list.some((order: any) => isTrackingRequiredForAnyShipmentPackage(order) && !order.trackingCode);
+  return filteredOrders.value.some((order: any) => isTrackingRequiredForAnyShipmentPackage(order) && !order.trackingCode);
 };
 
 const orderActionsPopover = async (order: any, ev: Event) => {
@@ -717,28 +702,13 @@ const generateCarrierManifest = async () => {
   isGeneratingManifest.value = false;
 };
 
-onIonViewWillEnter(async () => {
+onIonViewWillEnter(() => {
   isScrollingEnabled.value = false;
-  isLoadingOrders.value = true;
-  try {
-    await fetchShipmentFacets();
-    selectedShipmentMethods.value = selectedShipmentMethods.value?.filter((shipmentMethod: any) => shipmentMethods.value.includes(shipmentMethod));
-    const selectedCarrier = carrierPartyIds.value?.find((carrierPartyId: any) => carrierPartyId === selectedCarrierPartyId.value);
-    selectedCarrierPartyId.value = selectedCarrier ? selectedCarrier : "";
-    await initialiseOrderQuery();
-  } finally {
-    isLoadingOrders.value = false;
-  }
+  viewIndex.value = 0;
   emitter.on("updateOrderQuery", updateOrderQuery);
-  completedOrdersList.value = JSON.parse(JSON.stringify(completedOrders.value.list)).slice(0, (completedOrders.value.query.viewIndex + 1) * (import.meta.env.VITE_VIEW_SIZE as any));
 });
 
 onBeforeRouteLeave(() => {
-  useOrderStore().clearCompletedOrders();
   emitter.off("updateOrderQuery", updateOrderQuery);
-});
-
-watch(() => completedOrders.value.list, () => {
-  completedOrdersList.value = JSON.parse(JSON.stringify(completedOrders.value.list)).slice(0, (completedOrders.value.query.viewIndex + 1) * (import.meta.env.VITE_VIEW_SIZE as any));
 });
 </script>

@@ -1,10 +1,10 @@
 import { useLiveEntity } from "@common";
 import type { DbRow } from "@common/db";
 import { type Ref, computed, markRaw, watch } from "vue";
+import { useProductCacheBridge } from "@/composables/useProductCacheBridge";
 import { focusLiveOrders, liveOrdersStatus } from "@/db/appDbSync";
 import { deviceSettings } from "@/db/deviceSettings";
 import { ORDER_STAGE, fulfillmentDb, orderKeyOf } from "@/db/fulfillmentDb";
-import { useProductStore } from "@/store/product";
 import { liveOrdersLoad } from "@/utils/liveOrdersLoad";
 import { type FilterSelections, OPEN_ORDER_FILTER_DIMENSIONS, filterOpenOrders, openOrderFacets } from "@/utils/openOrderFilters";
 
@@ -51,22 +51,13 @@ export function useLiveOpenOrders(options: LiveOpenOrdersOptions) {
 
   // The facility on screen gets its items and products first.
   watch(options.facilityId, (facilityId) => {
-    if(facilityId) {void focusLiveOrders(facilityId);}
+    if(facilityId) {void focusLiveOrders(facilityId, options.productStoreId.value);}
   }, { immediate: true });
 
   const productsById = computed(() => new Map(productRows.value.map((row) => [String(row.productId), row as any])));
   const productVersions = computed(() => new Map(productRows.value.map((row) => [String(row.productId), Number(row.syncedAt) || 0])));
 
-  // The card helpers (images, identifiers, kit checks) read the Pinia product cache. Merged rather than
-  // replaced, so what other pages loaded onto a product (such as its kit components) stays.
-  const pushedVersions = new Map<string, number>();
-  watch(productRows, (rows) => {
-    const changed = rows.filter((row) => pushedVersions.get(String(row.productId)) !== row.syncedAt);
-    if(!changed.length) {return;}
-    const productStore = useProductStore();
-    productStore.addProductToCachedMultiple({ products: changed.map((row) => ({ ...productStore.getProduct(String(row.productId)), ...row })) });
-    changed.forEach((row) => pushedVersions.set(String(row.productId), Number(row.syncedAt)));
-  });
+  useProductCacheBridge(productRows);
 
   const itemsByOrderKey = computed(() => {
     const grouped = new Map<string, DbRow[]>();
