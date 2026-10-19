@@ -320,18 +320,19 @@ export const useCarrierStore = defineStore("carrier", {
           facility.isChecked = false
           facility.fromDate = ""
         } else {
+          const fromDate = DateTime.now().toMillis()
           resp = await api({
             url: `/oms/facilities/${payload.facilityId}/parties`,
             method: "POST",
             data: {
               ...payload,
-              fromDate: DateTime.now().toMillis()
+              fromDate
             }
           });
           if (commonUtil.hasError(resp)) {
             throw resp.data;
           }
-          facility = { ...facility, ...payload, isChecked: true }
+          facility = { ...facility, ...payload, fromDate, isChecked: true }
         }
 
         if (!commonUtil.hasError(resp)) {
@@ -348,7 +349,7 @@ export const useCarrierStore = defineStore("carrier", {
     async updateProductStoreShipmentMethod(productStoreId: string, shipmentMethod: any) {
       try {
         const resp = await api({
-          url: `/admin/productStores/${productStoreId}/shipmentMethods`,
+          url: `/admin/productStores/${productStoreId}/shippingMethods`,
           method: "PUT",
           data: {
             shipmentGatewayConfigId: shipmentMethod.shipmentGatewayConfigId,
@@ -376,7 +377,7 @@ export const useCarrierStore = defineStore("carrier", {
         let resp;
         if (isChecked) {
           resp = await api({
-            url: `/admin/productStores/${productStoreId}/shipmentMethods`,
+            url: `/admin/productStores/${productStoreId}/shippingMethods`,
             method: "POST",
             data: {
               productStoreId,
@@ -388,7 +389,7 @@ export const useCarrierStore = defineStore("carrier", {
           })
         } else {
           resp = await api({
-            url: `/admin/productStores/${productStoreId}/shipmentMethods`,
+            url: `/admin/productStores/${productStoreId}/shippingMethods`,
             method: "PUT",
             data: {
               productStoreShipMethId: shipmentMethod.productStoreShipMethId,
@@ -987,7 +988,7 @@ export const useCarrierStore = defineStore("carrier", {
         }
 
         const resp = await api({
-          url: `/oms/shippingGateways/config`,
+          url: `/oms/shippingGateways/configs`,
           method: "GET",
           params: payload
         });
