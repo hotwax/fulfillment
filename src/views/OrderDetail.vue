@@ -400,10 +400,12 @@
 </template>
 
 <script setup lang="ts">
-import { IonBackButton, IonBadge, IonButton, IonCard, IonCardHeader, IonCardSubtitle, IonCardTitle, IonCheckbox, IonChip, IonContent, IonHeader, IonIcon, IonItem, IonLabel, IonList, IonNote, IonPage, IonRow, IonSelect, IonSelectOption, IonSkeletonText, IonSpinner, IonTitle, IonToolbar, IonThumbnail, alertController, popoverController, modalController, onIonViewDidEnter } from "@ionic/vue";
-import { computed, defineProps, onMounted, ref, shallowRef } from "vue";
+import { IonBackButton, IonBadge, IonButton, IonCard, IonCardHeader, IonCardSubtitle, IonCardTitle, IonCheckbox, IonChip, IonContent, IonHeader, IonIcon, IonItem, IonLabel, IonList, IonNote, IonPage, IonRow, IonSelect, IonSelectOption, IonSkeletonText, IonSpinner, IonTitle, IonToolbar, IonThumbnail, alertController, popoverController, modalController, onIonViewDidEnter, onIonViewWillEnter } from "@ionic/vue";
+import { computed, defineProps, onMounted, ref, shallowRef, watch } from "vue";
 import { addOutline, archiveOutline, bagCheckOutline, cashOutline, caretDownOutline, checkmarkCircleOutline, chevronUpOutline, closeCircleOutline, cubeOutline, documentTextOutline, ellipsisVerticalOutline, fileTrayOutline, gift, giftOutline, informationCircleOutline, listOutline, locateOutline, personAddOutline, pricetagOutline, ribbonOutline, trashBinOutline } from "ionicons/icons";
-import { cookieHelper, commonUtil, DxpShopifyImg, emitter, logger, moduleFederationUtil, translate } from "@common";
+import { cookieHelper, commonUtil, DxpShopifyImg, emitter, logger, moduleFederationUtil, translate, useLiveEntity } from "@common";
+import { fulfillmentDb } from "@/db/fulfillmentDb";
+import { toShipmentView } from "@/utils/shipmentView";
 import { useOnePackageReroute } from "@/composables/useOnePackageReroute";
 import { useProductStore } from "@/store/productStore";
 
@@ -1454,6 +1456,25 @@ const printPackingSlip = async (order: any) => {
 const printPicklist = async(order: any) => {
   await orderStore.printPicklist(order.picklistId)
 }
+
+// A shipment the lists already hold is read from the app database, so its detail page paints at once while the fetch
+// below fills in the rest. Until then the page never shows the order that was open before.
+const shipmentRow = useLiveEntity<any>(fulfillmentDb.tables.shipments, () => props.shipmentId ? { equals: { shipmentId: props.shipmentId } } : { filter: () => false });
+const isCurrentOrder = () => {
+  const current = useOrderStore().getCurrent;
+
+  return !!current && current.orderId === props.orderId && (props.category === "open" || current.shipmentId === props.shipmentId);
+};
+const seedCurrentOrder = () => {
+  if(isCurrentOrder()) {return;}
+  const shipment = shipmentRow.first.value?.shipment;
+  useOrderStore().setCurrent(shipment ? toShipmentView(shipment, { requiresLabel: useProductStore().getProductStoreShipmentMethCount > 0 }) : {});
+};
+onIonViewWillEnter(seedCurrentOrder);
+// The row can arrive after the page opens.
+watch(() => shipmentRow.first.value, (row) => {
+  if(row?.shipment && !Object.keys(order.value ?? {}).length) {seedCurrentOrder();}
+});
 
 onIonViewDidEnter(async () => {
   await useUtilStore().fetchRejectReasonOptions();
