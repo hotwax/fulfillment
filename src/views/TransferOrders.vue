@@ -37,6 +37,15 @@
           </ion-infinite-scroll>
         </div>
       </div>
+      <ion-list v-else-if="isLoading" data-testid="transfer-orders-loading">
+        <ion-item v-for="row in 3" :key="row">
+          <ion-label>
+            <ion-skeleton-text animated class="skeleton-short" />
+            <ion-skeleton-text animated class="skeleton-long" />
+          </ion-label>
+          <ion-skeleton-text slot="end" animated class="skeleton-badge" />
+        </ion-item>
+      </ion-list>
       <div v-else class="empty-state">
         <p v-html="getErrorMessage()"></p>
       </div>
@@ -51,10 +60,10 @@
 </template>
 
 <script setup lang="ts">
-import { IonBadge, IonIcon, IonContent, IonFab, IonFabButton, IonHeader, IonInfiniteScroll, IonInfiniteScrollContent, IonItem, IonLabel, IonList, IonMenuButton, IonPage, IonSearchbar, IonSegment, IonSegmentButton, IonTitle, IonToolbar, modalController, onIonViewDidLeave, onIonViewWillEnter } from "@ionic/vue";
+import { translate } from "@common";
+import { IonBadge, IonContent, IonFab, IonFabButton, IonHeader, IonIcon, IonInfiniteScroll, IonInfiniteScrollContent, IonItem, IonLabel, IonList, IonMenuButton, IonPage, IonSearchbar, IonSegment, IonSegmentButton, IonSkeletonText, IonTitle, IonToolbar, modalController, onIonViewDidLeave, onIonViewWillEnter } from "@ionic/vue";
 import { computed, ref } from "vue";
 import { addOutline } from "ionicons/icons";
-import { emitter, translate } from "@common";
 
 import { useProductStore as useAppProductStore } from "@/store/productStore";
 import { DateTime } from "luxon";
@@ -66,6 +75,8 @@ const searchedQuery = ref("");
 const isScrollingEnabled = ref(false);
 const hasCompletedTransferOrders = ref(true);
 const selectedSegment = ref("open");
+// True while the list is asked for and there is nothing to show yet: the empty message must not flash before the answer.
+const isLoading = ref(true);
 
 const contentRef = ref();
 const infiniteScrollRef = ref();
@@ -153,7 +164,12 @@ const initialiseTransferOrderQuery = async () => {
     transferOrdersQuery.orderStatusId = "ORDER_APPROVED";
     transferOrdersQuery.shipmentStatusId = "";
   }
-  await useTransferOrderStore().updateTransferOrderQuery({ ...transferOrdersQuery });
+  isLoading.value = true;
+  try {
+    await useTransferOrderStore().updateTransferOrderQuery({ ...transferOrdersQuery });
+  } finally {
+    isLoading.value = false;
+  }
 };
 
 const viewTransferOrderDetail = async (order: any) => {
@@ -165,19 +181,18 @@ const getTime = (time: any) => {
   return DateTime.fromMillis(time).toFormat("dd MMMM yyyy t a");
 };
 
+// Coming back from an order shows the list as it was and refreshes it in place: there is no loader to wait behind.
 onIonViewWillEnter(async () => {
-  emitter.emit("presentLoader");
   isScrollingEnabled.value = false;
   await initialiseTransferOrderQuery();
-  emitter.emit("dismissLoader");
 });
 
 onIonViewDidLeave(() => {
   const routeTo = router.currentRoute;
   if (routeTo.value.name !== "TransferOrderDetail") {
     useTransferOrderStore().clearTransferOrderFilters();
+    useTransferOrderStore().clearTransferOrdersList();
   }
-  useTransferOrderStore().clearTransferOrdersList();
 });
 </script>
 
@@ -186,5 +201,18 @@ onIonViewDidLeave(() => {
   ion-header > div {
     display: flex;
   }
+}
+
+.skeleton-short {
+  width: 20%;
+}
+
+.skeleton-long {
+  width: 60%;
+}
+
+.skeleton-badge {
+  width: 70px;
+  height: 20px;
 }
 </style>

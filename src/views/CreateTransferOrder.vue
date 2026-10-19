@@ -181,10 +181,11 @@
           <ion-button data-testid="discard-order-btn" size="small" color="danger" fill="outline" @click="router.replace('/transfer-orders')">
             {{ translate("Discard order") }}
           </ion-button>
-          <ion-button data-testid="ship-later-btn-create-transfer-order-page" size="small" fill="outline" :disabled="!currentOrder.items?.length || hasInvalidPickedQuantity() || pendingProductIds.size" @click="shiplater">
+          <ion-button data-testid="ship-later-btn-create-transfer-order-page" size="small" fill="outline" :disabled="!currentOrder.items?.length || hasInvalidPickedQuantity() || pendingProductIds.size || isPackingOrder" @click="shiplater">
             {{ translate("Ship later") }}
           </ion-button>
-          <ion-button data-testid="pack-and-ship-order-btn" size="small" color="primary" fill="solid" :disabled="!currentOrder.items?.length || hasInvalidPickedQuantity() || pendingProductIds.size" @click="packAndShipOrder">
+          <ion-button data-testid="pack-and-ship-order-btn" size="small" color="primary" fill="solid" :disabled="!currentOrder.items?.length || hasInvalidPickedQuantity() || pendingProductIds.size || isPackingOrder" @click="packAndShipOrder">
+            <ion-spinner v-if="isPackingOrder" slot="start" name="crescent" />
             {{ translate("Pack and ship order") }}
           </ion-button>
         </ion-buttons>
@@ -206,6 +207,7 @@ import AddProductModal from "@/components/AddProductModal.vue";
 import SelectFacilityModal from "@/components/SelectFacilityModal.vue";
 import { useProductQueue } from "@/composables/useProductQueue";
 import { useProductStore as useProduct } from "@/store/product";
+import { useCarrierStore } from "@/store/carrier";
 import { useTransferOrderStore } from "@/store/transferorder";
 import { useOrderStore } from "@/store/order";
 
@@ -228,6 +230,7 @@ let timeoutId: any = null;
 const productSearchCount = ref(0);
 const facilities = ref([]) as any;
 const preventLeave = ref(false);
+const isPackingOrder = ref(false);
 const barcodeIdentificationDesc = ref({}) as any;
 
 const barcodeIdentifier = computed(() => useProductStore().getBarcodeIdentifierPref);
@@ -744,6 +747,10 @@ async function shiplater() {
 }
 
 async function packAndShipOrder() {
+  // The loader is only a slim bar, so a second click would approve and ship the order twice.
+  if(isPackingOrder.value) {return;}
+  isPackingOrder.value = true;
+
   let shipmentId;
   try {
     if (currentOrder.value.statusId === "ORDER_CREATED") {
@@ -774,7 +781,9 @@ async function packAndShipOrder() {
     const resp = await useTransferOrderStore().createOutboundTransferShipmentAPI(params);
     if (!commonUtil.hasError(resp)) {
       shipmentId = resp.data.shipmentId;
-      router.replace({ path: `/ship-transfer-order/${shipmentId}` });
+      // Rate shopping takes seconds. It starts now, and the Ship page picks up the request that is already running.
+      useCarrierStore().prefetchShippingRates(shipmentId);
+      await router.replace({ path: `/ship-transfer-order/${shipmentId}` });
     } else {
       throw resp.data;
     }
@@ -782,6 +791,8 @@ async function packAndShipOrder() {
     preventLeave.value = false;
     logger.error(error);
     commonUtil.showToast(translate("Failed to create shipment"));
+  } finally {
+    isPackingOrder.value = false;
   }
 }
 </script>

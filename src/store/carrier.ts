@@ -3,6 +3,20 @@ import { commonUtil, logger, translate, api } from "@common";
 import { DateTime } from "luxon";
 
 import { useProductStore as useAppProductStore } from "@/store/productStore";
+import { isFreshCacheEntry, readShippingRatesCache, removeShippingRatesCache, writeShippingRatesCache } from "@/utils/shippingRates";
+
+// Rate shopping takes several seconds, so the rates of a shipment are kept in memory and in sessionStorage for a few minutes,
+// and a request that is already running (the Ship page opening while createShipment prefetched) is shared.
+const shippingRatesCache = new Map<string, { at: number, rates: any[] }>()
+const shippingRatesRequests = new Map<string, Promise<any>>()
+
+const getSessionStorage = () => {
+  try {
+    return window.sessionStorage
+  } catch {
+    return null
+  }
+}
 
 interface CarrierState {
   carrier: {
@@ -560,23 +574,64 @@ export const useCarrierStore = defineStore("carrier", {
       }
       return logoUrls
     },
+    // `forceRefresh` skips the cache. Resolves with the response of poorti/shippingRate, or with only `shippingRates` from the cache.
     async fetchShippingRates(payload: any) {
-      try {
-        const resp = await api({
-          url: "poorti/shippingRate/",
-          method: "GET",
-          params: payload
-        })
+      const { forceRefresh, ...params } = payload
+      const shipmentId = params.shipmentId
 
-        if (!commonUtil.hasError(resp)) {
-          return Promise.resolve(resp.data)
-        } else {
-          throw resp.data
+      if(shipmentId && !forceRefresh) {
+        const memoryEntry = shippingRatesCache.get(shipmentId)
+        const entry = isFreshCacheEntry(memoryEntry) ? memoryEntry : readShippingRatesCache(getSessionStorage(), shipmentId)
+        if(entry) {
+          shippingRatesCache.set(shipmentId, entry)
+
+          return Promise.resolve({ shippingRates: entry.rates })
         }
-      } catch (err) {
-        logger.error("Failed to fetch shipping rates", err)
-        return Promise.reject(err)
+
+        const runningRequest = shippingRatesRequests.get(shipmentId)
+        if(runningRequest) {return runningRequest}
       }
+
+      const fetchRates = async () => {
+        try {
+          const resp = await api({
+            url: "poorti/shippingRate/",
+            method: "GET",
+            params
+          })
+
+          if(!commonUtil.hasError(resp)) {
+            if(shipmentId && resp.data?.shippingRates?.length) {
+              const entry = { at: Date.now(), rates: resp.data.shippingRates }
+              shippingRatesCache.set(shipmentId, entry)
+              writeShippingRatesCache(getSessionStorage(), shipmentId, entry)
+            }
+
+            return Promise.resolve(resp.data)
+          } else {
+            throw resp.data
+          }
+        } catch (err) {
+          logger.error("Failed to fetch shipping rates", err)
+
+          return Promise.reject(err)
+        }
+      }
+
+      const request: Promise<any> = fetchRates().finally(() => {
+        if(shipmentId && shippingRatesRequests.get(shipmentId) === request) {shippingRatesRequests.delete(shipmentId)}
+      })
+      if(shipmentId) {shippingRatesRequests.set(shipmentId, request)}
+
+      return request
+    },
+    // Starts the rates request before the Ship page is open. Nothing to handle: the page asks again and shares the running request.
+    prefetchShippingRates(shipmentId: string) {
+      return this.fetchShippingRates({ shipmentId }).catch(() => null)
+    },
+    clearShippingRatesCache(shipmentId: string) {
+      shippingRatesCache.delete(shipmentId)
+      removeShippingRatesCache(getSessionStorage(), shipmentId)
     },
     async fetchCarrierShipmentBoxTypes(params: any): Promise<any> {
       return api({
