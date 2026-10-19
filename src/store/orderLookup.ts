@@ -400,9 +400,9 @@ export const useOrderLookupStore = defineStore("orderLookup", {
           this.updateCurrent(order)
         }
       } catch (error) {
-        const serverError = commonUtil.getErrorMessage(error, translate("Please contact administrator."));
+        const serverError = commonUtil.getErrorMessage(error);
         logger.error("Failed to fetch order", serverError);
-        commonUtil.showToast(translate("Failed to fetch order. {error}", { error: serverError }));
+        commonUtil.showToast(`${translate("Failed to fetch order.")} ${serverError}`);
       }
 
       return order
@@ -464,9 +464,9 @@ export const useOrderLookupStore = defineStore("orderLookup", {
         })
 
       } catch (err) {
-        const serverError = commonUtil.getErrorMessage(err, translate("Please contact administrator."));
+        const serverError = commonUtil.getErrorMessage(err);
         logger.error("Failed to print shipping label", serverError);
-        commonUtil.showToast(translate('Failed to print shipping label. {error}', { error: serverError }));
+        commonUtil.showToast(`${translate('Failed to print shipping label.')} ${serverError}`);
       }
     }
   },

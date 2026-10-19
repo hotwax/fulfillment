@@ -76,9 +76,9 @@ const updateRejectionReason = async () => {
       throw resp.data;
     }
   } catch (err) {
-    const serverError = commonUtil.getErrorMessage(err, translate("Please contact administrator."));
+    const serverError = commonUtil.getErrorMessage(err);
     logger.error("Failed to update rejection reason", serverError);
-    commonUtil.showToast(translate("Failed to update rejection reason. {error}", { error: serverError }));
+    commonUtil.showToast(`${translate("Failed to update rejection reason.")} ${serverError}`);
   }
 };
 </script>

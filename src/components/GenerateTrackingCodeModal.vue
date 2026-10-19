@@ -275,9 +275,9 @@ const updateCarrierAndShippingMethod = async (partyId: string, methodTypeId: str
 
     isTrackingRequired.value = trackingRequired === "N" ? false : true;
   } catch (error: any) {
-    const serverError = commonUtil.getErrorMessage(error, translate("Please contact administrator."));
+    const serverError = commonUtil.getErrorMessage(error);
     logger.error("Failed to update carrier and method", serverError);
-    commonUtil.showToast(translate("Failed to update shipment method detail. {error}", { error: serverError }));
+    commonUtil.showToast(`${translate("Failed to update shipment method detail.")} ${serverError}`);
     return false;
   }
 

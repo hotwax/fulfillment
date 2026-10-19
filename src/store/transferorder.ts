@@ -152,9 +152,9 @@ export const useTransferOrderStore = defineStore("transferorder", {
           );
         }
       } catch (err) {
-        const serverError = commonUtil.getErrorMessage(err, translate("Please contact administrator."));
+        const serverError = commonUtil.getErrorMessage(err);
         logger.error("Failed to print picklist", serverError);
-        commonUtil.showToast(translate("Failed to print picklist. {error}", { error: serverError }));
+        commonUtil.showToast(`${translate("Failed to print picklist.")} ${serverError}`);
       }
     },
     async printShippingLabel(shipmentIds: Array<string>, shippingLabelPdfUrls?: Array<string>, shipmentPackages?: Array<any>, imageType?: string) {
@@ -209,9 +209,9 @@ export const useTransferOrderStore = defineStore("transferorder", {
           }
         });
       } catch (err) {
-        const serverError = commonUtil.getErrorMessage(err, translate("Please contact administrator."));
+        const serverError = commonUtil.getErrorMessage(err);
         logger.error("Failed to print shipping label", serverError);
-        commonUtil.showToast(translate("Failed to print shipping label. {error}", { error: serverError }));
+        commonUtil.showToast(`${translate("Failed to print shipping label.")} ${serverError}`);
       }
     },
     async createOutboundTransferShipmentAPI(query: any) {
@@ -437,9 +437,9 @@ export const useTransferOrderStore = defineStore("transferorder", {
           throw resp.data
         }
       } catch (error) {
-        const serverError = commonUtil.getErrorMessage(error, translate("Please contact administrator."));
+        const serverError = commonUtil.getErrorMessage(error);
         logger.error("Failed to create shipment", serverError);
-        commonUtil.showToast(translate("Failed to create shipment. {error}", { error: serverError }));
+        commonUtil.showToast(`${translate("Failed to create shipment.")} ${serverError}`);
       }
       return shipmentId
     },

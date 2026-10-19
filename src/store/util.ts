@@ -903,14 +903,14 @@ export const useUtilStore = defineStore("util", {
         if (!commonUtil.hasError(response)) {
           commonUtil.showToast(translate("Configuration updated"));
         } else {
-          const serverError = commonUtil.getErrorMessage(response, translate("Please contact administrator."));
+          const serverError = commonUtil.getErrorMessage(response);
           logger.error("Failed to update configuration", serverError);
-          commonUtil.showToast(translate("Failed to update configuration. {error}", { error: serverError }));
+          commonUtil.showToast(`${translate("Failed to update configuration.")} ${serverError}`);
         }
       } catch (error) {
-        const serverError = commonUtil.getErrorMessage(error, translate("Please contact administrator."));
+        const serverError = commonUtil.getErrorMessage(error);
         logger.error("Failed to update configuration", serverError);
-        commonUtil.showToast(translate("Failed to update configuration. {error}", { error: serverError }));
+        commonUtil.showToast(`${translate("Failed to update configuration.")} ${serverError}`);
       }
     }
   },

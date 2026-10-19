@@ -342,9 +342,9 @@ export const useCarrierStore = defineStore("carrier", {
           throw resp.data;
         }
       } catch (err) {
-        const serverError = commonUtil.getErrorMessage(err, translate("Please contact administrator."));
+        const serverError = commonUtil.getErrorMessage(err);
         logger.error("Failed to update facility carrier association", serverError);
-        commonUtil.showToast(translate("Failed to update facility carrier association. {error}", { error: serverError }));
+        commonUtil.showToast(`${translate("Failed to update facility carrier association.")} ${serverError}`);
       }
     },
     async updateProductStoreShipmentMethod(productStoreId: string, shipmentMethod: any) {
@@ -366,9 +366,9 @@ export const useCarrierStore = defineStore("carrier", {
           throw resp.data
         }
       } catch (err) {
-        const serverError = commonUtil.getErrorMessage(err, translate("Please contact administrator."));
+        const serverError = commonUtil.getErrorMessage(err);
         logger.error("Failed to update product store shipment method", serverError);
-        commonUtil.showToast(translate("Failed to update product store shipment method. {error}", { error: serverError }));
+        commonUtil.showToast(`${translate("Failed to update product store shipment method.")} ${serverError}`);
       }
     },
     async updateProductStoreShipmentMethodAssociation(payload: any) {
@@ -407,9 +407,9 @@ export const useCarrierStore = defineStore("carrier", {
         }
       } catch (err) {
         const errorMessage = isChecked ? "Failed to associate shipment method with product store" : "Failed to disassociate shipment method from product store";
-        const serverError = commonUtil.getErrorMessage(err, translate("Please contact administrator."));
+        const serverError = commonUtil.getErrorMessage(err);
         logger.error(errorMessage, serverError);
-        commonUtil.showToast(translate(`${errorMessage}. {error}`, { error: serverError }));
+        commonUtil.showToast(`${translate(`${errorMessage}.`)} ${serverError}`);
       }
       this.checkAssociatedProductStoreShipmentMethods()
     },
@@ -436,9 +436,9 @@ export const useCarrierStore = defineStore("carrier", {
         }
       } catch (err) {
         const errorMessage = isChecked ? "Failed to associate shipment method with carrier" : "Failed to disassociate shipment method from carrier";
-        const serverError = commonUtil.getErrorMessage(err, translate("Please contact administrator."));
+        const serverError = commonUtil.getErrorMessage(err);
         logger.error(errorMessage, serverError);
-        commonUtil.showToast(translate(`${errorMessage}. {error}`, { error: serverError }));
+        commonUtil.showToast(`${translate(`${errorMessage}.`)} ${serverError}`);
       }
     },
     async createShipmentMethod(payload: any) {
@@ -456,9 +456,9 @@ export const useCarrierStore = defineStore("carrier", {
           throw resp.data
         }
       } catch (err) {
-        const serverError = commonUtil.getErrorMessage(err, translate("Please contact administrator."));
+        const serverError = commonUtil.getErrorMessage(err);
         logger.error("Failed to create shipment method", serverError);
-        commonUtil.showToast(translate("Failed to create shipment method. {error}", { error: serverError }));
+        commonUtil.showToast(`${translate("Failed to create shipment method.")} ${serverError}`);
         return Promise.reject(err);
       }
     },
@@ -482,9 +482,9 @@ export const useCarrierStore = defineStore("carrier", {
           throw resp.data
         }
       } catch (err) {
-        const serverError = commonUtil.getErrorMessage(err, translate("Please contact administrator."));
+        const serverError = commonUtil.getErrorMessage(err);
         logger.error("Failed to rename shipment method", serverError);
-        commonUtil.showToast(translate("Failed to rename shipment method. {error}", { error: serverError }));
+        commonUtil.showToast(`${translate("Failed to rename shipment method.")} ${serverError}`);
       }
     },
     async removeCarrierShipmentMethod(shipmentMethod: any) {
@@ -508,9 +508,9 @@ export const useCarrierStore = defineStore("carrier", {
           throw resp.data
         }
       } catch (err) {
-        const serverError = commonUtil.getErrorMessage(err, translate("Please contact administrator."));
+        const serverError = commonUtil.getErrorMessage(err);
         logger.error("Failed to remove shipment method", serverError);
-        commonUtil.showToast(translate("Failed to remove shipment method. {error}", { error: serverError }));
+        commonUtil.showToast(`${translate("Failed to remove shipment method.")} ${serverError}`);
       }
     },
     async saveShipmentMethodsOrder(shipmentMethods: any) {
@@ -534,9 +534,9 @@ export const useCarrierStore = defineStore("carrier", {
 
       if (failedResponse) {
         const errorObj = failedResponse.status === "rejected" ? failedResponse.reason : failedResponse.value;
-        const serverError = commonUtil.getErrorMessage(errorObj, translate("Please contact administrator."));
+        const serverError = commonUtil.getErrorMessage(errorObj);
         logger.error("Failed to update sequence for some shipment methods", serverError);
-        commonUtil.showToast(translate("Failed to update sequence for some shipment methods. {error}", { error: serverError }));
+        commonUtil.showToast(`${translate("Failed to update sequence for some shipment methods.")} ${serverError}`);
       } else {
         commonUtil.showToast(translate("Shipment methods sequence updated successfully"))
       }
@@ -846,10 +846,10 @@ export const useCarrierStore = defineStore("carrier", {
           throw resp.data
         }
       } catch (error) {
-        const serverError = commonUtil.getErrorMessage(error, translate("Please contact administrator."));
+        const serverError = commonUtil.getErrorMessage(error);
         const baseMsg = messages?.errorMessage ? messages.errorMessage.replace(/\.$/, "") : "Failed to update shipment method";
         logger.error(baseMsg, serverError);
-        commonUtil.showToast(translate(`${baseMsg}. {error}`, { error: serverError }));
+        commonUtil.showToast(`${translate(`${baseMsg}.`)} ${serverError}`);
       }
     },
     async fetchFacilityCarriers() {

@@ -375,9 +375,9 @@ const updateFacilityMaximumOrderLimit = async (maximumOrderLimit: number | strin
       throw resp.data;
     }
   } catch (err) {
-    const serverError = commonUtil.getErrorMessage(err, translate("Please contact administrator."));
+    const serverError = commonUtil.getErrorMessage(err);
     logger.error("Failed to update facility", serverError);
-    commonUtil.showToast(translate("Failed to update facility. {error}", { error: serverError }));
+    commonUtil.showToast(`${translate("Failed to update facility.")} ${serverError}`);
   }
 };
 
@@ -398,9 +398,9 @@ const updateFacilityToGroup = async () => {
       throw resp.data;
     }
   } catch (err) {
-    const serverError = commonUtil.getErrorMessage(err, translate("Please contact administrator."));
+    const serverError = commonUtil.getErrorMessage(err);
     logger.error("Failed to update eCom inventory status", serverError);
-    commonUtil.showToast(translate("Failed to update eCom inventory status. {error}", { error: serverError }));
+    commonUtil.showToast(`${translate("Failed to update eCom inventory status.")} ${serverError}`);
   }
 };
 
@@ -419,9 +419,9 @@ const addFacilityToGroup = async () => {
       throw resp.data;
     }
   } catch (err) {
-    const serverError = commonUtil.getErrorMessage(err, translate("Please contact administrator."));
+    const serverError = commonUtil.getErrorMessage(err);
     logger.error("Failed to update eCom inventory status", serverError);
-    commonUtil.showToast(translate("Failed to update eCom inventory status. {error}", { error: serverError }));
+    commonUtil.showToast(`${translate("Failed to update eCom inventory status.")} ${serverError}`);
   }
 };
 
@@ -486,9 +486,9 @@ const updateNotificationPref = async (enumId: string) => {
     notificationStore.setNotificationPrefs(notificationPrefs.value);
     isToggledOn = notificationPref.isEnabled;
   } catch (error) {
-    const serverError = commonUtil.getErrorMessage(error, translate("Please try again."));
+    const serverError = commonUtil.getErrorMessage(error);
     logger.error("Failed to update notification preferences", serverError);
-    commonUtil.showToast(translate("Notification preferences not updated. {error}", { error: serverError }));
+    commonUtil.showToast(`${translate("Notification preferences not updated.")} ${serverError}`);
   } finally {
     emitter.emit("dismissLoader");
   }

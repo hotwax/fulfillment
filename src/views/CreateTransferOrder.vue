@@ -307,9 +307,9 @@ onBeforeRouteLeave(async () => {
               throw resp.data;
             }
           } catch (err) {
-            const serverError = commonUtil.getErrorMessage(err, translate("Please contact administrator"));
+            const serverError = commonUtil.getErrorMessage(err);
             logger.error("Failed to discard order", serverError);
-            commonUtil.showToast(translate("Failed to discard order. {error}", {error: serverError}));
+            commonUtil.showToast(`${translate("Failed to discard order.")} ${serverError}`);
             canLeave = false;
           }
         }
@@ -458,11 +458,11 @@ async function updateOrderProperty(property: string, value: any) {
       throw resp.data;
     }
   } catch (err) {
-    const serverError = commonUtil.getErrorMessage(err, translate("Please contact administrator."));
+    const serverError = commonUtil.getErrorMessage(err);
     logger.error(`Failed to update order ${property}`, serverError);
     property === "orderName"
-      ? commonUtil.showToast(translate("Failed to update order name. {error}", { error: serverError }))
-      : commonUtil.showToast(translate("Failed to update order flow. {error}", { error: serverError }));
+      ? commonUtil.showToast(`${translate("Failed to update order name.")} ${serverError}`)
+      : commonUtil.showToast(`${translate("Failed to update order flow.")} ${serverError}`);
   }
 }
 
@@ -504,9 +504,9 @@ async function updateOrderFacility(facilityId: string) {
       throw resp.data;
     }
   } catch (error) {
-    const serverError = commonUtil.getErrorMessage(error, translate("Please contact administrator"));
+    const serverError = commonUtil.getErrorMessage(error);
     logger.error("Failed to update destination facility", serverError);
-    commonUtil.showToast(translate("Failed to update store. {error}", {error: serverError}));
+    commonUtil.showToast(`${translate("Failed to update store.")} ${serverError}`);
   }
 }
 
@@ -709,9 +709,9 @@ async function approveOrder(orderId: string) {
       throw resp.data;
     }
   } catch (err) {
-    const serverError = commonUtil.getErrorMessage(err, translate("Please contact administrator."));
+    const serverError = commonUtil.getErrorMessage(err);
     logger.error("Failed to approve the transfer order", serverError);
-    commonUtil.showToast(translate("Order approval failed. {error}", { error: serverError }));
+    commonUtil.showToast(`${translate("Order approval failed.")} ${serverError}`);
     return false;
   }
 }
@@ -785,9 +785,9 @@ async function packAndShipOrder() {
     }
   } catch (error) {
     preventLeave.value = false;
-    const serverError = commonUtil.getErrorMessage(error, translate("Please contact administrator."));
+    const serverError = commonUtil.getErrorMessage(error);
     logger.error("Failed to create shipment", serverError);
-    commonUtil.showToast(translate("Failed to create shipment. {error}", { error: serverError }));
+    commonUtil.showToast(`${translate("Failed to create shipment.")} ${serverError}`);
   }
 }
 </script>

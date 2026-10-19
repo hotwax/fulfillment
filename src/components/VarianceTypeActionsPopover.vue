@@ -49,9 +49,9 @@ const updateVarianceType = async (selectedType: any) => {
       throw resp.data;
     }
   } catch (err) {
-    const serverError = commonUtil.getErrorMessage(err, translate("Please contact administrator."));
+    const serverError = commonUtil.getErrorMessage(err);
     logger.error("Failed to update variance type", serverError);
-    commonUtil.showToast(translate("Failed to update variance type. {error}", { error: serverError }));
+    commonUtil.showToast(`${translate("Failed to update variance type.")} ${serverError}`);
   }
   popoverController.dismiss({ isUpdated: true });
 };

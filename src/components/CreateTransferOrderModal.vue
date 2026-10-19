@@ -180,9 +180,9 @@ async function createTransferOrder() {
       throw resp.data;
     }
   } catch(error: any) {
-    const serverError = commonUtil.getErrorMessage(error, translate("Please contact administrator."));
+    const serverError = commonUtil.getErrorMessage(error);
     logger.error("Failed to create order", serverError);
-    commonUtil.showToast(translate("Failed to create order. {error}", { error: serverError }));
+    commonUtil.showToast(`${translate("Failed to create order.")} ${serverError}`);
   }
   closeModal();
 }

@@ -359,9 +359,9 @@ const rejectItems = async () => {
           commonUtil.showToast(translate("All order items are rejected"));
           router.replace("/transfer-orders");
         } catch (err) {
-          const serverError = commonUtil.getErrorMessage(err, translate("Please contact administrator."));
+          const serverError = commonUtil.getErrorMessage(err);
           logger.error("Failed to reject order", serverError);
-          commonUtil.showToast(translate("Failed to reject order. {error}", { error: serverError }));
+          commonUtil.showToast(`${translate("Failed to reject order.")} ${serverError}`);
           await useTransferOrderStore().fetchTransferOrderDetail({ orderId: route.params.orderId });
         }
         emitter.emit("dismissLoader");

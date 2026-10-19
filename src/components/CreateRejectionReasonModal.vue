@@ -109,9 +109,9 @@ const createReason = async () => {
       throw resp.data;
     }
   } catch (err) {
-    const serverError = commonUtil.getErrorMessage(err, translate("Please contact administrator."));
+    const serverError = commonUtil.getErrorMessage(err);
     logger.error("Failed to create rejection reason", serverError);
-    commonUtil.showToast(translate("Failed to create rejection reason. {error}", { error: serverError }));
+    commonUtil.showToast(`${translate("Failed to create rejection reason.")} ${serverError}`);
   }
 };
 

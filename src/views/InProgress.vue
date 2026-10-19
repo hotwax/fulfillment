@@ -426,8 +426,8 @@ const rejectEntireOrder = async (order: any, updateParameter?: string) => {
     commonUtil.showToast(translate("Order rejected successfully"));
     return true;
   } catch (err) {
-    const serverError = commonUtil.getErrorMessage(err, translate("Please contact administrator."));
-    commonUtil.showToast(translate("Failed to reject order. {error}", {error: serverError}));
+    const serverError = commonUtil.getErrorMessage(err);
+    commonUtil.showToast(`${translate("Failed to reject order.")} ${serverError}`);
     logger.error("Failed to reject order", serverError);
   } finally {
     emitter.emit("dismissLoader");
@@ -538,8 +538,8 @@ const executePackOrder = async (order: any, updateParameter?: string, trackingCo
     return { isPacked: true };
   } catch (err: any) {
     if (toast) toast.dismiss();
-    const serverError = commonUtil.getErrorMessage(err, translate("Please contact administrator."));
-    commonUtil.showToast(translate("Failed to pack order. {error}", {error: serverError}));
+    const serverError = commonUtil.getErrorMessage(err);
+    commonUtil.showToast(`${translate("Failed to pack order.")} ${serverError}`);
     logger.error("Failed to pack order", serverError);
     return { isPacked: false, errors: err?.response?.data?.errors };
   } finally {
@@ -654,8 +654,8 @@ const packOrders = async () => {
           } catch (err) {
             if (toast) toast.dismiss();
             emitter.emit("dismissLoader");
-            const serverError = commonUtil.getErrorMessage(err, translate("Please contact administrator."));
-            commonUtil.showToast(translate("Failed to pack orders. {error}", {error: serverError}));
+            const serverError = commonUtil.getErrorMessage(err);
+            commonUtil.showToast(`${translate("Failed to pack orders.")} ${serverError}`);
             logger.error("Failed to pack orders", serverError);
           } finally {
             emitter.emit("dismissLoader");
@@ -989,8 +989,8 @@ const addShipmentBox = async (order: any) => {
       throw resp.data;
     }
   } catch (err) {
-    const serverError = commonUtil.getErrorMessage(err, translate("Please contact administrator."));
-    commonUtil.showToast(translate("Failed to add box. {error}", { error: serverError }));
+    const serverError = commonUtil.getErrorMessage(err);
+    commonUtil.showToast(`${translate("Failed to add box.")} ${serverError}`);
     logger.error("Failed to add box", serverError);
   }
   addingBoxForShipmentIds.value.splice(addingBoxForShipmentIds.value.indexOf(order.shipmentId), 1);
@@ -1088,8 +1088,8 @@ const recycleInProgressOrders = async () => {
             throw resp.data;
           }
         } catch (err) {
-          const serverError = commonUtil.getErrorMessage(err, translate("Please contact administrator."));
-          commonUtil.showToast(translate("Failed to reject in progress orders. {error}", {error: serverError}));
+          const serverError = commonUtil.getErrorMessage(err);
+          commonUtil.showToast(`${translate("Failed to reject in progress orders.")} ${serverError}`);
           logger.error("Failed to reject in progress orders", serverError);
         }
         emitter.emit("dismissLoader");
