@@ -58,7 +58,7 @@
                 <p>{{ generateRateName(shipmentDetails.actualCarrierCode || shipmentDetails.routeSegCarrierPartyId, shipmentDetails.carrierService || shipmentDetails.routeSegShipmentMethodTypeId) }}</p>
               </ion-label>
               <ion-note>{{ shipmentDetails.trackingIdNumber }}</ion-note>
-              <ion-button :disabled="!getCarrierTrackingUrl()" data-testid="tracking-code-link" fill="clear" size="default" color="medium" @click="redirectToTrackingUrl()">
+              <ion-button :disabled="!getLabelTrackingUrl()" data-testid="tracking-code-link" fill="clear" size="default" color="medium" @click="redirectToLabelTrackingUrl()">
                 <ion-icon slot="icon-only" :icon="openOutline" />
               </ion-button>
             </ion-item>
@@ -341,6 +341,24 @@ function getFacilityName(facilityId: string) {
 
 function getCarrierTrackingUrl() {
   return facilityCarriers.value.find((carrier: any) => carrier.partyId === selectedCarrier.value)?.trackingUrl;
+}
+
+// The generated label's carrier is on the route segment (after rate shopping the order's own carrierPartyId stays "_NA_").
+function getLabelTrackingUrl() {
+  const labelCarriers = [shipmentDetails.value?.actualCarrierCode, shipmentDetails.value?.routeSegCarrierPartyId, shipmentDetails.value?.carrierPartyId]
+    .filter(Boolean)
+    .map((partyId: string) => partyId.toUpperCase());
+  for (const partyId of labelCarriers) {
+    const trackingUrl = facilityCarriers.value.find((carrier: any) => carrier.partyId?.toUpperCase() === partyId)?.trackingUrl;
+    if (trackingUrl) return trackingUrl;
+  }
+  return "";
+}
+
+function redirectToLabelTrackingUrl() {
+  const trackingUrl = getLabelTrackingUrl();
+  if (!trackingUrl || !shipmentDetails.value?.trackingIdNumber) return;
+  window.open(trackingUrl.replace("${trackingNumber}", shipmentDetails.value.trackingIdNumber), "_blank");
 }
 
 function generateTrackingUrl() {
