@@ -331,8 +331,9 @@ const shipOrder = async (order: any) => {
       throw resp.data;
     }
   } catch (err) {
-    logger.error("Failed to ship order", err);
-    commonUtil.showToast(translate("Failed to ship order"));
+    const serverError= commonUtil.getErrorMessage(err);
+    logger.error("Failed to ship order", serverError);
+    commonUtil.showToast(`${translate("Failed to ship order.")} ${serverError}`);
   }
 };
 
@@ -382,8 +383,9 @@ const bulkShipOrders = async () => {
               throw resp.data;
             }
           } catch (err) {
-            logger.error("Failed to ship orders", err);
-            commonUtil.showToast(translate("Failed to ship orders"));
+            const serverError = commonUtil.getErrorMessage(err);
+            logger.error("Failed to ship orders", serverError);
+            commonUtil.showToast(`${translate("Failed to ship orders.")} ${serverError}`);
           }
         }
       }]
@@ -496,8 +498,9 @@ const unpackOrder = async (order: any) => {
               throw resp.data;
             }
           } catch (err) {
-            logger.error("Failed to unpack the order", err);
-            commonUtil.showToast(translate("Failed to unpack the order"));
+            const serverError = commonUtil.getErrorMessage(err);
+            logger.error("Failed to unpack the order", serverError);
+            commonUtil.showToast(`${translate("Failed to unpack the order.")} ${serverError}`);
           }
         }
       }]
@@ -711,8 +714,9 @@ const generateCarrierManifest = async () => {
     commonUtil.showToast(translate("Manifest has been generated successfully"));
     await fetchCarrierManifestInformation([selectedCarrierPartyId.value]);
   } catch (err) {
-    logger.error("Failed to generate manifest", err);
-    commonUtil.showToast(translate("Failed to generate manifest"));
+    const serverError = commonUtil.getErrorMessage(err);
+    logger.error("Failed to generate manifest", serverError);
+    commonUtil.showToast(`${translate("Failed to generate manifest.")} ${serverError}`);
   }
   isGeneratingManifest.value = false;
 };

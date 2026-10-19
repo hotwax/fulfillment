@@ -44,7 +44,7 @@
 import { IonButton, IonButtons, IonCheckbox, IonContent, IonFab, IonFabButton, IonHeader, IonIcon, IonItem, IonLabel, IonList, IonListHeader, IonTitle, IonToolbar, IonThumbnail, alertController, modalController } from "@ionic/vue";
 import { arrowBackOutline, saveOutline } from "ionicons/icons";
 import { computed } from "vue";
-import { commonUtil, translate, DxpShopifyImg } from "@common";
+import { commonUtil, DxpShopifyImg, logger, translate } from "@common";
 import router from "@/router";
 import { useUserStore } from "@/store/user";
 import { useTransferOrderStore } from "@/store/transferorder";
@@ -76,7 +76,9 @@ const closeOrderItems = async () => {
 
     return true;
   } catch (error) {
-    commonUtil.showToast(translate("Failed to update the status of transfer order items."));
+    const serverError = commonUtil.getErrorMessage(error);
+    logger.error("Failed to update the status of transfer order items", serverError);
+    commonUtil.showToast(`${translate("Failed to update the status of transfer order items.")} ${serverError}`);
     return false;
   }
 };

@@ -61,8 +61,9 @@ const createCarrier = async () => {
       router.replace({ path: `/shipment-methods-setup/${partyId}` });
     }
   } catch (err: any) {
-    logger.error("error", err);
-    commonUtil.showToast("Failed to create carrier.");
+    const serverError = commonUtil.getErrorMessage(err);
+    logger.error("Failed to create carrier", serverError);
+    commonUtil.showToast(`${translate("Failed to create carrier.")} ${serverError}`);
   }
 };
 

@@ -791,5 +791,16 @@
   "You are packing orders. Select additional documents that you would like to print.": "You are packing { count } orders. { space } Select additional documents that you would like to print.",
   "You are shipping orders. You cannot unpack and edit orders after they have been shipped. Are you sure you are ready to ship this orders?": "You are shipping { count } order. { space } You cannot unpack and edit orders after they have been shipped. Are you sure you are ready to ship this order? | You are shipping { count } orders. { space } You cannot unpack and edit orders after they have been shipped. Are you sure you are ready to ship these orders?",
   "You do not have permission to access this page": "You do not have permission to access this page",
-  "Your scanner isn’t focused yet.": "Your scanner isn’t focused yet."
+  "Your scanner isn’t focused yet.": "Your scanner isn’t focused yet.",
+  "Failed to associate shipment method with carrier.": "Failed to associate shipment method with carrier.",
+  "Failed to associate shipment method with product store.": "Failed to associate shipment method with product store.",
+  "Failed to create carrier.": "Failed to create carrier.",
+  "Failed to disassociate shipment method from carrier.": "Failed to disassociate shipment method from carrier.",
+  "Failed to disassociate shipment method from product store.": "Failed to disassociate shipment method from product store.",
+  "Failed to fetch order.": "Failed to fetch order.",
+  "Failed to update carrier code.": "Failed to update carrier code.",
+  "Failed to update configuration.": "Failed to update configuration.",
+  "Failed to update product store shipment method.": "Failed to update product store shipment method.",
+  "Failed to update shipment method.": "Failed to update shipment method.",
+  "Notification preferences not updated.": "Notification preferences not updated."
 }

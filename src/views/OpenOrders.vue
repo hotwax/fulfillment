@@ -359,8 +359,9 @@ const recycleOutstandingOrders = async () => {
             throw resp.data;
           }
         } catch (err) {
-          commonUtil.showToast(translate("Failed to reject outstanding orders"));
-          logger.error("Failed to reject outstanding orders", err);
+          const serverError= commonUtil.getErrorMessage(err);
+          commonUtil.showToast(`${translate("Failed to reject outstanding orders.")} ${serverError}`);
+          logger.error("Failed to reject outstanding orders", serverError);
         }
         emitter.emit("dismissLoader");
       }

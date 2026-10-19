@@ -84,8 +84,9 @@ const downloadCarrierManifest = async (manifest: any) => {
           commonUtil.showToast(translate('Unable to open as browser is blocking pop-ups.', {documentName: 'carrier manifest'}), { icon: cogOutline });
         }
       } catch(err) {
-        logger.error("Failed to print manifest", err)
-        commonUtil.showToast(translate("Failed to print manifest"));
+        const serverError = commonUtil.getErrorMessage(err);
+        logger.error("Failed to print manifest", serverError);
+        commonUtil.showToast(`${translate("Failed to print manifest.")} ${serverError}`);
       }
       loadingContentId.value = null;
 };

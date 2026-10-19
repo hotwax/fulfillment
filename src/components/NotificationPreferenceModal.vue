@@ -91,7 +91,14 @@ const handleTopicSubscription = async () => {
 
   const responses = await Promise.allSettled([...subscribeRequests, ...unsubscribeRequests]);
   const hasFailedResponse = responses.some((response: any) => response.status === "rejected");
-  commonUtil.showToast(hasFailedResponse ? translate("Notification preferences not updated. Please try again.") : translate("Notification preferences updated."));
+  if (hasFailedResponse) {
+    const failedReason = (responses.find((r: any) => r.status === "rejected") as any)?.reason;
+    const serverError = commonUtil.getErrorMessage(failedReason);
+    logger.error("Failed to update notification preferences", serverError);
+    commonUtil.showToast(`${translate("Notification preferences not updated.")} ${serverError}`);
+  } else {
+    commonUtil.showToast(translate("Notification preferences updated."));
+  }
 };
 
 const updateNotificationPref = async () => {
@@ -99,7 +106,8 @@ const updateNotificationPref = async () => {
   try {
     await handleTopicSubscription();
   } catch (error) {
-    logger.error(error);
+    const serverError = commonUtil.getErrorMessage(error);
+    logger.error("Failed to update notification preferences", serverError);
   } finally {
     emitter.emit("dismissLoader");
   }
