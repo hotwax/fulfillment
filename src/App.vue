@@ -48,7 +48,7 @@ import { computed, onMounted, onUnmounted, ref, watch } from "vue";
 import { translate, emitter, logger, useNotificationStore, useAuth, i18n } from "@common";
 import { Settings } from "luxon";
 import { init } from "@module-federation/runtime";
-import { focusLiveOrders, startLiveOrdersSync, syncMasterFacilities } from "@/db/liveOrdersSync";
+import { focusLiveOrders, startLiveOrdersSync, syncMasterFacilities } from "@/db/appDbSync";
 import { useUserStore } from "@/store/user";
 import { useProductStore } from "@/store/productStore";
 import router from './router';

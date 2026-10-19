@@ -144,7 +144,7 @@ import { computed, nextTick, ref } from "vue";
 import { onBeforeRouteLeave } from "vue-router";
 import { caretDownOutline, chevronUpOutline, cubeOutline, listOutline, notificationsOutline, optionsOutline, pricetagOutline, printOutline } from "ionicons/icons";
 import { useLiveOpenOrders } from "@/composables/useLiveOpenOrders";
-import { liveOrdersStatus, refreshLiveOrders } from "@/db/liveOrdersSync";
+import { liveOrdersStatus, refreshLiveOrders } from "@/db/appDbSync";
 import type { FilterSelections } from "@/utils/openOrderFilters";
 import AssignPickerModal from "@/views/AssignPickerModal.vue";
 import { commonUtil, DxpShopifyImg, emitter, logger, translate, useNotificationStore } from "@common";

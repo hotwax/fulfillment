@@ -118,10 +118,10 @@ describe("order item keys", () => {
 
 describe("liveOrderDomains", () => {
   it("runs the facility on screen's own items and products before the rest of the queue's", () => {
-    const domains = liveOrderDomains("BROOKLYN");
+    const domains = liveOrderDomains("BROOKLYN", ["BROOKLYN", "QUEENS"]);
 
     expect(domains.map((domain) => [domain.name, domain.args])).toEqual([
-      [OPEN_ORDERS_DOMAIN, undefined],
+      [OPEN_ORDERS_DOMAIN, { facilityIds: ["BROOKLYN", "QUEENS"] }],
       [ORDER_ITEMS_DOMAIN, { facilityId: "BROOKLYN", only: true }],
       [PRODUCTS_DOMAIN, { facilityId: "BROOKLYN" }],
       [ORDER_ITEMS_DOMAIN, { facilityId: "BROOKLYN" }],
@@ -129,6 +129,11 @@ describe("liveOrderDomains", () => {
     ]);
     // Each activation keeps its own clock, so the facility's passes don't stop the queue's from running.
     expect(new Set(domains.map(activationKey)).size).toBe(domains.length);
+  });
+
+  it("hands the open orders pass the user's facilities, and none until they are known", () => {
+    expect(liveOrderDomains(undefined, ["QUEENS"])[0].args).toEqual({ facilityIds: ["QUEENS"] });
+    expect(liveOrderDomains()[0].args).toEqual({ facilityIds: [] });
   });
 
   it("has one pass each without a facility", () => {

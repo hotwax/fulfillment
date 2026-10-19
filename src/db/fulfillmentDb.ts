@@ -14,13 +14,6 @@ export const orderKeyOf = (orderId: unknown, shipGroupSeqId: unknown): string | 
   orderId && shipGroupSeqId ? `${orderId}-${shipGroupSeqId}` : undefined;
 
 const fulfillmentSchema = defineSchema({
-  userFacilities: defineEntity({
-    primaryKey: "facilityId",
-    fields: {
-      facilityId: "text"
-    }
-  }),
-
   orders: defineEntity({
     primaryKey: "orderId,shipGroupSeqId",
     fields: {
@@ -75,7 +68,8 @@ const fulfillmentSchema = defineSchema({
 
 export const fulfillmentDb = defineAppDb({
   suffix: "FulfillmentDB",
-  version: 4,
+  // 5: the user's facilities go to the open orders domain as args, so the userFacilities table is gone.
+  version: 5,
   schema: mergeSchemas(commonSchema.pick(["shipmentMethodTypes"]), fulfillmentSchema)
 });
 

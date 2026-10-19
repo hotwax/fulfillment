@@ -37,10 +37,6 @@ function fetchOpenOrders(ctx: SyncContext, facilityIds: string[], filters: Recor
   });
 }
 
-async function masterFacilityIds(db: BaseDB): Promise<string[]> {
-  return (await db.table("userFacilities").toCollection().primaryKeys()).map(String);
-}
-
 function replaceOpenRows(db: BaseDB, rawRows: any[]): Promise<number> {
   if(isUnkeyableFetch(rawRows, orderEntity)) {
     console.warn(`[db] ${OPEN_ORDERS_DOMAIN}: fetched ${rawRows.length} orders but none could be keyed. Leaving the table unchanged.`);
@@ -72,9 +68,10 @@ export const openOrdersDomain = defineSyncDomain({
   syncClass: "A",
   table: "orders",
 
-  async sync(ctx: SyncContext) {
+  // The facilities are the user's whole list, handed over as args by the main thread.
+  async sync(ctx: SyncContext, args: { facilityIds?: string[] } = {}) {
     const db = getFulfillmentDb(ctx.omsInstance);
-    const facilityIds = await masterFacilityIds(db);
+    const facilityIds = (args.facilityIds ?? []).map(String);
     // Without a master list there is nothing to scope the prune by, so leave the table alone.
     if(!facilityIds.length) {return 0;}
 

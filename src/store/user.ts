@@ -1,7 +1,7 @@
 import { api, commonUtil, cookieHelper, i18n, logger, translate, useAuth, useNotificationStore, useEmbeddedAppStore } from "@common";
 import { defineStore } from "pinia"
 import { DateTime, Settings } from "luxon"
-import { startLiveOrdersSync, stopLiveOrdersSync } from "@/db/liveOrdersSync";
+import { startLiveOrdersSync, stopLiveOrdersSync } from "@/db/appDbSync";
 import router from "@/router";
 import { useUtilStore } from "@/store/util";
 import { useProductStore } from "@/store/productStore";

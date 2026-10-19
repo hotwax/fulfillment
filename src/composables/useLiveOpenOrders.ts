@@ -1,8 +1,9 @@
-import { type DbRow, ensureDbReady } from "@common/db";
-import { type Ref, computed, markRaw, onUnmounted, ref, shallowRef, watch } from "vue";
+import { useLiveEntity } from "@common";
+import type { DbRow } from "@common/db";
+import { type Ref, computed, markRaw, watch } from "vue";
+import { focusLiveOrders, liveOrdersStatus } from "@/db/appDbSync";
 import { deviceSettings } from "@/db/deviceSettings";
 import { ORDER_STAGE, fulfillmentDb, orderKeyOf } from "@/db/fulfillmentDb";
-import { focusLiveOrders, liveOrdersStatus } from "@/db/liveOrdersSync";
 import { useProductStore } from "@/store/product";
 import { liveOrdersLoad } from "@/utils/liveOrdersLoad";
 import { type FilterSelections, OPEN_ORDER_FILTER_DIMENSIONS, filterOpenOrders, openOrderFacets } from "@/utils/openOrderFilters";
@@ -33,56 +34,25 @@ function toOrderView(order: any, items: DbRow[]) {
 }
 
 export function useLiveOpenOrders(options: LiveOpenOrdersOptions) {
-  const orderRows = shallowRef<DbRow[]>([]);
-  const itemRows = shallowRef<DbRow[]>([]);
-  const productRows = shallowRef<DbRow[]>([]);
-  const shipmentMethodRows = shallowRef<DbRow[]>([]);
-  const hydrated = ref(false);
+  // Each read re-subscribes when its options change, and starts empty until its first emit.
+  const orders = useLiveEntity<DbRow>(fulfillmentDb.tables.orders, () => {
+    const facilityId = options.facilityId.value;
 
-  let subscriptions: Array<{ unsubscribe: () => void }> = [];
-  // So a subscribe still opening the database knows it was replaced.
-  let generation = 0;
-  const unsubscribe = () => {
-    subscriptions.forEach((subscription) => subscription.unsubscribe());
-    subscriptions = [];
-  };
-
-  const subscribe = async (facilityId?: string) => {
-    const current = ++generation;
-    unsubscribe();
-    hydrated.value = false;
-    orderRows.value = [];
-    if(!facilityId) {return;}
-    void focusLiveOrders(facilityId);
-
-    const onError = (error: unknown) => console.error("[useLiveOpenOrders] live query failed:", error);
-    try {
-      // The version check can rebuild the database, and a live query may only read.
-      await ensureDbReady(fulfillmentDb.raw());
-    } catch (error) {
-      onError(error);
-      hydrated.value = true;
-
-      return;
-    }
-    if(current !== generation) {return;}
-
-    subscriptions = [
-      fulfillmentDb.entity<DbRow>("orders").live({ scope: { field: "facilityId", value: facilityId }, filter: (row) => row.stage === ORDER_STAGE.OPEN }).subscribe({
-        next: (rows) => { orderRows.value = rows; hydrated.value = true; },
-        error: (error) => { onError(error); hydrated.value = true; }
-      }),
-      fulfillmentDb.entity<DbRow>("orderItems").live().subscribe({ next: (rows) => { itemRows.value = rows; }, error: onError }),
-      fulfillmentDb.entity<DbRow>("products").live().subscribe({ next: (rows) => { productRows.value = rows; }, error: onError }),
-      fulfillmentDb.entity<DbRow>("shipmentMethodTypes").live().subscribe({ next: (rows) => { shipmentMethodRows.value = rows; }, error: onError })
-    ];
-  };
-
-  watch(options.facilityId, (facilityId) => void subscribe(facilityId), { immediate: true });
-  onUnmounted(() => {
-    generation++;
-    unsubscribe();
+    return facilityId
+      ? { scope: { field: "facilityId", value: facilityId }, filter: (row: DbRow) => row.stage === ORDER_STAGE.OPEN }
+      : { filter: () => false };
   });
+  const orderRows = orders.records;
+  const itemRows = useLiveEntity<DbRow>(fulfillmentDb.tables.orderItems).records;
+  const productRows = useLiveEntity<DbRow>(fulfillmentDb.tables.products).records;
+  const shipmentMethodRows = useLiveEntity<DbRow>(fulfillmentDb.tables.shipmentMethodTypes).records;
+  // A failed read counts as loaded, so the page doesn't wait on it for ever.
+  const hydrated = computed(() => !!options.facilityId.value && (orders.hydrated.value || !!orders.error.value));
+
+  // The facility on screen gets its items and products first.
+  watch(options.facilityId, (facilityId) => {
+    if(facilityId) {void focusLiveOrders(facilityId);}
+  }, { immediate: true });
 
   const productsById = computed(() => new Map(productRows.value.map((row) => [String(row.productId), row as any])));
   const productVersions = computed(() => new Map(productRows.value.map((row) => [String(row.productId), Number(row.syncedAt) || 0])));
@@ -122,6 +92,8 @@ export function useLiveOpenOrders(options: LiveOpenOrdersOptions) {
     for(const row of orderRows.value) {
       if(productStoreId && row.productStoreId && row.productStoreId !== productStoreId) {continue;}
       const key = orderKeyOfRow(row);
+      // A picklist just took it, and the next open orders pass has yet to prune it.
+      if(liveOrdersStatus.hiddenOrderKeys.has(key)) {continue;}
       const items = itemsByOrderKey.value.get(key) ?? [];
       // An order joins the view once its items are stored, so a card is never shown half-filled.
       if(!items.length) {continue;}

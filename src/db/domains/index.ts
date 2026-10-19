@@ -14,8 +14,9 @@ export const FULFILLMENT_SYNC_DOMAINS: SyncDomain[] = [commonDomains.shipmentMet
 
 // In tick order: items follow orders, products follow items. The facility on screen gets a pass of its own for
 // both first, so its cards are complete before the rest of the queue's items are fetched.
-export const liveOrderDomains = (facilityId?: string): ActiveDomain[] => [
-  { name: OPEN_ORDERS_DOMAIN, intervalMs: LIVE_ORDERS_INTERVAL_MS },
+// The open orders pass reads the user's facilities from its args, since the worker can't read the store.
+export const liveOrderDomains = (facilityId?: string, facilityIds: string[] = []): ActiveDomain[] => [
+  { name: OPEN_ORDERS_DOMAIN, intervalMs: LIVE_ORDERS_INTERVAL_MS, args: { facilityIds } },
   ...(facilityId
     ? [
       { name: ORDER_ITEMS_DOMAIN, intervalMs: LIVE_ORDERS_INTERVAL_MS, args: { facilityId, only: true } },

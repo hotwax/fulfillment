@@ -54,7 +54,7 @@ import { computed, defineProps, onMounted, ref } from "vue";
 import { closeOutline, closeCircle, saveOutline } from "ionicons/icons";
 import { commonUtil, emitter, logger, translate, useSolrSearch } from "@common";
 import { OPEN_ORDERS_DOMAIN } from "@/db/domains";
-import { refreshLiveOrders, removeOpenOrdersLocally } from "@/db/liveOrdersSync";
+import { refreshLiveOrders, removeOpenOrdersLocally } from "@/db/appDbSync";
 import { useUserStore as useDxpUserStore } from "@/store/user";
 import { useProductStore as useAppProductStore } from "@/store/productStore";
 import { useUtilStore } from "@/store/util";
@@ -118,7 +118,7 @@ const printPicklist = async () => {
       closeModal({ picklistId: resp.data.picklistId, shipmentIds: resp.data.shipmentIds });
       commonUtil.showToast(translate("Picklist created successfully"));
       // Take the picked orders off the list now; the resync confirms against the server.
-      await removeOpenOrdersLocally(orderItems);
+      removeOpenOrdersLocally(orderItems);
       void refreshLiveOrders([OPEN_ORDERS_DOMAIN]);
 
       if (resp.data.picklistId) {
