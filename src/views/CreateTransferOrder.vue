@@ -196,7 +196,7 @@
 
 <script setup lang="ts">
 import { ref, computed, watch, nextTick } from "vue";
-import { IonPage, IonHeader, IonToolbar, IonBackButton, IonTitle, IonContent, IonCard, IonList, IonItem, IonInput, IonLabel, IonButton, IonIcon, IonToggle, IonSegment, IonSegmentButton, IonThumbnail, IonBadge, IonSearchbar, IonSpinner, IonFooter, IonButtons, onIonViewWillEnter, alertController, modalController, onIonViewWillLeave } from "@ionic/vue";
+import { IonPage, IonHeader, IonToolbar, IonBackButton, IonTitle, IonContent, IonCard, IonList, IonItem, IonInput, IonLabel, IonButton, IonIcon, IonToggle, IonSegment, IonSegmentButton, IonThumbnail, IonBadge, IonSearchbar, IonSpinner, IonFooter, IonButtons, onIonViewWillEnter, alertController, modalController, onIonViewWillLeave, onIonViewDidLeave } from "@ionic/vue";
 import { barcodeOutline, checkmarkDoneOutline, checkmarkCircle, cloudOfflineOutline, locateOutline, searchOutline, shirtOutline, storefrontOutline } from "ionicons/icons";
 import { onBeforeRouteLeave } from "vue-router";
 import router from "@/router";
@@ -210,6 +210,8 @@ import { useProductStore as useProduct } from "@/store/product";
 import { useCarrierStore } from "@/store/carrier";
 import { useTransferOrderStore } from "@/store/transferorder";
 import { useOrderStore } from "@/store/order";
+import { refreshLiveOrders } from "@/db/appDbSync";
+import { TRANSFER_ORDERS_DOMAIN } from "@/db/domains";
 
 const route = router.currentRoute.value;
 const productIdentificationPref = computed(() => useProductStore().getProductIdentificationPref);
@@ -795,6 +797,11 @@ async function packAndShipOrder() {
     isPackingOrder.value = false;
   }
 }
+
+// Leaving after a shipment, a label or a new transfer order: the list the user returns to is read again.
+onIonViewDidLeave(() => {
+  void refreshLiveOrders([TRANSFER_ORDERS_DOMAIN]);
+});
 </script>
 
 <style scoped>

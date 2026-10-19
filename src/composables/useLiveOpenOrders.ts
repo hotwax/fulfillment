@@ -1,6 +1,6 @@
-import { useLiveEntity } from "@common";
 import type { DbRow } from "@common/db";
 import { type Ref, computed, markRaw, watch } from "vue";
+import { useCachedLiveEntity } from "@/composables/useCachedLiveEntity";
 import { useProductCacheBridge } from "@/composables/useProductCacheBridge";
 import { focusLiveOrders, liveOrdersStatus } from "@/db/appDbSync";
 import { deviceSettings } from "@/db/deviceSettings";
@@ -35,17 +35,17 @@ function toOrderView(order: any, items: DbRow[]) {
 
 export function useLiveOpenOrders(options: LiveOpenOrdersOptions) {
   // Each read re-subscribes when its options change, and starts empty until its first emit.
-  const orders = useLiveEntity<DbRow>(fulfillmentDb.tables.orders, () => {
+  const orders = useCachedLiveEntity<DbRow>(fulfillmentDb.tables.orders, () => {
     const facilityId = options.facilityId.value;
 
     return facilityId
       ? { scope: { field: "facilityId", value: facilityId }, filter: (row: DbRow) => row.stage === ORDER_STAGE.OPEN }
       : { filter: () => false };
-  });
+  }, () => `orders:${options.facilityId.value ?? ""}`);
   const orderRows = orders.records;
-  const itemRows = useLiveEntity<DbRow>(fulfillmentDb.tables.orderItems).records;
-  const productRows = useLiveEntity<DbRow>(fulfillmentDb.tables.products).records;
-  const shipmentMethodRows = useLiveEntity<DbRow>(fulfillmentDb.tables.shipmentMethodTypes).records;
+  const itemRows = useCachedLiveEntity<DbRow>(fulfillmentDb.tables.orderItems, undefined, () => "orderItems").records;
+  const productRows = useCachedLiveEntity<DbRow>(fulfillmentDb.tables.products, undefined, () => "products").records;
+  const shipmentMethodRows = useCachedLiveEntity<DbRow>(fulfillmentDb.tables.shipmentMethodTypes, undefined, () => "shipmentMethodTypes").records;
   // A failed read counts as loaded, so the page doesn't wait on it for ever.
   const hydrated = computed(() => !!options.facilityId.value && (orders.hydrated.value || !!orders.error.value));
 

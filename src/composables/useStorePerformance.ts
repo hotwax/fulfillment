@@ -6,6 +6,12 @@ import { closingTime, fillRate, pickerPerformance } from "@/utils/storePerforman
 
 const distinct = (rows: any[], field: string) => new Set(rows.map((row) => row[field]));
 
+const emptyPerformance = () => ({ allocated: [] as any[], packed: [] as any[], rejected: [] as any[], pending: [] as any[], picklists: [] as any[], store: undefined as any });
+
+// What each facility's numbers last were. The page is mounted afresh on every visit, and the numbers take about a second to
+// arrive, so a visit shows the last ones at once and the new ones replace them in place.
+const lastPerformance = new Map<string, ReturnType<typeof emptyPerformance>>();
+
 async function dataDocumentRows(dataDocumentId: string, customParametersMap: Record<string, unknown>, options: Record<string, unknown> = {}): Promise<any[]> {
   const resp = await api({ url: "oms/dataDocumentView", method: "POST", data: { dataDocumentId, customParametersMap: { pageNoLimit: true, ...customParametersMap }, ...options } }) as any;
   if(commonUtil.hasError(resp)) {throw resp.data;}
@@ -16,9 +22,11 @@ async function dataDocumentRows(dataDocumentId: string, customParametersMap: Rec
 // Today's numbers for the current facility. The data documents are defined in hotwax-poorti, and ORDER_FACILITY_CHANGE in oms.
 export function useStorePerformance() {
   const productStore = useProductStore();
+  const cacheKey = () => `${productStore.getCurrentFacility?.facilityId}:${productStore.getCurrentProductStore?.productStoreId}`;
+  // True only while there is nothing to show yet.
   const loading = ref(false);
   const now = ref(DateTime.now());
-  const performance = ref({ allocated: [] as any[], packed: [] as any[], rejected: [] as any[], pending: [] as any[], picklists: [] as any[], store: undefined as any });
+  const performance = ref(lastPerformance.get(cacheKey()) ?? emptyPerformance());
   let latestLoad = 0;
 
   const allocatedCount = computed(() => distinct(performance.value.allocated, "orderId").size);
@@ -53,7 +61,9 @@ export function useStorePerformance() {
     if(!facilityId) {return;}
 
     const load = ++latestLoad;
-    loading.value = true;
+    const remembered = lastPerformance.get(cacheKey());
+    if(remembered) {performance.value = remembered;}
+    loading.value = !remembered;
     now.value = DateTime.now();
     const today = now.value.startOf("day").toFormat("yyyy-MM-dd");
     const productStoreId = productStore.getCurrentProductStore?.productStoreId;
@@ -89,7 +99,9 @@ export function useStorePerformance() {
         orderIds.length ? dataDocumentRows("SHIPMENT_AND_PICKLIST_AND_ROLE", { primaryOrderId: orderIds.join(","), primaryOrderId_op: "in" }) : []
       ]);
 
-      if(load === latestLoad) {performance.value = { allocated, packed, rejected, pending, picklists: [...picklists, ...earlierPicklists.flat()], store };}
+      const fresh = { allocated, packed, rejected, pending, picklists: [...picklists, ...earlierPicklists.flat()], store };
+      lastPerformance.set(`${facilityId}:${productStoreId}`, fresh);
+      if(load === latestLoad) {performance.value = fresh;}
     } catch (error) {
       logger.error("Failed to get today's store performance", error);
       commonUtil.showToast(translate("Failed to get today's store performance"));

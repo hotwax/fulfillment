@@ -1,5 +1,5 @@
 <template>
-  <ion-page :key="router.currentRoute.value.path">
+  <ion-page :key="pageKey">
     <ViewSizeSelector menu-id="view-size-selector-inprogress" content-id="view-size-selector" :total="filteredOrders.length" :view-size="pageSize" />
 
     <ion-header :translucent="true">
@@ -281,6 +281,9 @@ import { useStockStore } from "@/store/stock";
 import { useProductStore as useProductStore } from "@/store/productStore";
 import Actions from "@/authorization/actions";
 import { useOnePackageReroute } from "@/composables/useOnePackageReroute";
+// Keyed by the route this page was opened on, read once. It used to follow the current route, which rebuilt the page that was
+// being left (cards, thumbnails and all) in the middle of every navigation.
+const pageKey = router.currentRoute.value.path;
 
 const userStore = useUserStore();
 const orderStore = useOrderStore();

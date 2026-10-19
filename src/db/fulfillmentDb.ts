@@ -67,6 +67,22 @@ const fulfillmentSchema = defineSchema({
     indexes: ["stage", "facilityId", "picklistId"]
   }),
 
+  transferOrders: defineEntity({
+    // A transfer order is open and completed at once when it has shipped in part, so the stage is part of the key.
+    primaryKey: "stage,orderId",
+    fields: {
+      stage: "text",
+      orderId: "text",
+      facilityId: "text",
+      orderName: "text",
+      orderDate: "date",
+      shippedDate: "date",
+      // The order as the API returned it.
+      order: "structured"
+    },
+    indexes: ["facilityId", "stage"]
+  }),
+
   pickers: defineEntity({
     primaryKey: "partyId",
     fields: {
@@ -114,8 +130,8 @@ const fulfillmentSchema = defineSchema({
 
 export const fulfillmentDb = defineAppDb({
   suffix: "FulfillmentDB",
-  // 7: pickers table. 6: shipments and picklists tables for the In Progress and Completed pages (5: the userFacilities table went, the user's facilities are args).
-  version: 7,
+  // 8: transferOrders table. 7: pickers table. 6: shipments and picklists tables for the In Progress and Completed pages (5: the userFacilities table went, the user's facilities are args).
+  version: 8,
   schema: mergeSchemas(commonSchema.pick(["shipmentMethodTypes"]), fulfillmentSchema)
 });
 

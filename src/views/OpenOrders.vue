@@ -1,5 +1,5 @@
 <template>
-  <ion-page :key="router.currentRoute.value.path">
+  <ion-page :key="pageKey">
     <ViewSizeSelector menu-id="view-size-selector-open" content-id="view-size-selector" :total="filteredOrders.length" />
 
     <ion-header :translucent="true">
@@ -161,6 +161,9 @@ import { useUserStore } from "@/store/user";
 import { useProductStore as useAppProductStore } from "@/store/productStore";
 import router from "@/router";
 import Actions from "@/authorization/actions";
+// Keyed by the route this page was opened on, read once. It used to follow the current route, which rebuilt the page that was
+// being left (cards, thumbnails and all) in the middle of every navigation.
+const pageKey = router.currentRoute.value.path;
 
 // Picking from data this old risks orders that already left the queue.
 const STALE_AFTER_MS = 5 * 60 * 1000;

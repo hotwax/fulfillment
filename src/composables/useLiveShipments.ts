@@ -1,7 +1,7 @@
-import { useLiveEntity } from "@common";
 import type { DbRow } from "@common/db";
 import { DateTime } from "luxon";
 import { type Ref, computed, reactive, watch } from "vue";
+import { useCachedLiveEntity } from "@/composables/useCachedLiveEntity";
 import { useProductCacheBridge } from "@/composables/useProductCacheBridge";
 import { focusLiveOrders, liveOrdersStatus } from "@/db/appDbSync";
 import { SHIPMENT_STAGE, fulfillmentDb } from "@/db/fulfillmentDb";
@@ -20,20 +20,21 @@ const formatTime = (millis: number) => DateTime.fromMillis(millis).toLocaleStrin
 // The shipments of the facility on screen, in one stage, kept live from the app database. The page reads this
 // instead of fetching: a visit shows the last sync at once, and the worker's next pass updates it in place.
 export function useLiveShipments(options: LiveShipmentsOptions) {
-  const shipmentLive = useLiveEntity<DbRow>(fulfillmentDb.tables.shipments, () => {
+  const facilityKey = () => options.facilityId.value ?? "";
+  const shipmentLive = useCachedLiveEntity<DbRow>(fulfillmentDb.tables.shipments, () => {
     const facilityId = options.facilityId.value;
 
     return facilityId
       ? { scope: { field: "facilityId", value: facilityId }, filter: (row: DbRow) => row.stage === options.stage }
       : { filter: () => false };
-  });
-  const picklistRows = useLiveEntity<DbRow>(fulfillmentDb.tables.picklists, () => {
+  }, () => `shipments:${options.stage}:${facilityKey()}`);
+  const picklistRows = useCachedLiveEntity<DbRow>(fulfillmentDb.tables.picklists, () => {
     const facilityId = options.facilityId.value;
 
     return facilityId ? { scope: { field: "facilityId", value: facilityId } } : { filter: () => false };
-  }).records;
-  const productRows = useLiveEntity<DbRow>(fulfillmentDb.tables.products).records;
-  const shipmentMethodRows = useLiveEntity<DbRow>(fulfillmentDb.tables.shipmentMethodTypes).records;
+  }, () => `picklists:${facilityKey()}`).records;
+  const productRows = useCachedLiveEntity<DbRow>(fulfillmentDb.tables.products, undefined, () => "products").records;
+  const shipmentMethodRows = useCachedLiveEntity<DbRow>(fulfillmentDb.tables.shipmentMethodTypes, undefined, () => "shipmentMethodTypes").records;
 
   useProductCacheBridge(productRows);
 

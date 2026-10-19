@@ -95,14 +95,25 @@ export function filterShipments(views: any[], filters: ShipmentFilters) {
   });
 }
 
-// In progress shipments go oldest order first, as they were picked. Completed ones newest first by when their wave made the
-// shipment, so the order just packed is on top, then by order date.
+// When something last happened to the shipment: its wave, or a box added or changed after it. A shipment packed today after a
+// wave made last week still counts as recent.
+export function lastActivityOf(view: any) {
+  const stamps = [Number(view.createdDate) || 0];
+  for(const shipmentPackage of view.shipmentPackages ?? []) {
+    stamps.push(Number(shipmentPackage.lastUpdatedStamp) || 0, Number(shipmentPackage.dateCreated) || 0);
+  }
+
+  return Math.max(...stamps);
+}
+
+// In progress shipments go oldest order first, as they were picked. Completed ones go by most recent activity, so the order
+// just packed is on top, then by order date.
 export function sortShipments(views: any[], category: string) {
   const direction = category === SHIPMENT_CATEGORY.COMPLETED ? -1 : 1;
-  const waveTime = (view: any) => (category === SHIPMENT_CATEGORY.COMPLETED ? Number(view.createdDate) || 0 : 0);
+  const activity = (view: any) => (category === SHIPMENT_CATEGORY.COMPLETED ? lastActivityOf(view) : 0);
 
   return [...views].sort((a, b) =>
-    (waveTime(b) - waveTime(a)) ||
+    (activity(b) - activity(a)) ||
     direction * ((Number(a.orderDate) || 0) - (Number(b.orderDate) || 0)) ||
     direction * String(a.shipmentId).localeCompare(String(b.shipmentId)));
 }

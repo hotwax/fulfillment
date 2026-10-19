@@ -1,7 +1,7 @@
 import { commonUtil, logger } from "@common";
 import { setupAppDbSync } from "@common/db";
 import { reactive } from "vue";
-import { LIVE_ORDERS_CHANNEL, OPEN_ORDERS_DOMAIN, ORDER_ITEMS_DOMAIN, PICKLISTS_DOMAIN, PRODUCTS_DOMAIN, SHIPMENTS_DOMAIN, liveOrderDomains } from "./domains";
+import { LIVE_ORDERS_CHANNEL, OPEN_ORDERS_DOMAIN, ORDER_ITEMS_DOMAIN, PICKLISTS_DOMAIN, PRODUCTS_DOMAIN, SHIPMENTS_DOMAIN, TRANSFER_ORDERS_DOMAIN, liveOrderDomains } from "./domains";
 import { fulfillmentDb, orderKeyOf } from "./fulfillmentDb";
 import fulfillmentSyncWorkerUrl from "./fulfillmentSync.worker.ts?worker&url";
 
@@ -98,7 +98,7 @@ export async function focusLiveOrders(facilityId?: string, productStoreId?: stri
   if(productStoreId) {focusedProductStoreId = productStoreId;}
   if(!appDbSync.syncService()) {return;}
   await appDbSync.activateSyncDomains(liveOrderDomains(facilityId, masterFacilityIds, focusedProductStoreId), syncOwner);
-  if(changed && facilityId) {await refreshLiveOrders([SHIPMENTS_DOMAIN, PICKLISTS_DOMAIN, ORDER_ITEMS_DOMAIN, PRODUCTS_DOMAIN]);}
+  if(changed && facilityId) {await refreshLiveOrders([SHIPMENTS_DOMAIN, PICKLISTS_DOMAIN, TRANSFER_ORDERS_DOMAIN, ORDER_ITEMS_DOMAIN, PRODUCTS_DOMAIN]);}
 }
 
 export async function syncMasterFacilities(facilities: any[]): Promise<void> {
@@ -108,7 +108,7 @@ export async function syncMasterFacilities(facilities: any[]): Promise<void> {
   await refreshLiveOrders();
 }
 
-export async function refreshLiveOrders(domainNames: string[] = [OPEN_ORDERS_DOMAIN, SHIPMENTS_DOMAIN, PICKLISTS_DOMAIN, ORDER_ITEMS_DOMAIN, PRODUCTS_DOMAIN]): Promise<void> {
+export async function refreshLiveOrders(domainNames: string[] = [OPEN_ORDERS_DOMAIN, SHIPMENTS_DOMAIN, PICKLISTS_DOMAIN, TRANSFER_ORDERS_DOMAIN, ORDER_ITEMS_DOMAIN, PRODUCTS_DOMAIN]): Promise<void> {
   if(!liveOrdersStatus.running) {return;}
   try {
     for(const name of domainNames) {await appDbSync.resyncDomain(name);}

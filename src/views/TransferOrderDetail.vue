@@ -178,6 +178,8 @@ import { useUtilStore } from "@/store/util";
 import { useProductStore } from "@/store/product";
 import router from "@/router";
 import Actions from "@/authorization/actions";
+import { refreshLiveOrders } from "@/db/appDbSync";
+import { TRANSFER_ORDERS_DOMAIN } from "@/db/domains";
 
 const userStore = useUserStore();
 const transferOrderStore = useTransferOrderStore();
@@ -435,6 +437,11 @@ onIonViewDidLeave(() => {
   if (routeTo.value.name !== "Transfer Orders") {
     useTransferOrderStore().clearTransferOrderFilters();
   }
+});
+
+// Leaving after a shipment, a label or a new transfer order: the list the user returns to is read again.
+onIonViewDidLeave(() => {
+  void refreshLiveOrders([TRANSFER_ORDERS_DOMAIN]);
 });
 </script>
 

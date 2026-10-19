@@ -2,7 +2,7 @@ import { defineEntity } from "@common/db/schema/defineEntity";
 import { canonicalKey, entityKeyOf, projectRows } from "@common/db/storage/projection";
 import { activationKey } from "@common/db/sync/syncRegistry";
 import { describe, expect, it } from "vitest";
-import { OPEN_ORDERS_DOMAIN, ORDER_ITEMS_DOMAIN, PICKERS_DOMAIN, PICKLISTS_DOMAIN, PRODUCTS_DOMAIN, SHIPMENTS_DOMAIN, liveOrderDomains } from "@/db/domains";
+import { OPEN_ORDERS_DOMAIN, ORDER_ITEMS_DOMAIN, PICKERS_DOMAIN, PICKLISTS_DOMAIN, PRODUCTS_DOMAIN, SHIPMENTS_DOMAIN, TRANSFER_ORDERS_DOMAIN, liveOrderDomains } from "@/db/domains";
 import { pickerQuery } from "@/db/domains/pickersDomain";
 import { mergeProductDocs } from "@/db/domains/productsDomain";
 import { changedRows, chunk, hydrationOrder, runWithConcurrency } from "@/db/domains/rowSync";
@@ -125,6 +125,7 @@ describe("liveOrderDomains", () => {
       [OPEN_ORDERS_DOMAIN, { facilityIds: ["BROOKLYN", "QUEENS"] }],
       [SHIPMENTS_DOMAIN, { facilityId: "BROOKLYN", productStoreId: "STORE" }],
       [PICKLISTS_DOMAIN, { facilityId: "BROOKLYN", productStoreId: "STORE" }],
+      [TRANSFER_ORDERS_DOMAIN, { facilityId: "BROOKLYN" }],
       [ORDER_ITEMS_DOMAIN, { facilityId: "BROOKLYN", only: true }],
       [PRODUCTS_DOMAIN, { facilityId: "BROOKLYN" }],
       [ORDER_ITEMS_DOMAIN, { facilityId: "BROOKLYN" }],

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { filterShipments, matchesQuery, picklistView, sortShipments, toShipmentView, withoutKitComponents } from "@/utils/shipmentView";
+import { filterShipments, lastActivityOf, matchesQuery, picklistView, sortShipments, toShipmentView, withoutKitComponents } from "@/utils/shipmentView";
 
 const shipment = (overrides: Record<string, unknown> = {}) => ({
   shipmentId: "S1",
@@ -103,6 +103,15 @@ describe("filtering and sorting", () => {
   it("sorts in progress oldest first and completed newest first", () => {
     expect(sortShipments(views, "in-progress").map((view) => view.shipmentId)).toEqual(["S2", "S3", "S1"]);
     expect(sortShipments(views, "completed").map((view) => view.shipmentId)).toEqual(["S1", "S3", "S2"]);
+  });
+
+  it("counts a box added or changed after the wave as recent activity", () => {
+    expect(lastActivityOf({ createdDate: 100, shipmentPackages: [{ dateCreated: 100, lastUpdatedStamp: 100 }, { dateCreated: 500, lastUpdatedStamp: 600 }] })).toBe(600);
+    expect(lastActivityOf({ createdDate: 100 })).toBe(100);
+
+    const waveLastWeekPackedToday = { ...views[0], shipmentId: "PACKED_TODAY", createdDate: 10, shipmentPackages: [{ lastUpdatedStamp: 90 }] };
+    const waveToday = { ...views[0], shipmentId: "WAVE_TODAY", createdDate: 50, shipmentPackages: [] };
+    expect(sortShipments([waveToday, waveLastWeekPackedToday], "completed").map((view) => view.shipmentId)).toEqual(["PACKED_TODAY", "WAVE_TODAY"]);
   });
 
   it("puts the shipment made last on top of completed, even for an older order", () => {

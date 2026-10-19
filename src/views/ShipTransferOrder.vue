@@ -207,7 +207,7 @@
 </template>
 
 <script setup lang="ts">
-import { IonAvatar, IonBackButton, IonButton, IonButtons, IonCard, IonCardContent, IonCardHeader, IonCardSubtitle, IonCardTitle, IonContent, IonFooter, IonHeader, IonIcon, IonInput, IonItem, IonLabel, IonList, IonListHeader, IonNote, IonPage, IonSegment, IonSegmentButton, IonSelect, IonSelectOption, IonSkeletonText, IonSpinner, IonThumbnail, IonTitle, IonToolbar, alertController, onIonViewWillEnter } from "@ionic/vue";
+import { IonAvatar, IonBackButton, IonButton, IonButtons, IonCard, IonCardContent, IonCardHeader, IonCardSubtitle, IonCardTitle, IonContent, IonFooter, IonHeader, IonIcon, IonInput, IonItem, IonLabel, IonList, IonListHeader, IonNote, IonPage, IonSegment, IonSegmentButton, IonSelect, IonSelectOption, IonSkeletonText, IonSpinner, IonThumbnail, IonTitle, IonToolbar, alertController, onIonViewWillEnter, onIonViewDidLeave } from "@ionic/vue";
 import { openOutline, pricetagOutline, printOutline, refreshOutline, storefrontOutline } from "ionicons/icons";
 import { computed, ref } from "vue";
 import { commonUtil, logger, translate } from "@common";
@@ -221,6 +221,8 @@ import { useCarrierStore } from "@/store/carrier";
 import { useTransferOrderStore } from "@/store/transferorder";
 import { dedupeShippingRates, shippingRateKey, shippingRateName } from "@/utils/shippingRates";
 import router from "@/router";
+import { refreshLiveOrders } from "@/db/appDbSync";
+import { TRANSFER_ORDERS_DOMAIN } from "@/db/domains";
 
 const route = router.currentRoute.value;
 const shipmentId = route?.params?.shipmentId as string;
@@ -751,6 +753,11 @@ async function shipOrder() {
     commonUtil.showToast(translate("Something went wrong, could not ship the shipment"));
   }
 }
+
+// Leaving after a shipment, a label or a new transfer order: the list the user returns to is read again.
+onIonViewDidLeave(() => {
+  void refreshLiveOrders([TRANSFER_ORDERS_DOMAIN]);
+});
 </script>
 
 <style scoped>

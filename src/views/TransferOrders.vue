@@ -4,11 +4,11 @@
       <ion-toolbar>
         <ion-menu-button menu="start" slot="start" />
         <ion-title v-if="!transferOrders.total">{{ transferOrders.total }} {{ translate('orders') }}</ion-title>
-        <ion-title v-else>{{ transferOrders.list.length }} {{ translate('of') }} {{ transferOrders.total }} {{ translate('orders') }}</ion-title>
+        <ion-title v-else>{{ visibleOrders.length }} {{ translate('of') }} {{ transferOrders.total }} {{ translate('orders') }}</ion-title>
       </ion-toolbar>
       <div>
-        <ion-searchbar class="searchbar" :value="transferOrders.query.queryString" @keyup.enter="updateQueryString($event.target.value)" />
-        <ion-segment v-model="selectedSegment" @ionChange="segmentChanged()">
+        <ion-searchbar class="searchbar" v-model="queryString" />
+        <ion-segment v-model="selectedSegment" @ionChange="resetPage()">
           <ion-segment-button data-testid="open-transfer-orders-tab" value="open">
             <ion-label>{{ translate("Open") }}</ion-label>
           </ion-segment-button>
@@ -23,7 +23,7 @@
       <div v-if="transferOrders.total">
         <div class="results">
           <ion-list>
-            <ion-item v-for="(order, index) in transferOrders.list" :key="index" @click="viewTransferOrderDetail(order)" button>
+            <ion-item v-for="order in visibleOrders" :key="order.orderId" @click="viewTransferOrderDetail(order)" button>
               <ion-label>
                 <p class="overline">{{ order.orderId }}</p>
                 {{ order.orderName }}
@@ -37,7 +37,7 @@
           </ion-infinite-scroll>
         </div>
       </div>
-      <ion-list v-else-if="isLoading" data-testid="transfer-orders-loading">
+      <ion-list v-else-if="!isLoaded" data-testid="transfer-orders-loading">
         <ion-item v-for="row in 3" :key="row">
           <ion-label>
             <ion-skeleton-text animated class="skeleton-short" />
@@ -61,28 +61,39 @@
 
 <script setup lang="ts">
 import { translate } from "@common";
-import { IonBadge, IonContent, IonFab, IonFabButton, IonHeader, IonIcon, IonInfiniteScroll, IonInfiniteScrollContent, IonItem, IonLabel, IonList, IonMenuButton, IonPage, IonSearchbar, IonSegment, IonSegmentButton, IonSkeletonText, IonTitle, IonToolbar, modalController, onIonViewDidLeave, onIonViewWillEnter } from "@ionic/vue";
-import { computed, ref } from "vue";
+import { IonBadge, IonContent, IonFab, IonFabButton, IonHeader, IonIcon, IonInfiniteScroll, IonInfiniteScrollContent, IonItem, IonLabel, IonList, IonMenuButton, IonPage, IonSearchbar, IonSegment, IonSegmentButton, IonSkeletonText, IonTitle, IonToolbar, modalController, onIonViewWillEnter } from "@ionic/vue";
+import { computed, ref, watch } from "vue";
 import { addOutline } from "ionicons/icons";
 
 import { useProductStore as useAppProductStore } from "@/store/productStore";
 import { DateTime } from "luxon";
 import CreateTransferOrderModal from "@/components/CreateTransferOrderModal.vue";
+import { useLiveTransferOrders } from "@/composables/useLiveTransferOrders";
 import { useTransferOrderStore } from "@/store/transferorder";
+import { TRANSFER_ORDER_PAGE_SIZE } from "@/utils/transferOrderView";
 import router from "@/router";
 
-const searchedQuery = ref("");
+const queryString = ref("");
 const isScrollingEnabled = ref(false);
-const hasCompletedTransferOrders = ref(true);
 const selectedSegment = ref("open");
-// True while the list is asked for and there is nothing to show yet: the empty message must not flash before the answer.
-const isLoading = ref(true);
+const viewIndex = ref(0);
 
 const contentRef = ref();
 const infiniteScrollRef = ref();
 
-const transferOrders = computed(() => useTransferOrderStore().getTransferOrders);
+// The transfer orders are read from the app database, which the sync keeps current, so the page never fetches its own list.
 const currentFacility = computed(() => useAppProductStore().getCurrentFacility);
+const currentFacilityId = computed(() => currentFacility.value?.facilityId as string | undefined);
+const currentProductStoreId = computed(() => useAppProductStore().getCurrentProductStore?.productStoreId as string | undefined);
+const live = useLiveTransferOrders({ facilityId: currentFacilityId, productStoreId: currentProductStoreId, stage: selectedSegment, query: queryString });
+const isLoaded = live.loaded;
+const visibleOrders = computed(() => live.orders.value.slice(0, (viewIndex.value + 1) * TRANSFER_ORDER_PAGE_SIZE));
+// Shaped as the page has always read it.
+const transferOrders = computed(() => ({ list: live.orders.value, total: live.orders.value.length }));
+
+// A new search or segment starts again from the top.
+const resetPage = () => { viewIndex.value = 0; };
+watch(queryString, resetPage);
 
 const openCreateTransferOrderModal = async () => {
   const createTransferOrderModal = await modalController.create({
@@ -92,19 +103,11 @@ const openCreateTransferOrderModal = async () => {
   return createTransferOrderModal.present();
 };
 
-const segmentChanged = () => {
-  initialiseTransferOrderQuery();
-};
-
 const getErrorMessage = () => {
-  if (!searchedQuery.value) {
-    if (selectedSegment.value === "completed") {
-      return translate("doesn't have any completed transfer orders right now.", { facilityName: currentFacility.value.facilityName });
-    } else {
-      return hasCompletedTransferOrders.value ? translate("doesn't have any open transfer orders right now.", { facilityName: currentFacility.value.facilityName }) : translate("doesn't have any transfer orders right now.", { facilityName: currentFacility.value.facilityName });
-    }
+  if (!queryString.value) {
+    return translate(selectedSegment.value === "completed" ? "doesn't have any completed transfer orders right now." : "doesn't have any open transfer orders right now.", { facilityName: currentFacility.value?.facilityName });
   } else {
-    return translate("No results found for .", { searchedQuery: searchedQuery.value });
+    return translate("No results found for .", { searchedQuery: queryString.value });
   }
 };
 
@@ -125,51 +128,12 @@ const loadMoreTransferOrders = async (event: any) => {
   if (!(isScrollingEnabled.value && isTransferOrdersScrollable())) {
     await event.target.complete();
   }
-  const transferOrdersQuery = JSON.parse(JSON.stringify(transferOrders.value.query));
-  transferOrdersQuery.viewIndex = transferOrders.value.list?.length / 20;
-  await useTransferOrderStore().updateTransferOrderQuery({ ...transferOrdersQuery });
+  viewIndex.value++;
   event.target.complete();
 };
 
 const isTransferOrdersScrollable = () => {
-  return transferOrders.value.list?.length > 0 && transferOrders.value.list?.length < transferOrders.value.total;
-};
-
-const updateQueryString = async (queryString: string) => {
-  const transferOrdersQuery = JSON.parse(JSON.stringify(transferOrders.value.query));
-
-  transferOrdersQuery.viewIndex = 0;
-  transferOrdersQuery.viewSize = 20;
-  transferOrdersQuery.queryString = queryString.trim();
-  if (selectedSegment.value === "completed") {
-    transferOrdersQuery.orderStatusId = "";
-    transferOrdersQuery.shipmentStatusId = "SHIPMENT_SHIPPED";
-  } else {
-    transferOrdersQuery.orderStatusId = "ORDER_APPROVED";
-    transferOrdersQuery.shipmentStatusId = "";
-  }
-
-  await useTransferOrderStore().updateTransferOrderQuery({ ...transferOrdersQuery });
-  searchedQuery.value = queryString;
-};
-
-const initialiseTransferOrderQuery = async () => {
-  const transferOrdersQuery = JSON.parse(JSON.stringify(transferOrders.value.query));
-  transferOrdersQuery.viewIndex = 0;
-  transferOrdersQuery.viewSize = 20;
-  if (selectedSegment.value === "completed") {
-    transferOrdersQuery.orderStatusId = "";
-    transferOrdersQuery.shipmentStatusId = "SHIPMENT_SHIPPED";
-  } else {
-    transferOrdersQuery.orderStatusId = "ORDER_APPROVED";
-    transferOrdersQuery.shipmentStatusId = "";
-  }
-  isLoading.value = true;
-  try {
-    await useTransferOrderStore().updateTransferOrderQuery({ ...transferOrdersQuery });
-  } finally {
-    isLoading.value = false;
-  }
+  return visibleOrders.value.length < live.orders.value.length;
 };
 
 const viewTransferOrderDetail = async (order: any) => {
@@ -181,18 +145,9 @@ const getTime = (time: any) => {
   return DateTime.fromMillis(time).toFormat("dd MMMM yyyy t a");
 };
 
-// Coming back from an order shows the list as it was and refreshes it in place: there is no loader to wait behind.
-onIonViewWillEnter(async () => {
+onIonViewWillEnter(() => {
   isScrollingEnabled.value = false;
-  await initialiseTransferOrderQuery();
-});
-
-onIonViewDidLeave(() => {
-  const routeTo = router.currentRoute;
-  if (routeTo.value.name !== "TransferOrderDetail") {
-    useTransferOrderStore().clearTransferOrderFilters();
-    useTransferOrderStore().clearTransferOrdersList();
-  }
+  viewIndex.value = 0;
 });
 </script>
 

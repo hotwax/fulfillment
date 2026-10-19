@@ -1,12 +1,12 @@
 <template>
-  <ion-page :key="router.currentRoute.value.path">
+  <ion-page :key="pageKey">
     <ViewSizeSelector menu-id="view-size-selector-completed" content-id="view-size-selector" :total="filteredOrders.length" :view-size="pageSize" />
 
     <ion-header :translucent="true">
       <ion-toolbar>
         <ion-menu-button slot="start" />
         <ion-title v-if="!completedOrders.total">{{ completedOrders.total }} {{ translate('orders') }}</ion-title>
-        <ion-title v-else>{{ completedOrders.query.viewSize }} {{ translate('of') }} {{ completedOrders.total }} {{ completedOrders.total ? translate('order') : translate('orders') }}</ion-title>
+        <ion-title v-else>{{ completedOrders.query.viewSize }} {{ translate('of') }} {{ completedOrders.total }} {{ completedOrders.total === 1 ? translate('order') : translate('orders') }}</ion-title>
 
         <ion-buttons slot="end">
           <ion-menu-button menu="view-size-selector-completed" :disabled="!completedOrders.total">
@@ -204,6 +204,7 @@
 import { IonBadge, IonButton, IonButtons, IonCard, IonCheckbox, IonChip, IonContent, IonFab, IonFabButton, IonFooter, IonHeader, IonIcon, IonInfiniteScroll, IonInfiniteScrollContent, IonItem, IonLabel, IonMenuButton, IonNote, IonPage, IonRadio, IonRadioGroup, IonRow, IonSearchbar, IonSkeletonText, IonSpinner, IonThumbnail, IonTitle, IonToolbar, alertController, modalController, onIonViewWillEnter, popoverController } from "@ionic/vue";
 import { computed, ref, watch } from "vue";
 import { onBeforeRouteLeave } from "vue-router";
+import router from "@/router";
 import { caretDownOutline, chevronUpOutline, cubeOutline, printOutline, gift, giftOutline, listOutline, pricetagOutline, ellipsisVerticalOutline, checkmarkDoneOutline, optionsOutline, timeOutline } from "ionicons/icons";
 import Popover from "@/views/ShippingPopover.vue";
 import { commonUtil, DxpShopifyImg, emitter, logger, translate } from "@common";
@@ -231,8 +232,10 @@ import { filterShipments } from "@/utils/shipmentView";
 import { useProductStore as useProduct } from "@/store/product";
 import { useStockStore } from "@/store/stock";
 import { useUtilStore } from "@/store/util";
-import router from "@/router";
 import Actions from "@/authorization/actions";
+// Keyed by the route this page was opened on, read once. It used to follow the current route, which rebuilt the page that was
+// being left (cards, thumbnails and all) in the middle of every navigation.
+const pageKey = router.currentRoute.value.path;
 
 const orderStore = useOrderStore();
 const carrierStore = useCarrierStore();

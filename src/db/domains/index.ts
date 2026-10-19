@@ -7,15 +7,16 @@ import { PICKERS_DOMAIN, pickersDomain } from "./pickersDomain";
 import { PICKLISTS_DOMAIN, picklistsDomain } from "./picklistsDomain";
 import { PRODUCTS_DOMAIN, productsDomain } from "./productsDomain";
 import { SHIPMENTS_DOMAIN, shipmentsDomain } from "./shipmentsDomain";
+import { TRANSFER_ORDERS_DOMAIN, transferOrdersDomain } from "./transferOrdersDomain";
 
-export { OPEN_ORDERS_DOMAIN, ORDER_ITEMS_DOMAIN, PICKERS_DOMAIN, PICKLISTS_DOMAIN, PRODUCTS_DOMAIN, SHIPMENTS_DOMAIN };
+export { OPEN_ORDERS_DOMAIN, ORDER_ITEMS_DOMAIN, PICKERS_DOMAIN, PICKLISTS_DOMAIN, PRODUCTS_DOMAIN, SHIPMENTS_DOMAIN, TRANSFER_ORDERS_DOMAIN };
 export { LIVE_ORDERS_CHANNEL } from "./productsDomain";
 
 const LIVE_ORDERS_INTERVAL_MS = 15_000;
 // Who can pick changes rarely.
 const PICKERS_INTERVAL_MS = 5 * 60 * 1000;
 
-export const FULFILLMENT_SYNC_DOMAINS: SyncDomain[] = [commonDomains.shipmentMethodType, openOrdersDomain, orderItemsDomain, shipmentsDomain, picklistsDomain, pickersDomain, productsDomain];
+export const FULFILLMENT_SYNC_DOMAINS: SyncDomain[] = [commonDomains.shipmentMethodType, openOrdersDomain, orderItemsDomain, shipmentsDomain, picklistsDomain, pickersDomain, transferOrdersDomain, productsDomain];
 
 // In tick order: items follow orders, products follow items. The facility on screen gets a pass of its own for
 // both first, so its cards are complete before the rest of the queue's items are fetched.
@@ -27,6 +28,7 @@ export const liveOrderDomains = (facilityId?: string, facilityIds: string[] = []
     ? [
       { name: SHIPMENTS_DOMAIN, intervalMs: LIVE_ORDERS_INTERVAL_MS, args: { facilityId, productStoreId } },
       { name: PICKLISTS_DOMAIN, intervalMs: LIVE_ORDERS_INTERVAL_MS, args: { facilityId, productStoreId } },
+      { name: TRANSFER_ORDERS_DOMAIN, intervalMs: LIVE_ORDERS_INTERVAL_MS, args: { facilityId } },
       { name: ORDER_ITEMS_DOMAIN, intervalMs: LIVE_ORDERS_INTERVAL_MS, args: { facilityId, only: true } },
       { name: PRODUCTS_DOMAIN, intervalMs: LIVE_ORDERS_INTERVAL_MS, args: { facilityId } }
     ]
