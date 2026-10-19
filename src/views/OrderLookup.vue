@@ -3,8 +3,8 @@
     <OrderLookupFilters menu-id="orderLookup-filter" content-id="orderLookup-filter" />
 
     <ion-header :translucent="true">
-      <ion-menu-button menu="start" slot="start" />
       <ion-toolbar>
+        <ion-menu-button menu="start" slot="start" />
         <ion-title>{{ translate("Orders") }}</ion-title>
         <ion-buttons slot="end">
           <ion-menu-button menu="orderLookup-filter">
