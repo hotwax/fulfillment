@@ -150,7 +150,7 @@
                   </ion-avatar>
                   <ion-label class="ion-text-wrap">
                     {{ commonUtil.formatCurrency(shippingRate.shippingEstimateAmount, shipmentDetails.currencyUom || shippingRate.currencyUomId) }}
-                    <ion-chip v-if="isSuggested(shippingRate)" outline color="success" data-testid="suggested-rate">{{ translate("Suggested") }}</ion-chip>
+                    <ion-badge v-if="isSuggested(shippingRate)" color="success" class="suggested-badge" data-testid="suggested-rate">{{ translate("Suggested") }}</ion-badge>
                     <p>{{ getRateName(shippingRate) }}</p>
                     <p v-if="deliveryDateText(shippingRate)" :class="{ 'package-note': isLateRate(shippingRate) }" data-testid="rate-delivery-date">{{ deliveryDateText(shippingRate) }}</p>
                     <p v-if="isSuggested(shippingRate)" class="suggestion" data-testid="suggestion-reason">{{ suggestionReason }}</p>
@@ -245,7 +245,7 @@
 </template>
 
 <script setup lang="ts">
-import { IonAvatar, IonBackButton, IonButton, IonButtons, IonCard, IonCardContent, IonCardHeader, IonCardSubtitle, IonCardTitle, IonChip, IonContent, IonFooter, IonHeader, IonIcon, IonInput, IonItem, IonLabel, IonList, IonListHeader, IonNote, IonPage, IonProgressBar, IonSegment, IonSegmentButton, IonSelect, IonSelectOption, IonSkeletonText, IonSpinner, IonThumbnail, IonTitle, IonToolbar, alertController, modalController, onIonViewWillEnter, onIonViewDidLeave } from "@ionic/vue";
+import { IonAvatar, IonBackButton, IonBadge, IonButton, IonButtons, IonCard, IonCardContent, IonCardHeader, IonCardSubtitle, IonCardTitle, IonContent, IonFooter, IonHeader, IonIcon, IonInput, IonItem, IonLabel, IonList, IonListHeader, IonNote, IonPage, IonProgressBar, IonSegment, IonSegmentButton, IonSelect, IonSelectOption, IonSkeletonText, IonSpinner, IonThumbnail, IonTitle, IonToolbar, alertController, modalController, onIonViewWillEnter, onIonViewDidLeave } from "@ionic/vue";
 import { calendarOutline, createOutline, cubeOutline, openOutline, pricetagOutline, printOutline, refreshOutline, storefrontOutline } from "ionicons/icons";
 import { computed, ref, watch } from "vue";
 import { commonUtil, logger, translate } from "@common";
@@ -1012,6 +1012,11 @@ hr {
 
 ion-note {
   align-self: center;
+}
+
+.suggested-badge {
+  margin-inline-start: var(--spacer-xs);
+  vertical-align: middle;
 }
 
 .suggestion {
