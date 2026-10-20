@@ -881,5 +881,5 @@
   "{date} fill rate": "{date} fill rate",
   "{duration} average": "{duration} average",
   "{quantity} units, no weight on file": "{quantity} units, no weight on file",
-  "{quantity} x {weight} each": "{quantity} x {weight} each"
+  "{quantity} × {weight}": "{quantity} × {weight}"
 }

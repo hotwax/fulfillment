@@ -575,7 +575,8 @@ function describePackageItem(item: any) {
 
   return {
     name: primary && primary !== "null" ? primary : (product?.productName || item.productId),
-    detail: secondary && secondary !== "null" ? secondary : ""
+    detail: secondary && secondary !== "null" ? secondary : "",
+    imageUrl: product?.mainImageUrl || ""
   };
 }
 

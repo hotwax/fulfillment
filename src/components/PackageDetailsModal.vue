@@ -34,16 +34,23 @@
       <ion-list v-if="breakdown.rows.length" lines="full" data-testid="weight-breakdown">
         <ion-list-header>{{ translate("Estimated weight by product") }}</ion-list-header>
         <ion-item v-for="row in breakdown.rows" :key="row.key" data-testid="weight-breakdown-row">
+          <ion-thumbnail slot="start">
+            <Image :key="row.imageUrl" :src="row.imageUrl" />
+          </ion-thumbnail>
           <ion-label class="ion-text-wrap">
             {{ row.name }}
             <p v-if="row.detail">
               {{ row.detail }}
             </p>
-            <p>{{ row.unitText ? translate("{quantity} x {weight} each", { quantity: row.quantity, weight: row.unitText }) : translate("{quantity} units, no weight on file", { quantity: row.quantity }) }}</p>
           </ion-label>
-          <ion-note slot="end" :color="row.contributionText ? undefined : 'warning'">
-            {{ row.contributionText || "-" }}
-          </ion-note>
+          <div slot="end" class="item-weight">
+            <ion-note :color="row.contributionText ? undefined : 'warning'" data-testid="weight-breakdown-total">
+              {{ row.contributionText || "-" }}
+            </ion-note>
+            <ion-note class="math" data-testid="weight-breakdown-math">
+              {{ row.unitText ? translate("{quantity} × {weight}", { quantity: row.quantity, weight: row.unitText }) : translate("{quantity} units, no weight on file", { quantity: row.quantity }) }}
+            </ion-note>
+          </div>
         </ion-item>
         <ion-item lines="none">
           <ion-label>{{ translate("Estimated total") }}</ion-label>
@@ -91,9 +98,10 @@
 
 <script setup lang="ts">
 import { translate } from "@common";
-import { IonButton, IonButtons, IonContent, IonHeader, IonIcon, IonInput, IonItem, IonLabel, IonList, IonListHeader, IonNote, IonSelect, IonSelectOption, IonTitle, IonToggle, IonToolbar, modalController } from "@ionic/vue";
+import { IonButton, IonButtons, IonContent, IonHeader, IonIcon, IonInput, IonItem, IonLabel, IonList, IonListHeader, IonNote, IonSelect, IonSelectOption, IonThumbnail, IonTitle, IonToggle, IonToolbar, modalController } from "@ionic/vue";
 import { closeOutline, warningOutline } from "ionicons/icons";
 import { computed, ref, watch } from "vue";
+import Image from "@/components/Image.vue";
 import { CARRIER_PACKAGE_WEIGHT_LIMIT_LB, type PackageView, type WeightRow, formatBoxSize, isOverCarrierLimit, packageChanges, weightUnitLabel } from "@/utils/packageDetails";
 
 // packageView: the package as it is. boxTypes: the boxes to choose from, each with a length, width and height.
@@ -144,6 +152,18 @@ ion-input {
 .override {
   --padding-start: 0;
   --inner-padding-end: 0;
+}
+
+.item-weight {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+  text-align: end;
+}
+
+.item-weight .math {
+  font-size: 0.8em;
 }
 
 .missing-note {

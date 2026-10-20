@@ -54,6 +54,7 @@ export interface WeightRow {
   key: string;
   name: string;
   detail: string;
+  imageUrl: string;
   quantity: number;
   // The weight of one unit, in the package's unit. Undefined when the product has none on file.
   unitWeight?: number;
@@ -65,17 +66,18 @@ export interface WeightRow {
 
 // What each product adds to the package weight: quantity times the weight of one unit, in the unit of the package. The sum is the
 // estimate the package gets when it is made. describe gives the words for an item; weightUomId is the unit of the package.
-export function weightBreakdown(items: any[] | undefined, weightUomId: string | undefined, describe: (item: any) => { name: string; detail?: string }) {
+export function weightBreakdown(items: any[] | undefined, weightUomId: string | undefined, describe: (item: any) => { name: string; detail?: string; imageUrl?: string }) {
   const rows: WeightRow[] = (items ?? []).map((item, index) => {
     const quantity = toNumber(item.quantity) ?? 0;
     const unitWeight = convertWeight(item.productShippingWeight, item.productWeightUomId || weightUomId, weightUomId);
     const contribution = unitWeight === undefined ? undefined : roundWeight(quantity * unitWeight);
-    const { name, detail } = describe(item);
+    const { name, detail, imageUrl } = describe(item);
 
     return {
       key: `${item.shipmentItemSeqId ?? index}`,
       name,
       detail: detail ?? "",
+      imageUrl: imageUrl ?? "",
       quantity,
       unitWeight,
       unitText: formatWeight(unitWeight, weightUomId),

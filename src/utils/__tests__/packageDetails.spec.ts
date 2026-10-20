@@ -116,11 +116,11 @@ describe("convertWeight", () => {
 });
 
 describe("weightBreakdown", () => {
-  const describe_ = (item: any) => ({ name: `Product ${item.productId}`, detail: item.size });
+  const describe_ = (item: any) => ({ name: `Product ${item.productId}`, detail: item.size, imageUrl: item.image });
 
   it("gives what each product adds and their sum", () => {
     const result = weightBreakdown([
-      { shipmentItemSeqId: "01", productId: "A", quantity: 3, productShippingWeight: 0.66, productWeightUomId: "WT_lb", size: "XS" },
+      { shipmentItemSeqId: "01", productId: "A", quantity: 3, productShippingWeight: 0.66, productWeightUomId: "WT_lb", size: "XS", image: "https://cdn/a.jpg" },
       { shipmentItemSeqId: "02", productId: "B", quantity: 2, productShippingWeight: 1.25, productWeightUomId: "WT_lb" }
     ], "WT_lb", describe_);
 
@@ -129,6 +129,8 @@ describe("weightBreakdown", () => {
       ["Product B", 2, "1.25 lb", 2.5, "2.5 lb"]
     ]);
     expect(result.rows[0].detail).toBe("XS");
+    expect(result.rows[0].imageUrl).toBe("https://cdn/a.jpg");
+    expect(result.rows[1].imageUrl).toBe("");
     expect(result.estimate).toBe(4.48);
     expect(result.estimateText).toBe("4.48 lb");
     expect(result.missingCount).toBe(0);
