@@ -34,6 +34,15 @@
             <ion-label>
               <p class="overline">{{ translate("Shipping method") }}</p>
               {{ shippingMethodName }}
+              <p v-if="methodDaysText" data-testid="method-delivery-days">{{ methodDaysText }}</p>
+            </ion-label>
+          </ion-item>
+          <ion-item v-if="orderEstimate" lines="full" data-testid="order-delivery-estimate">
+            <ion-icon :icon="calendarOutline" slot="start" />
+            <ion-label>
+              <p class="overline">{{ translate("Estimated delivery") }}</p>
+              {{ formatDeliveryDate(orderEstimate.date) }}
+              <p>{{ orderEstimateSourceText }}</p>
             </ion-label>
           </ion-item>
           <ion-list v-if="packageViews.length" data-testid="package-details">
@@ -139,9 +148,12 @@
                   <ion-avatar slot="start">
                     <Image :src="getCarrierLogo(shippingRate.actualCarrierCode || shippingRate.carrierPartyId)" />
                   </ion-avatar>
-                  <ion-label>
+                  <ion-label class="ion-text-wrap">
                     {{ commonUtil.formatCurrency(shippingRate.shippingEstimateAmount, shipmentDetails.currencyUom || shippingRate.currencyUomId) }}
+                    <ion-chip v-if="isSuggested(shippingRate)" outline color="success" data-testid="suggested-rate">{{ translate("Suggested") }}</ion-chip>
                     <p>{{ getRateName(shippingRate) }}</p>
+                    <p v-if="deliveryDateText(shippingRate)" :class="{ 'package-note': isLateRate(shippingRate) }" data-testid="rate-delivery-date">{{ deliveryDateText(shippingRate) }}</p>
+                    <p v-if="isSuggested(shippingRate)" class="suggestion" data-testid="suggestion-reason">{{ suggestionReason }}</p>
                     <p v-if="shippingRate?.serviceDays">{{ "Service Days:" }} {{ shippingRate.serviceDays }}</p>
                   </ion-label>
                   <ion-button slot="end" data-testid="purchase-label-btn" color="primary" fill="outline" :disabled="isBusy || !shipmentDetails.shipmentId" @click="generateLabel(shippingRate)">
@@ -233,8 +245,8 @@
 </template>
 
 <script setup lang="ts">
-import { IonAvatar, IonBackButton, IonButton, IonButtons, IonCard, IonCardContent, IonCardHeader, IonCardSubtitle, IonCardTitle, IonContent, IonFooter, IonHeader, IonIcon, IonInput, IonItem, IonLabel, IonList, IonListHeader, IonNote, IonPage, IonProgressBar, IonSegment, IonSegmentButton, IonSelect, IonSelectOption, IonSkeletonText, IonSpinner, IonThumbnail, IonTitle, IonToolbar, alertController, modalController, onIonViewWillEnter, onIonViewDidLeave } from "@ionic/vue";
-import { createOutline, cubeOutline, openOutline, pricetagOutline, printOutline, refreshOutline, storefrontOutline } from "ionicons/icons";
+import { IonAvatar, IonBackButton, IonButton, IonButtons, IonCard, IonCardContent, IonCardHeader, IonCardSubtitle, IonCardTitle, IonChip, IonContent, IonFooter, IonHeader, IonIcon, IonInput, IonItem, IonLabel, IonList, IonListHeader, IonNote, IonPage, IonProgressBar, IonSegment, IonSegmentButton, IonSelect, IonSelectOption, IonSkeletonText, IonSpinner, IonThumbnail, IonTitle, IonToolbar, alertController, modalController, onIonViewWillEnter, onIonViewDidLeave } from "@ionic/vue";
+import { calendarOutline, createOutline, cubeOutline, openOutline, pricetagOutline, printOutline, refreshOutline, storefrontOutline } from "ionicons/icons";
 import { computed, ref, watch } from "vue";
 import { commonUtil, logger, translate } from "@common";
 import { useProductStore as useAppProductStore } from "@/store/productStore";
@@ -249,6 +261,7 @@ import { useCarrierStore } from "@/store/carrier";
 import { useTransferOrderStore } from "@/store/transferorder";
 import { dedupeShippingRates, shippingRateKey, shippingRateName } from "@/utils/shippingRates";
 import { CARRIER_PACKAGE_WEIGHT_LIMIT_LB, type PackageView, toPackageView, weightBreakdown } from "@/utils/packageDetails";
+import { formatDeliveryDate, isAfter, orderDeliveryEstimate, suggestRate, toIsoDate } from "@/utils/deliveryEstimate";
 import router from "@/router";
 import { refreshLiveOrders } from "@/db/appDbSync";
 import { TRANSFER_ORDERS_DOMAIN } from "@/db/domains";
@@ -551,6 +564,39 @@ async function fetchShipmentOrderDetail(shipmentId: string) {
 
     return null;
   }
+}
+
+// When the order should arrive: the ship group's date, or the order date plus the delivery days of the order's shipping method.
+const orderEstimate = computed(() => orderDeliveryEstimate(shipmentDetails.value ?? {}));
+// The days belong to the shipping method of the order, which the card stops showing once a label is bought (it shows the label's).
+const methodDaysText = computed(() => {
+  const days = Number(shipmentDetails.value?.methodDeliveryDays);
+  if(isLabelAccepted.value || shipmentDetails.value?.methodDeliveryDays === null || shipmentDetails.value?.methodDeliveryDays === undefined || !Number.isFinite(days)) {return "";}
+
+  return days === 1 ? translate("1 delivery day") : translate("{count} delivery days", { count: days });
+});
+const orderEstimateSourceText = computed(() => {
+  if(orderEstimate.value?.source === "shipGroup") {return translate("From the ship group of the order");}
+
+  return translate("Order date plus {count} delivery days", { count: orderEstimate.value?.days ?? 0 });
+});
+
+// The FedEx service that gets the package there by that date at the lowest price.
+const suggestion = computed(() => suggestRate(displayRates.value, orderEstimate.value?.date, shippingRateKey));
+const isSuggested = (rate: any) => !!suggestion.value && suggestion.value.key === shippingRateKey(rate);
+const suggestionReason = computed(() => {
+  if(!suggestion.value || !orderEstimate.value) {return "";}
+  const target = formatDeliveryDate(orderEstimate.value.date);
+
+  return suggestion.value.isOnTime ? translate("The cheapest option that arrives by {date}", { date: target }) : translate("None arrives by {date}, this one arrives first and costs the least of those", { date: target });
+});
+const isLateRate = (rate: any) => isAfter(rate.estimatedDeliveryDate, orderEstimate.value?.date);
+// "Delivers Thu, Oct 22", and for a service that arrives after the order should have, what it is late against.
+function deliveryDateText(rate: any) {
+  const date = formatDeliveryDate(toIsoDate(rate.estimatedDeliveryDate));
+  if(!date) {return "";}
+
+  return isLateRate(rate) ? translate("Delivers {date}, after {target}", { date, target: formatDeliveryDate(orderEstimate.value?.date) }) : translate("Delivers {date}", { date });
 }
 
 function packageBoxLine(packageView: PackageView) {
@@ -966,6 +1012,10 @@ hr {
 
 ion-note {
   align-self: center;
+}
+
+.suggestion {
+  color: var(--ion-color-success-shade);
 }
 
 .package-note {
