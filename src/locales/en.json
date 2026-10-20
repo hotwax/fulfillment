@@ -277,6 +277,7 @@
   "Failed to update variance type.": "Failed to update variance type.",
   "Failed to void shipping label": "Failed to void shipping label",
   "Fastest fulfiller": "Fastest fulfiller",
+  "FedEx did not answer, asking again ({attempt} of {total})": "FedEx did not answer, asking again ({attempt} of {total})",
   "Fetching facilities": "Fetching facilities",
   "Fetching gift card info.": "Fetching gift card info.",
   "Fetching order information...": "Fetching order information...",

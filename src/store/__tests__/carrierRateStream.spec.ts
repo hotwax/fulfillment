@@ -23,6 +23,8 @@ const notFound = () => Promise.reject({ response: { status: 404 } });
 async function freshStore() {
   vi.resetModules();
   const { useCarrierStore } = await import("@/store/carrier");
+  // No pause between the attempts of a service that is asked for again.
+  (await import("@/utils/rateStream")).rateRetry.delayMs = 0;
   setActivePinia(createPinia());
 
   return useCarrierStore();
@@ -110,7 +112,8 @@ describe("streamShippingRates", () => {
     handlers["poorti/shippingRate/"] = (params) => {
       if(params.carrierServiceCode === "OK") {return Promise.resolve({ data: { shippingRates: [rate("OK")] } });}
 
-      return Promise.resolve({ data: { shippingRates: ++attempts === 1 ? [] : [rate("FLAKY", "30.00")] } });
+      // empty for the four attempts of the first lookup, then a rate
+      return Promise.resolve({ data: { shippingRates: ++attempts <= 4 ? [] : [rate("FLAKY", "30.00")] } });
     };
     const store = await freshStore();
     await store.streamShippingRates("S1");
@@ -135,10 +138,49 @@ describe("streamShippingRates", () => {
     await store.retryRateService("S1", "FEDEX|OK");
     expect(requests.length).toBe(before);
 
+    // a retry by hand is also asked for again, up to four attempts
     await store.retryRateService("S1", "FEDEX|BAD");
-    expect(requests.length).toBe(before + 1);
+    expect(requests.length).toBe(before + 4);
     expect(store.rateStreams.S1.rows.map((row) => row.status)).toEqual(["done", "failed"]);
     expect(store.rateStreams.S1.rates).toHaveLength(1);
+  });
+
+  it("asks a service again when FedEx fails, and shows the attempt it is on", async () => {
+    const seenAttempts: number[] = [];
+    let calls = 0;
+    handlers["poorti/shippingRateOptions"] = () => Promise.resolve(options("FLAKY"));
+    handlers["poorti/shippingRate/"] = () => {
+      calls++;
+      seenAttempts.push(store.rateStreams.S1.rows[0].attempt);
+
+      return calls < 3 ? Promise.reject(new Error("FedEx 503")) : Promise.resolve({ data: { shippingRates: [rate("FLAKY")] } });
+    };
+    const store = await freshStore();
+
+    const stream = await store.streamShippingRates("S1");
+
+    expect(calls).toBe(3);
+    expect(seenAttempts).toEqual([1, 2, 3]);
+    expect(stream.rows[0].status).toBe("done");
+    expect(stream.rates).toHaveLength(1);
+  });
+
+  it("gives up on a service after the first attempt and three retries, and the others are not held back", async () => {
+    let flakyCalls = 0;
+    handlers["poorti/shippingRateOptions"] = () => Promise.resolve(options("OK", "DEAD"));
+    handlers["poorti/shippingRate/"] = (params) => {
+      if(params.carrierServiceCode === "OK") {return Promise.resolve({ data: { shippingRates: [rate("OK")] } });}
+      flakyCalls++;
+
+      return Promise.reject(new Error("FedEx 500"));
+    };
+    const store = await freshStore();
+
+    const stream = await store.streamShippingRates("S1");
+
+    expect(flakyCalls).toBe(4);
+    expect(stream.rows.map((row) => row.status)).toEqual(["done", "failed"]);
+    expect(stream.rates).toHaveLength(1);
   });
 
   it("serves a complete list from the cache the next time, without asking again", async () => {

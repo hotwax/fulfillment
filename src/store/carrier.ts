@@ -4,7 +4,7 @@ import { DateTime } from "luxon";
 
 import { useProductStore as useAppProductStore } from "@/store/productStore";
 import { isFreshCacheEntry, readShippingRatesCache, removeShippingRatesCache, writeShippingRatesCache } from "@/utils/shippingRates";
-import { type RateStreamRow, runRateStream, toRateRows } from "@/utils/rateStream";
+import { type RateStreamRow, fetchWithRetries, runRateStream, toRateRows } from "@/utils/rateStream";
 
 // Rate shopping takes several seconds, so the rates of a shipment are kept in memory and in sessionStorage for a few minutes,
 // and a request that is already running (the Ship page opening while createShipment prefetched) is shared.
@@ -678,6 +678,18 @@ export const useCarrierStore = defineStore("carrier", {
 
       return resp.data?.shippingRates || []
     },
+    // One service, asked for again (a few times, with a growing pause) while the carrier answers with an error or no rate. The row says
+    // which attempt it is on.
+    fetchServiceRatesWithRetries(shipmentId: string, row: RateStreamRow, isCancelled: () => boolean = () => false) {
+      row.attempt = 1
+      return fetchWithRetries(() => this.fetchServiceShippingRates(shipmentId, row), {
+        isCancelled,
+        onRetry: (attempt, maxAttempts) => {
+          row.attempt = attempt
+          row.maxAttempts = maxAttempts
+        }
+      })
+    },
     // Looks up the rates of a shipment and keeps the progress in `rateStreams[shipmentId]`. Where the backend can rate one service at
     // a time every service is asked at once, and a rate shows as soon as its carrier answers. Elsewhere it is one request for all of
     // them. A lookup that is running is shared, and a fresh cached lookup is not repeated, unless `forceRefresh`.
@@ -711,7 +723,7 @@ export const useCarrierStore = defineStore("carrier", {
         const rows = toRateRows(options?.rateOptions)
         if(rows.length) {
           Object.assign(live(), { mode: "stream", rows, rates: [] })
-          await runRateStream(live().rows, (row) => this.fetchServiceShippingRates(shipmentId, row), {
+          await runRateStream(live().rows, (row) => this.fetchServiceRatesWithRetries(shipmentId, row, isCancelled), {
             isCancelled,
             onSettled: (row, { rates, error }) => {
               if(error) {logger.error(`Failed to fetch the rates of ${row.key}`, error)}
@@ -756,7 +768,7 @@ export const useCarrierStore = defineStore("carrier", {
       const runId = stream.runId
       row.status = "pending"
       try {
-        const rates = await this.fetchServiceShippingRates(shipmentId, row)
+        const rates = await this.fetchServiceRatesWithRetries(shipmentId, row, () => this.rateStreams[shipmentId]?.runId !== runId)
         if(this.rateStreams[shipmentId]?.runId !== runId) {return}
         row.status = rates.length ? "done" : "failed"
         stream.rates.push(...rates)

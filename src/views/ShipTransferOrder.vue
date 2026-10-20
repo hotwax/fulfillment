@@ -167,7 +167,7 @@
                   </ion-avatar>
                   <ion-label color="medium">
                     {{ rowName(row) }}
-                    <p v-if="row.status === 'pending'">{{ translate("Checking the price") }}</p>
+                    <p v-if="row.status === 'pending'">{{ row.attempt > 1 ? translate("FedEx did not answer, asking again ({attempt} of {total})", { attempt: row.attempt, total: row.maxAttempts }) : translate("Checking the price") }}</p>
                     <p v-else>{{ translate("No rate available") }}</p>
                   </ion-label>
                   <ion-spinner v-if="row.status === 'pending'" slot="end" name="dots" />

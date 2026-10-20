@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { type RateStreamRow, runRateStream, toRateRows } from "@/utils/rateStream";
+import { type RateStreamRow, fetchWithRetries, runRateStream, toRateRows } from "@/utils/rateStream";
 
 const option = (carrierServiceCode: string, shipmentMethodTypeIds = [carrierServiceCode], carrierPartyId = "FEDEX") => ({ carrierPartyId, carrierServiceCode, shipmentMethodTypeIds });
 
@@ -109,5 +109,81 @@ describe("runRateStream", () => {
 
   it("does nothing for no services", async () => {
     await expect(runRateStream([], () => Promise.resolve([]), { onSettled: () => { throw new Error("unexpected"); } })).resolves.toBeUndefined();
+  });
+});
+
+describe("fetchWithRetries", () => {
+  const fail = () => Promise.reject(new Error("FedEx unavailable"));
+
+  it("answers at once when the first attempt has rates", async () => {
+    let calls = 0;
+
+    const rates = await fetchWithRetries(() => {
+      calls++;
+
+      return Promise.resolve([{ a: 1 }]);
+    }, { delayMs: 0 });
+
+    expect(rates).toEqual([{ a: 1 }]);
+    expect(calls).toBe(1);
+  });
+
+  it("asks again after an error or an empty answer until one has rates, and says which attempt it is on", async () => {
+    const answers = [fail, () => Promise.resolve([]), () => Promise.resolve([{ ok: true }])];
+    const attempts: number[][] = [];
+    let calls = 0;
+
+    const rates = await fetchWithRetries(() => answers[calls++](), { delayMs: 0, onRetry: (attempt, max) => attempts.push([attempt, max]) });
+
+    expect(rates).toEqual([{ ok: true }]);
+    expect(calls).toBe(3);
+    expect(attempts).toEqual([[2, 4], [3, 4]]);
+  });
+
+  it("makes the first attempt and three retries, then gives up with the last error", async () => {
+    let calls = 0;
+
+    await expect(fetchWithRetries(() => {
+      calls++;
+
+      return fail();
+    }, { delayMs: 0 })).rejects.toThrow("FedEx unavailable");
+    expect(calls).toBe(4);
+  });
+
+  it("resolves with no rates when every attempt was an empty answer", async () => {
+    let calls = 0;
+
+    await expect(fetchWithRetries(() => {
+      calls++;
+
+      return Promise.resolve([]);
+    }, { delayMs: 0 })).resolves.toEqual([]);
+    expect(calls).toBe(4);
+  });
+
+  it("waits longer before each retry", async () => {
+    const times: number[] = [];
+
+    await fetchWithRetries(() => {
+      times.push(Date.now());
+
+      return Promise.resolve([]);
+    }, { retries: 2, delayMs: 20 });
+
+    expect(times[1] - times[0]).toBeGreaterThanOrEqual(18);
+    expect(times[2] - times[1]).toBeGreaterThanOrEqual(36);
+  });
+
+  it("stops asking once nobody wants the answer", async () => {
+    let calls = 0;
+
+    await fetchWithRetries(() => {
+      calls++;
+
+      return Promise.resolve([]);
+    }, { delayMs: 0, isCancelled: () => calls >= 2 });
+
+    expect(calls).toBe(2);
   });
 });
