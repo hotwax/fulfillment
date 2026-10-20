@@ -6,7 +6,7 @@
         <ion-title v-if="!transferOrders.total">{{ transferOrders.total }} {{ translate('orders') }}</ion-title>
         <ion-title v-else>{{ visibleOrders.length }} {{ translate('of') }} {{ transferOrders.total }} {{ translate('orders') }}</ion-title>
       </ion-toolbar>
-      <div>
+      <div class="filters">
         <ion-searchbar class="searchbar" v-model="queryString" />
         <ion-segment v-model="selectedSegment" @ionChange="resetPage()">
           <ion-segment-button data-testid="open-transfer-orders-tab" value="open">
@@ -152,8 +152,13 @@ onIonViewWillEnter(() => {
 </script>
 
 <style scoped>
+/* The filter row sits in the header but outside the toolbar. Without a background of its own it shows the header's elevation shadow as a gray band. */
+.filters {
+  background: var(--ion-background-color, #fff);
+}
+
 @media (min-width: 991px) {
-  ion-header > div {
+  .filters {
     display: flex;
   }
 }

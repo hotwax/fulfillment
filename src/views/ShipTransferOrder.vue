@@ -69,7 +69,9 @@
             <ion-segment-button value="manual">{{ translate("Manual tracking") }}</ion-segment-button>
           </ion-segment>
 
-          <ion-card v-if="isLabelAccepted">
+          <StepProgress v-if="labelProgress" data-testid="label-progress" :title="labelProgressTitle" :subtitle="labelProgressSubtitle" :steps="labelSteps" :active-index="labelProgress.activeIndex" />
+
+          <ion-card v-else-if="isLabelAccepted">
             <ion-item lines="full">
               <ion-avatar slot="start">
                 <Image :src="getCarrierLogo(shipmentDetails.actualCarrierCode || shipmentDetails.routeSegCarrierPartyId)" />
@@ -103,24 +105,7 @@
 
           <template v-else>
             <template v-if="selectedSegment === 'generate'">
-              <ion-list v-if="isLoadingRates" data-testid="shipping-rates-loading">
-                <ion-item v-for="row in 3" :key="row">
-                  <ion-avatar slot="start">
-                    <ion-skeleton-text animated />
-                  </ion-avatar>
-                  <ion-label>
-                    <ion-skeleton-text animated class="skeleton-short" />
-                    <p><ion-skeleton-text animated class="skeleton-long" /></p>
-                  </ion-label>
-                  <ion-skeleton-text slot="end" animated class="skeleton-button" />
-                </ion-item>
-                <ion-item lines="none">
-                  <ion-spinner slot="start" name="crescent" />
-                  <ion-label color="medium">
-                    {{ translate("Loading...") }}
-                  </ion-label>
-                </ion-item>
-              </ion-list>
+              <StepProgress v-if="isLoadingRates" data-testid="shipping-rates-loading" :title="translate('Finding your shipping options')" :steps="rateSteps" :active-index="0" />
 
               <ion-list v-else-if="displayRates.length">
                 <ion-item v-for="shippingRate in displayRates" :key="shippingRateKey(shippingRate)">
@@ -215,6 +200,7 @@ import { useProductStore as useAppProductStore } from "@/store/productStore";
 import { useOrderStore } from "@/store/order";
 import { onBeforeRouteLeave } from "vue-router";
 import Image from "@/components/Image.vue";
+import StepProgress from "@/components/StepProgress.vue";
 import { useProductStore } from "@/store/product";
 import { useUtilStore } from "@/store/util";
 import { useCarrierStore } from "@/store/carrier";
@@ -264,6 +250,59 @@ const isPrintingLabel = ref(false);
 const selectedRateKey = ref("");
 const carrierLogos = ref<Record<string, string>>({});
 let latestRatesRequest = 0;
+
+// Where a label purchase is: 0 locking in the service, 1 the carrier creating the label, 2 reading the label back, 3 all done.
+// Null when no label is being bought.
+const LABEL_STEP_COUNT = 3;
+// The finished state stays on screen for a moment so the last step is seen to complete before the label card replaces it.
+const LABEL_READY_HOLD_MS = 500;
+const labelProgress = ref<{ activeIndex: number; serviceName: string; carrierName: string; amount: string } | null>(null);
+
+function setLabelStep(activeIndex: number) {
+  if(labelProgress.value) {labelProgress.value.activeIndex = activeIndex;}
+}
+
+const labelSteps = computed(() => {
+  const serviceName = labelProgress.value?.serviceName || "";
+  const carrierName = labelProgress.value?.carrierName || "";
+
+  return [
+    { label: translate("Locking in {serviceName}", { serviceName }), doneLabel: translate("Locked in {serviceName}", { serviceName }) },
+    {
+      label: translate("Buying the label from {carrierName}", { carrierName }),
+      doneLabel: translate("Label bought from {carrierName}", { carrierName }),
+      hints: [
+        { afterSeconds: 0, text: translate("{carrierName} is creating your label", { carrierName }) },
+        { afterSeconds: 5, text: translate("This is the slow part, carriers can take a few seconds") },
+        { afterSeconds: 12, text: translate("Still waiting on {carrierName}, nearly there", { carrierName }) }
+      ]
+    },
+    { label: translate("Fetching your label and tracking number"), doneLabel: translate("Label and tracking number received") }
+  ];
+});
+
+const labelProgressTitle = computed(() => labelProgress.value && labelProgress.value.activeIndex >= LABEL_STEP_COUNT ? translate("Your shipping label is ready") : translate("Generating your shipping label"));
+const labelProgressSubtitle = computed(() => {
+  if(!labelProgress.value) {return "";}
+  if(labelProgress.value.activeIndex >= LABEL_STEP_COUNT) {return translate("Tracking number: {trackingNumber}", { trackingNumber: shipmentDetails.value?.trackingIdNumber || "" });}
+
+  return [labelProgress.value.serviceName, labelProgress.value.amount].filter(Boolean).join(" · ");
+});
+
+// The rates call is one request to the backend, which asks the carrier about each service, so there is no real progress to
+// report. The lines reassure the user that it is working, by how long it has been.
+const rateSteps = computed(() => [
+  {
+    label: translate("Asking the carriers for live rates"),
+    hints: [
+      { afterSeconds: 0, text: translate("Sending the package details") },
+      { afterSeconds: 3, text: translate("Waiting for the carriers to price each service") },
+      { afterSeconds: 9, text: translate("Carriers can take a little while, hang tight") },
+      { afterSeconds: 18, text: translate("Still working on it, almost there") }
+    ]
+  },
+  { label: translate("Lining up your shipping options") }
+]);
 
 // A voided label keeps its tracking number on the shipment, so the status decides, not the presence of the number.
 const isLabelAccepted = computed(() => shipmentDetails.value?.carrierServiceStatusId === "SHRSCS_ACCEPTED");
@@ -568,6 +607,12 @@ async function generateLabel(shippingRate: any) {
   selectedRateKey.value = shippingRateKey(shippingRate);
   labelError.value = "";
   isLabelWindowBlocked.value = false;
+  labelProgress.value = {
+    activeIndex: 0,
+    serviceName: getRateName(shippingRate),
+    carrierName: getCarrierDesc(shippingRate.carrierPartyId) || shippingRate.carrierPartyId,
+    amount: commonUtil.formatCurrency(shippingRate.shippingEstimateAmount, shipmentDetails.value.currencyUom || shippingRate.currencyUomId)
+  };
 
   try {
     const payload = {
@@ -591,8 +636,10 @@ async function generateLabel(shippingRate: any) {
 
     const resp = await orderStore.updateRouteShipmentCarrierAndMethod(payload);
     if(commonUtil.hasError(resp)) {throw resp.data;}
+    setLabelStep(1);
 
     await transferOrderStore.generateShippingLabel(shipmentDetails.value.shipmentId);
+    setLabelStep(2);
 
     const [shipment] = await Promise.all([
       fetchShipmentOrderDetail(shipmentDetails.value.shipmentId),
@@ -604,13 +651,18 @@ async function generateLabel(shippingRate: any) {
       throw new Error("The shipping label was not accepted");
     }
 
+    setLabelStep(LABEL_STEP_COUNT);
     commonUtil.showToast(translate("Shipping Label generated successfully"));
     printLabelInBackground();
+    await new Promise((resolve) => setTimeout(resolve, LABEL_READY_HOLD_MS));
   } catch (error) {
     logger.error("Failed to generate shipping label", error);
+    // The rates come back at once, the reason follows when the gateway has one.
+    labelProgress.value = null;
     labelError.value = await fetchLabelErrorMessage();
     commonUtil.showToast(translate("Failed to generate shipping label"));
   } finally {
+    labelProgress.value = null;
     selectedRateKey.value = "";
   }
 }
@@ -799,10 +851,5 @@ ion-note {
 
 .skeleton-long {
   width: 60%;
-}
-
-.skeleton-button {
-  width: 110px;
-  height: 36px;
 }
 </style>
