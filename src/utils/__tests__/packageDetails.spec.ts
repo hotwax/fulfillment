@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { formatBoxSize, formatWeight, isOverCarrierLimit, itemsMissingWeight, packageChanges, toPackageView, toPounds } from "@/utils/packageDetails";
+import { convertWeight, formatBoxSize, formatWeight, isOverCarrierLimit, itemsMissingWeight, packageChanges, toPackageView, toPounds, weightBreakdown } from "@/utils/packageDetails";
 
 describe("formatWeight", () => {
   it("shows the weight with its unit and at most two decimals", () => {
@@ -98,5 +98,62 @@ describe("packageChanges", () => {
   it("ignores an empty or unreadable weight and an empty box", () => {
     expect(packageChanges(view, { shipmentBoxTypeId: "", weight: "" })).toEqual({});
     expect(packageChanges(view, { weight: "abc" })).toEqual({});
+  });
+});
+
+describe("convertWeight", () => {
+  it("converts between the units it knows, through pounds", () => {
+    expect(convertWeight(1, "WT_kg", "WT_lb")).toBeCloseTo(2.2046, 3);
+    expect(convertWeight(16, "WT_oz", "WT_lb")).toBe(1);
+    expect(convertWeight(2.2046226, "WT_lb", "WT_kg")).toBeCloseTo(1, 3);
+  });
+
+  it("keeps the number when the unit is the same, even one it does not know, and gives up on two it cannot compare", () => {
+    expect(convertWeight(5, "WT_stone", "WT_stone")).toBe(5);
+    expect(convertWeight(5, "WT_stone", "WT_lb")).toBeUndefined();
+    expect(convertWeight(undefined, "WT_lb", "WT_lb")).toBeUndefined();
+  });
+});
+
+describe("weightBreakdown", () => {
+  const describe_ = (item: any) => ({ name: `Product ${item.productId}`, detail: item.size });
+
+  it("gives what each product adds and their sum", () => {
+    const result = weightBreakdown([
+      { shipmentItemSeqId: "01", productId: "A", quantity: 3, productShippingWeight: 0.66, productWeightUomId: "WT_lb", size: "XS" },
+      { shipmentItemSeqId: "02", productId: "B", quantity: 2, productShippingWeight: 1.25, productWeightUomId: "WT_lb" }
+    ], "WT_lb", describe_);
+
+    expect(result.rows.map((row) => [row.name, row.quantity, row.unitText, row.contribution, row.contributionText])).toEqual([
+      ["Product A", 3, "0.66 lb", 1.98, "1.98 lb"],
+      ["Product B", 2, "1.25 lb", 2.5, "2.5 lb"]
+    ]);
+    expect(result.rows[0].detail).toBe("XS");
+    expect(result.estimate).toBe(4.48);
+    expect(result.estimateText).toBe("4.48 lb");
+    expect(result.missingCount).toBe(0);
+  });
+
+  it("states a product without a weight as having none, counts it as nothing and says how many", () => {
+    const result = weightBreakdown([
+      { productId: "A", quantity: 3, productShippingWeight: 0.66, productWeightUomId: "WT_lb" },
+      { productId: "B", quantity: 4 }
+    ], "WT_lb", describe_);
+
+    expect(result.rows[1]).toMatchObject({ unitWeight: undefined, unitText: "", contribution: undefined, contributionText: "" });
+    expect(result.estimate).toBe(1.98);
+    expect(result.missingCount).toBe(1);
+  });
+
+  it("converts a product weight into the unit of the package", () => {
+    const result = weightBreakdown([{ productId: "A", quantity: 2, productShippingWeight: 16, productWeightUomId: "WT_oz" }], "WT_lb", describe_);
+
+    expect(result.rows[0].unitText).toBe("1 lb");
+    expect(result.estimate).toBe(2);
+  });
+
+  it("has no estimate when no product has a weight, or there are no items", () => {
+    expect(weightBreakdown([{ productId: "A", quantity: 1 }], "WT_lb", describe_)).toMatchObject({ estimate: undefined, estimateText: "", missingCount: 1 });
+    expect(weightBreakdown(undefined, "WT_lb", describe_)).toMatchObject({ rows: [], estimate: undefined, missingCount: 0 });
   });
 });

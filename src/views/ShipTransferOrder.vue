@@ -37,7 +37,6 @@
             </ion-label>
           </ion-item>
           <ion-list v-if="packageViews.length" data-testid="package-details">
-            <ion-list-header>{{ packageViews.length > 1 ? translate("Packages") : translate("Package") }}</ion-list-header>
             <ion-item v-for="(packageView, index) in packageViews" :key="packageView.shipmentPackageSeqId" lines="full">
               <ion-icon :icon="cubeOutline" slot="start" />
               <ion-label class="ion-text-wrap">
@@ -249,7 +248,7 @@ import { useUtilStore } from "@/store/util";
 import { useCarrierStore } from "@/store/carrier";
 import { useTransferOrderStore } from "@/store/transferorder";
 import { dedupeShippingRates, shippingRateKey, shippingRateName } from "@/utils/shippingRates";
-import { CARRIER_PACKAGE_WEIGHT_LIMIT_LB, type PackageView, toPackageView } from "@/utils/packageDetails";
+import { CARRIER_PACKAGE_WEIGHT_LIMIT_LB, type PackageView, toPackageView, weightBreakdown } from "@/utils/packageDetails";
 import router from "@/router";
 import { refreshLiveOrders } from "@/db/appDbSync";
 import { TRANSFER_ORDERS_DOMAIN } from "@/db/domains";
@@ -568,13 +567,27 @@ async function loadBoxTypes() {
   }
 }
 
+// The words for an item in the weight breakdown: its identifier as the left card shows it, and the second identifier under it.
+function describePackageItem(item: any) {
+  const product = getProduct(item.productId);
+  const primary = commonUtil.getProductIdentificationValue(productIdentificationPref.value.primaryId, product);
+  const secondary = commonUtil.getProductIdentificationValue(productIdentificationPref.value.secondaryId, product);
+
+  return {
+    name: primary && primary !== "null" ? primary : (product?.productName || item.productId),
+    detail: secondary && secondary !== "null" ? secondary : ""
+  };
+}
+
 async function editPackage(packageView: PackageView, index: number) {
   if(isBusy.value || isLabelAccepted.value) {return;}
   if(!boxTypes.value.length) {await loadBoxTypes();}
 
+  const shipmentPackage = (shipmentDetails.value?.packages ?? []).find((candidate: any) => candidate.shipmentPackageSeqId === packageView.shipmentPackageSeqId);
+  const breakdown = weightBreakdown(shipmentPackage?.items, packageView.weightUomId, describePackageItem);
   const modal = await modalController.create({
     component: PackageDetailsModal,
-    componentProps: { title: packageViews.value.length > 1 ? translate("Package {number}", { number: index + 1 }) : translate("Package"), packageView, boxTypes: boxTypes.value }
+    componentProps: { title: packageViews.value.length > 1 ? translate("Package {number}", { number: index + 1 }) : translate("Package"), packageView, boxTypes: boxTypes.value, breakdown }
   });
   await modal.present();
   const { data, role } = await modal.onDidDismiss();

@@ -36,6 +36,59 @@ export function toPounds(weight: any, uomId?: string) {
   return number === undefined || factor === undefined ? undefined : number * factor;
 }
 
+// A weight in another unit, through pounds. Undefined when either unit is not one it knows (and they differ).
+export function convertWeight(weight: any, fromUomId?: string, toUomId?: string) {
+  const number = toNumber(weight);
+  if(number === undefined) {return undefined;}
+  if(fromUomId === toUomId) {return number;}
+
+  const fromFactor = POUNDS_PER_UNIT[fromUomId ?? ""];
+  const toFactor = POUNDS_PER_UNIT[toUomId ?? ""];
+
+  return fromFactor === undefined || toFactor === undefined ? undefined : number * fromFactor / toFactor;
+}
+
+const roundWeight = (value: number) => Math.round(value * 100) / 100;
+
+export interface WeightRow {
+  key: string;
+  name: string;
+  detail: string;
+  quantity: number;
+  // The weight of one unit, in the package's unit. Undefined when the product has none on file.
+  unitWeight?: number;
+  unitText: string;
+  // quantity times unitWeight, in the package's unit.
+  contribution?: number;
+  contributionText: string;
+}
+
+// What each product adds to the package weight: quantity times the weight of one unit, in the unit of the package. The sum is the
+// estimate the package gets when it is made. describe gives the words for an item; weightUomId is the unit of the package.
+export function weightBreakdown(items: any[] | undefined, weightUomId: string | undefined, describe: (item: any) => { name: string; detail?: string }) {
+  const rows: WeightRow[] = (items ?? []).map((item, index) => {
+    const quantity = toNumber(item.quantity) ?? 0;
+    const unitWeight = convertWeight(item.productShippingWeight, item.productWeightUomId || weightUomId, weightUomId);
+    const contribution = unitWeight === undefined ? undefined : roundWeight(quantity * unitWeight);
+    const { name, detail } = describe(item);
+
+    return {
+      key: `${item.shipmentItemSeqId ?? index}`,
+      name,
+      detail: detail ?? "",
+      quantity,
+      unitWeight,
+      unitText: formatWeight(unitWeight, weightUomId),
+      contribution,
+      contributionText: formatWeight(contribution, weightUomId)
+    };
+  });
+  const weighed = rows.filter((row) => row.contribution !== undefined);
+  const estimate = weighed.length ? roundWeight(weighed.reduce((sum, row) => sum + (row.contribution as number), 0)) : undefined;
+
+  return { rows, estimate, estimateText: formatWeight(estimate, weightUomId), missingCount: rows.length - weighed.length };
+}
+
 export function isOverCarrierLimit(weight: any, uomId?: string, limitLb = CARRIER_PACKAGE_WEIGHT_LIMIT_LB) {
   const pounds = toPounds(weight, uomId);
 
