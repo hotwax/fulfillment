@@ -715,19 +715,14 @@ export const useCarrierStore = defineStore("carrier", {
             isCancelled,
             onSettled: (row, { rates, error }) => {
               if(error) {logger.error(`Failed to fetch the rates of ${row.key}`, error)}
-              row.status = error ? "failed" : "done"
+              // A service that answered with no rate is shown as having none, the same as one that failed.
+              row.status = error || !rates.length ? "failed" : "done"
               live().rates.push(...rates)
             }
           })
           if(isCancelled()) {return live()}
 
-          // Only a complete list is kept, otherwise the next visit would show a list with a service missing.
-          const stream = live()
-          if(stream.rates.length && stream.rows.every((row) => row.status === "done")) {
-            const cacheEntry = { at: Date.now(), rates: JSON.parse(JSON.stringify(stream.rates)) }
-            shippingRatesCache.set(shipmentId, cacheEntry)
-            writeShippingRatesCache(getSessionStorage(), shipmentId, cacheEntry)
-          }
+          this.cacheCompleteRateStream(shipmentId)
         } else {
           live().mode = "single"
           const data = await this.fetchShippingRates({ shipmentId, forceRefresh: true })
@@ -742,6 +737,35 @@ export const useCarrierStore = defineStore("carrier", {
       if(!isCancelled()) {live().status = "done"}
 
       return live()
+    },
+    // Only a complete list is kept, otherwise the next visit would show a list with a service missing.
+    cacheCompleteRateStream(shipmentId: string) {
+      const stream = this.rateStreams[shipmentId]
+      if(!stream || stream.mode !== "stream" || !stream.rates.length || !stream.rows.every((row) => row.status === "done")) {return}
+
+      const cacheEntry = { at: Date.now(), rates: JSON.parse(JSON.stringify(stream.rates)) }
+      shippingRatesCache.set(shipmentId, cacheEntry)
+      writeShippingRatesCache(getSessionStorage(), shipmentId, cacheEntry)
+    },
+    // Asks again for one service that returned no rate, for the page's retry button. The others stay as they are.
+    async retryRateService(shipmentId: string, key: string) {
+      const stream = this.rateStreams[shipmentId]
+      const row = stream?.rows.find((candidate) => candidate.key === key)
+      if(!stream || !row || row.status !== "failed") {return}
+
+      const runId = stream.runId
+      row.status = "pending"
+      try {
+        const rates = await this.fetchServiceShippingRates(shipmentId, row)
+        if(this.rateStreams[shipmentId]?.runId !== runId) {return}
+        row.status = rates.length ? "done" : "failed"
+        stream.rates.push(...rates)
+      } catch (err) {
+        logger.error(`Failed to fetch the rates of ${row.key}`, err)
+        if(this.rateStreams[shipmentId]?.runId === runId) {row.status = "failed"}
+        return
+      }
+      this.cacheCompleteRateStream(shipmentId)
     },
     // Starts the rates lookup before the Ship page is open. Nothing to handle: the page reads the same running lookup.
     prefetchShippingRates(shipmentId: string) {

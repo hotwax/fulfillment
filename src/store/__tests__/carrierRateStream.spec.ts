@@ -92,6 +92,55 @@ describe("streamShippingRates", () => {
     expect(window.sessionStorage.length).toBe(0);
   });
 
+  it("shows a service that answered with no rate as having none, and does not cache the list", async () => {
+    handlers["poorti/shippingRateOptions"] = () => Promise.resolve(options("OK", "EMPTY"));
+    handlers["poorti/shippingRate/"] = (params) => Promise.resolve({ data: { shippingRates: params.carrierServiceCode === "EMPTY" ? [] : [rate("OK")] } });
+    const store = await freshStore();
+
+    const stream = await store.streamShippingRates("S1");
+
+    expect(stream.rows.map((row) => row.status)).toEqual(["done", "failed"]);
+    expect(stream.rates).toHaveLength(1);
+    expect(window.sessionStorage.length).toBe(0);
+  });
+
+  it("asks again for one service that had no rate, and keeps a list that is complete then", async () => {
+    let attempts = 0;
+    handlers["poorti/shippingRateOptions"] = () => Promise.resolve(options("OK", "FLAKY"));
+    handlers["poorti/shippingRate/"] = (params) => {
+      if(params.carrierServiceCode === "OK") {return Promise.resolve({ data: { shippingRates: [rate("OK")] } });}
+
+      return Promise.resolve({ data: { shippingRates: ++attempts === 1 ? [] : [rate("FLAKY", "30.00")] } });
+    };
+    const store = await freshStore();
+    await store.streamShippingRates("S1");
+    const before = requests.length;
+
+    await store.retryRateService("S1", "FEDEX|FLAKY");
+
+    expect(requests.length).toBe(before + 1);
+    expect(requests[requests.length - 1].params).toEqual({ shipmentId: "S1", carrierPartyId: "FEDEX", carrierServiceCode: "FLAKY" });
+    expect(store.rateStreams.S1.rows.map((row) => row.status)).toEqual(["done", "done"]);
+    expect(store.rateStreams.S1.rates).toHaveLength(2);
+    expect(window.sessionStorage.length).toBe(1);
+  });
+
+  it("leaves the service as having no rate when the retry fails too, and ignores a retry for a service that has one", async () => {
+    handlers["poorti/shippingRateOptions"] = () => Promise.resolve(options("OK", "BAD"));
+    handlers["poorti/shippingRate/"] = (params) => params.carrierServiceCode === "BAD" ? Promise.reject(new Error("carrier timed out")) : Promise.resolve({ data: { shippingRates: [rate("OK")] } });
+    const store = await freshStore();
+    await store.streamShippingRates("S1");
+    const before = requests.length;
+
+    await store.retryRateService("S1", "FEDEX|OK");
+    expect(requests.length).toBe(before);
+
+    await store.retryRateService("S1", "FEDEX|BAD");
+    expect(requests.length).toBe(before + 1);
+    expect(store.rateStreams.S1.rows.map((row) => row.status)).toEqual(["done", "failed"]);
+    expect(store.rateStreams.S1.rates).toHaveLength(1);
+  });
+
   it("serves a complete list from the cache the next time, without asking again", async () => {
     handlers["poorti/shippingRateOptions"] = () => Promise.resolve(options("A"));
     handlers["poorti/shippingRate/"] = () => Promise.resolve({ data: { shippingRates: [rate("A")] } });

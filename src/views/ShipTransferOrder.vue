@@ -139,6 +139,9 @@
                     <p v-else>{{ translate("No rate available") }}</p>
                   </ion-label>
                   <ion-spinner v-if="row.status === 'pending'" slot="end" name="dots" />
+                  <ion-button v-else slot="end" data-testid="retry-rate-row-btn" fill="clear" size="small" color="medium" :disabled="isBusy" :aria-label="translate('Try again')" @click="retryRateRow(row.key)">
+                    <ion-icon slot="icon-only" :icon="refreshOutline" />
+                  </ion-button>
                 </ion-item>
                 <ion-item lines="none">
                   <ion-button slot="end" data-testid="refresh-rates-btn" fill="clear" size="small" color="medium" :disabled="isBusy || isRefreshingRates || isRateLookupRunning" @click="loadShippingRates(true)">
@@ -528,6 +531,10 @@ function loadShippingRates(forceRefresh = false) {
 watch(rawShippingRates, (rates) => {
   fetchCarrierLogos(rates.map((rate: any) => rate.actualCarrierCode || rate.carrierPartyId));
 });
+
+function retryRateRow(key: string) {
+  carrierStore.retryRateService(shipmentId, key);
+}
 
 // The name of a service that has no rate yet: the carrier's own name for its shipment method.
 function rowName(row: { carrierPartyId: string; shipmentMethodTypeIds: string[] }) {
