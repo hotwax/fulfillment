@@ -9,6 +9,12 @@ import { useUserStore } from "@/store/user";
 import { useZebraPrinter } from "@/composables/useZebraPrinter";
 import Actions from "@/authorization/actions";
 
+// The label PDF of a shipment as a blob URL, fetched while the shipment detail loads so printing and re-printing is instant.
+const shippingLabelPdfUrlCache = new Map<string, string>()
+// A slow response of an earlier search or order must not replace the one the user asked for last.
+let latestTransferOrdersRequest = 0
+let latestTransferOrderDetailRequest = 0
+
 interface TransferOrderState {
   transferOrder: {
     list: any[]
@@ -126,6 +132,14 @@ export const useTransferOrderStore = defineStore("transferorder", {
         data: payload
       });
     },
+    // Changes the box and/or the weight of one package of a transfer shipment. The backend refuses once a label is bought.
+    async updateShipmentPackage({ shipmentId, shipmentPackageSeqId, ...changes }: { shipmentId: string, shipmentPackageSeqId: string, shipmentBoxTypeId?: string, weight?: number, weightUomId?: string }) {
+      return api({
+        url: `poorti/transferShipments/${shipmentId}/packages/${shipmentPackageSeqId}`,
+        method: "put",
+        data: changes
+      })
+    },
     async printTransferOrderPicklist(orderId: string) {
       try {
         const resp: any = await api({
@@ -156,6 +170,46 @@ export const useTransferOrderStore = defineStore("transferorder", {
         logger.error("Failed to load picklist", err);
       }
     },
+    // Asks the backend to buy the label for the route segment that was just updated. Unlike orderStore.retryShippingLabel, a failure
+    // is thrown so the caller can tell a failed label from a slow one.
+    async generateShippingLabel(shipmentId: string) {
+      this.clearShippingLabelPdf(shipmentId)
+      const resp = await api({
+        url: "/poorti/shipments/retryShippingLabel",
+        method: "post",
+        data: { shipmentIds: [shipmentId] }
+      }) as any
+      if(commonUtil.hasError(resp)) {throw resp?.data}
+
+      return resp.data
+    },
+    async fetchShippingLabelPdfUrl(shipmentId: string) {
+      const cachedUrl = shippingLabelPdfUrlCache.get(shipmentId)
+      if(cachedUrl) {return cachedUrl}
+
+      const resp: any = await api({
+        method: "get",
+        url: "/fop/apps/pdf/PrintLabel",
+        params: { shipmentId },
+        responseType: "blob",
+        baseURL: commonUtil.getMaargBaseURL(),
+      })
+
+      if(!resp || resp.status !== 200 || commonUtil.hasError(resp)) {
+        throw resp?.data
+      }
+
+      const pdfUrl = window.URL.createObjectURL(resp.data)
+      shippingLabelPdfUrlCache.set(shipmentId, pdfUrl)
+
+      return pdfUrl
+    },
+    clearShippingLabelPdf(shipmentId: string) {
+      const cachedUrl = shippingLabelPdfUrlCache.get(shipmentId)
+      if(cachedUrl) {window.URL.revokeObjectURL(cachedUrl)}
+      shippingLabelPdfUrlCache.delete(shipmentId)
+    },
+    // Resolves true when the label was handed to a new window or the printer, false when the browser blocked the window.
     async printShippingLabel(shipmentIds: Array<string>, shippingLabelPdfUrls?: Array<string>, shipmentPackages?: Array<any>, imageType?: string) {
       try {
         let pdfUrls = shippingLabelPdfUrls?.filter((pdfUrl: any) => pdfUrl);
@@ -174,31 +228,19 @@ export const useTransferOrderStore = defineStore("transferorder", {
               shipmentPackage.labelImage && labelImages.push(shipmentPackage.labelImage)
             })
             await zebraPrinter.printZplLabels(labelImages);
-            return;
+
+            return true;
           }
 
-          const resp: any = await api({
-            method: "get",
-            url: "/fop/apps/pdf/PrintLabel",
-            params: {
-              shipmentId: shipmentIds[0]
-            },
-            responseType: "blob",
-            baseURL: commonUtil.getMaargBaseURL(),
-          });
-
-          if (!resp || resp.status !== 200 || commonUtil.hasError(resp)) {
-            throw resp.data;
-          }
-
-          const pdfUrl = window.URL.createObjectURL(resp.data);
-          pdfUrls = [pdfUrl];
+          pdfUrls = [await this.fetchShippingLabelPdfUrl(shipmentIds[0])];
         }
 
+        let isOpened = true;
         pdfUrls.forEach((pdfUrl: string) => {
           try {
             (window as any).open(pdfUrl, "_blank").focus();
           } catch {
+            isOpened = false;
             commonUtil.showToast(
               translate("Unable to open as browser is blocking pop-ups.", {
                 documentName: "shipping label",
@@ -207,9 +249,13 @@ export const useTransferOrderStore = defineStore("transferorder", {
             );
           }
         });
+
+        return isOpened;
       } catch (err) {
         commonUtil.showToast(translate("Failed to print shipping label"));
         logger.error("Failed to load shipping label", err);
+
+        return false;
       }
     },
     async createOutboundTransferShipmentAPI(query: any) {
@@ -275,6 +321,7 @@ export const useTransferOrderStore = defineStore("transferorder", {
     },
     async findTransferOrders() {
       let resp
+      const requestId = ++latestTransferOrdersRequest
       const transferOrderQuery = JSON.parse(JSON.stringify(this.transferOrder.query))
       const orderStatusId = transferOrderQuery.orderStatusId ?? "ORDER_APPROVED"
 
@@ -324,83 +371,93 @@ export const useTransferOrderStore = defineStore("transferorder", {
         logger.error("No transfer orders found", err)
       }
 
+      // The user has already changed the segment or the search: this response is not what the page shows anymore.
+      if(requestId !== latestTransferOrdersRequest) {return resp}
+
       this.setTransferOrderQuery({ ...transferOrderQuery })
       this.setTransferOrders({ list: orders, total })
 
       return resp
     },
+    // The order and its shipped shipments only need the order id, so they are asked together. The products and the status
+    // description need the order, and are asked together once it is there.
     async fetchTransferOrderDetail(payload: any) {
       let orderDetail = {} as any
-      let orderResp, shipmentResp
+      const requestId = ++latestTransferOrderDetailRequest
+      const isLatestRequest = () => requestId === latestTransferOrderDetailRequest
 
       try {
-        orderResp = await api({
-          url: `/oms/transferOrders/${payload.orderId}`,
-          method: "get",
-        });
-
-        if (!commonUtil.hasError(orderResp)) {
-          orderDetail = orderResp.data.order || {}
-
-          shipmentResp = await api({
+        const [orderResp, shipmentResp] = await Promise.all([
+          api({
+            url: `/oms/transferOrders/${payload.orderId}`,
+            method: "get",
+          }),
+          api({
             url: "poorti/transferShipments",
             method: "get",
             params: { orderId: payload.orderId, shipmentStatusId: "SHIPMENT_SHIPPED" }
+          }).catch((err: any) => {
+            logger.error("Failed to fetch shipped shipments of the transfer order", err)
+
+            return null
+          })
+        ])
+
+        if(commonUtil.hasError(orderResp)) {throw orderResp.data}
+
+        orderDetail = orderResp.data.order || {}
+
+        if(shipmentResp && !commonUtil.hasError(shipmentResp)) {
+          const shipments = shipmentResp.data?.shipments || []
+
+          const updatedShipments = shipments.map((shipment: any) => {
+            const packages = shipment.packages || []
+            const items = packages.flatMap((pkg: any) => pkg.items || [])
+            const labelImageUrls = packages
+              .filter((shipmentPackage: any) => shipmentPackage.labelImageUrl)
+              .map((shipmentPackage: any) => shipmentPackage.labelImageUrl)
+
+            return {
+              ...shipment,
+              items,
+              labelImageUrls
+            }
           })
 
-          if (!commonUtil.hasError(shipmentResp)) {
-            const shipmentData = shipmentResp.data || {}
-            const shipments = shipmentData.shipments || []
-
-            const updatedShipments = shipments.map((shipment: any) => {
-              const packages = shipment.packages || []
-              const items = packages.flatMap((pkg: any) => pkg.items || [])
-              const labelImageUrls = shipment.packages
-                .filter((shipmentPackage: any) => shipmentPackage.labelImageUrl)
-                .map((shipmentPackage: any) => shipmentPackage.labelImageUrl)
-
-              return {
-                ...shipment,
-                items,
-                labelImageUrls
-              }
-            })
-
-            orderDetail = {
-              ...orderDetail,
-              shipments: updatedShipments
-            }
+          orderDetail = {
+            ...orderDetail,
+            shipments: updatedShipments
           }
-          if (orderDetail.items && Array.isArray(orderDetail.items)) {
-            orderDetail.items = orderDetail.items.map((item: any) => ({
-              ...item,
-              orderedQuantity: item.quantity,
-              shippedQuantity: item.totalIssuedQuantity || 0,
-              pickedQuantity: 0
-            }))
-          }
+        }
+        if(orderDetail.items && Array.isArray(orderDetail.items)) {
+          orderDetail.items = orderDetail.items.map((item: any) => ({
+            ...item,
+            orderedQuantity: item.quantity,
+            shippedQuantity: item.totalIssuedQuantity || 0,
+            pickedQuantity: 0
+          }))
+        }
 
-          const productIds = [...new Set((orderDetail.items || []).map((item: any) => item.productId))]
-          const batchSize = 250
-          const productIdBatches = []
+        const productIds = [...new Set((orderDetail.items || []).map((item: any) => item.productId))]
+        const batchSize = 250
+        const productIdBatches = []
 
-          while (productIds.length) {
-            productIdBatches.push(productIds.splice(0, batchSize))
-          }
+        while(productIds.length) {
+          productIdBatches.push(productIds.splice(0, batchSize))
+        }
 
-          try {
-            await Promise.all([
-              ...productIdBatches.map((batch) => useProductStore().fetchProducts({ productIds: batch })),
-              useUtilStore().fetchStatusDesc([orderDetail.statusId])
-            ])
-            this.setCurrent(orderDetail)
-            return orderResp;
-          } catch (err: any) {
-            logger.error("Error fetching product details or status description", err)
-            return Promise.reject(new Error(err))
-          }
-        } else {
-          throw orderResp.data
+        try {
+          await Promise.all([
+            ...productIdBatches.map((batch) => useProductStore().fetchProducts({ productIds: batch })),
+            useUtilStore().fetchStatusDesc([orderDetail.statusId])
+          ])
+          if(isLatestRequest()) {this.setCurrent(orderDetail)}
+
+          return orderResp;
+        } catch (err: any) {
+          logger.error("Error fetching product details or status description", err)
+
+          return Promise.reject(new Error(err))
         }
       } catch (err: any) {
         logger.error("error", err)
