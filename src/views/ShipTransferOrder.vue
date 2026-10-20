@@ -36,6 +36,27 @@
               {{ shippingMethodName }}
             </ion-label>
           </ion-item>
+          <ion-list v-if="packageViews.length" data-testid="package-details">
+            <ion-list-header>{{ packageViews.length > 1 ? translate("Packages") : translate("Package") }}</ion-list-header>
+            <ion-item v-for="(packageView, index) in packageViews" :key="packageView.shipmentPackageSeqId" lines="full">
+              <ion-icon :icon="cubeOutline" slot="start" />
+              <ion-label class="ion-text-wrap">
+                <p class="overline">{{ packageViews.length > 1 ? translate("Package {number}, estimated weight", { number: index + 1 }) : translate("Estimated weight") }}</p>
+                <span data-testid="package-weight">{{ packageView.weightText || translate("No weight on file") }}</span>
+                <p data-testid="package-box">{{ packageBoxLine(packageView) }}</p>
+                <p v-if="packageView.isOverLimit" class="package-note" data-testid="package-over-limit">
+                  {{ translate("Over the {limit} lb limit of a FedEx package, so FedEx refuses it.", { limit: CARRIER_PACKAGE_WEIGHT_LIMIT_LB }) }}
+                </p>
+                <p v-if="packageView.missingWeightCount" class="package-note" data-testid="package-missing-weight">
+                  {{ translate("{count} items have no weight on file, so this weight and the rates may be too low.", { count: packageView.missingWeightCount }) }}
+                </p>
+              </ion-label>
+              <ion-button v-if="!isLabelAccepted" slot="end" data-testid="edit-package-btn" fill="clear" color="medium" :aria-label="translate('Change package')" :disabled="isBusy" @click="editPackage(packageView, index)">
+                <ion-spinner v-if="isSavingPackage" slot="icon-only" name="crescent" />
+                <ion-icon v-else slot="icon-only" :icon="createOutline" />
+              </ion-button>
+            </ion-item>
+          </ion-list>
           <ion-list>
             <ion-list-header>{{ translate("Items") }}</ion-list-header>
             <template v-if="shipmentDetails.shipmentId">
@@ -213,20 +234,22 @@
 </template>
 
 <script setup lang="ts">
-import { IonAvatar, IonBackButton, IonButton, IonButtons, IonCard, IonCardContent, IonCardHeader, IonCardSubtitle, IonCardTitle, IonContent, IonFooter, IonHeader, IonIcon, IonInput, IonItem, IonLabel, IonList, IonListHeader, IonNote, IonPage, IonProgressBar, IonSegment, IonSegmentButton, IonSelect, IonSelectOption, IonSkeletonText, IonSpinner, IonThumbnail, IonTitle, IonToolbar, alertController, onIonViewWillEnter, onIonViewDidLeave } from "@ionic/vue";
-import { openOutline, pricetagOutline, printOutline, refreshOutline, storefrontOutline } from "ionicons/icons";
+import { IonAvatar, IonBackButton, IonButton, IonButtons, IonCard, IonCardContent, IonCardHeader, IonCardSubtitle, IonCardTitle, IonContent, IonFooter, IonHeader, IonIcon, IonInput, IonItem, IonLabel, IonList, IonListHeader, IonNote, IonPage, IonProgressBar, IonSegment, IonSegmentButton, IonSelect, IonSelectOption, IonSkeletonText, IonSpinner, IonThumbnail, IonTitle, IonToolbar, alertController, modalController, onIonViewWillEnter, onIonViewDidLeave } from "@ionic/vue";
+import { createOutline, cubeOutline, openOutline, pricetagOutline, printOutline, refreshOutline, storefrontOutline } from "ionicons/icons";
 import { computed, ref, watch } from "vue";
 import { commonUtil, logger, translate } from "@common";
 import { useProductStore as useAppProductStore } from "@/store/productStore";
 import { useOrderStore } from "@/store/order";
 import { onBeforeRouteLeave } from "vue-router";
 import Image from "@/components/Image.vue";
+import PackageDetailsModal from "@/components/PackageDetailsModal.vue";
 import StepProgress from "@/components/StepProgress.vue";
 import { useProductStore } from "@/store/product";
 import { useUtilStore } from "@/store/util";
 import { useCarrierStore } from "@/store/carrier";
 import { useTransferOrderStore } from "@/store/transferorder";
 import { dedupeShippingRates, shippingRateKey, shippingRateName } from "@/utils/shippingRates";
+import { CARRIER_PACKAGE_WEIGHT_LIMIT_LB, type PackageView, toPackageView } from "@/utils/packageDetails";
 import router from "@/router";
 import { refreshLiveOrders } from "@/db/appDbSync";
 import { TRANSFER_ORDERS_DOMAIN } from "@/db/domains";
@@ -275,6 +298,9 @@ const isOrderShipped = ref(false);
 const facilities = ref([]) as any;
 const isProcessingShipment = ref(false);
 const isVoidingLabel = ref(false);
+const isSavingPackage = ref(false);
+// The boxes a package can be changed to: the ones with a size (the BOPIS packaging has none).
+const boxTypes = ref<any[]>([]);
 const isPrintingLabel = ref(false);
 // The key of the rate whose label is being bought. Set for the whole PUT, label and refresh round trip.
 const selectedRateKey = ref("");
@@ -337,13 +363,15 @@ const rateSteps = computed(() => [
 // A voided label keeps its tracking number on the shipment, so the status decides, not the presence of the number.
 const isLabelAccepted = computed(() => shipmentDetails.value?.carrierServiceStatusId === "SHRSCS_ACCEPTED");
 // The loader is only a slim bar, so every action that must not run twice has to disable its own buttons.
-const isBusy = computed(() => !!selectedRateKey.value || isVoidingLabel.value || isProcessingShipment.value);
+const isBusy = computed(() => !!selectedRateKey.value || isVoidingLabel.value || isProcessingShipment.value || isSavingPackage.value);
 
 const shipmentItems = computed(() => {
   if(!shipmentDetails.value?.packages) {return [];}
 
   return shipmentDetails.value.packages.flatMap((pkg: any) => pkg.items || []);
 });
+
+const packageViews = computed(() => (shipmentDetails.value?.packages ?? []).map((shipmentPackage: any) => toPackageView(shipmentPackage, Object.fromEntries(boxTypes.value.map((boxType: any) => [boxType.shipmentBoxTypeId, boxType.description])))));
 
 const displayRates = computed(() => dedupeShippingRates(rawShippingRates.value, { isCarrierSpecificMethod }));
 
@@ -367,6 +395,7 @@ onIonViewWillEnter(() => {
   // and nothing waits for it, and nothing it needs waits for the rest.
   loadShippingRates();
   loadShipment();
+  loadBoxTypes();
 });
 
 onBeforeRouteLeave(async () => {
@@ -522,6 +551,53 @@ async function fetchShipmentOrderDetail(shipmentId: string) {
 
     return null;
   }
+}
+
+function packageBoxLine(packageView: PackageView) {
+  return [packageView.boxName, packageView.boxSize].filter(Boolean).join(" · ") || translate("No box");
+}
+
+async function loadBoxTypes() {
+  try {
+    const resp = await carrierStore.fetchShipmentBoxType({ pageSize: 50 });
+    if(commonUtil.hasError(resp)) {throw resp.data;}
+    boxTypes.value = (resp.data ?? []).filter((boxType: any) => boxType.boxLength && boxType.boxWidth && boxType.boxHeight);
+  } catch (err) {
+    logger.error("Failed to fetch the box types", err);
+  }
+}
+
+async function editPackage(packageView: PackageView, index: number) {
+  if(isBusy.value || isLabelAccepted.value) {return;}
+  if(!boxTypes.value.length) {await loadBoxTypes();}
+
+  const modal = await modalController.create({
+    component: PackageDetailsModal,
+    componentProps: { title: packageViews.value.length > 1 ? translate("Package {number}", { number: index + 1 }) : translate("Package"), packageView, boxTypes: boxTypes.value }
+  });
+  await modal.present();
+  const { data, role } = await modal.onDidDismiss();
+  if(role === "save" && data && Object.keys(data).length) {await savePackage(packageView, data);}
+}
+
+// The weight and the box change what the carrier is asked, so the rates are asked for again.
+async function savePackage(packageView: PackageView, changes: { shipmentBoxTypeId?: string; weight?: number; weightUomId?: string }) {
+  if(isBusy.value) {return;}
+
+  isSavingPackage.value = true;
+  try {
+    const resp = await transferOrderStore.updateShipmentPackage({ shipmentId, shipmentPackageSeqId: packageView.shipmentPackageSeqId, ...changes });
+    if(commonUtil.hasError(resp)) {throw resp.data;}
+
+    await fetchShipmentOrderDetail(shipmentId);
+    carrierStore.clearShippingRatesCache(shipmentId);
+    loadShippingRates(true);
+    commonUtil.showToast(translate("Package updated"));
+  } catch (err: any) {
+    logger.error("Failed to update the package", err);
+    commonUtil.showToast(err?.response?.data?.errors || translate("Failed to update the package"));
+  }
+  isSavingPackage.value = false;
 }
 
 function loadShippingRates(forceRefresh = false) {
@@ -875,6 +951,10 @@ hr {
 
 ion-note {
   align-self: center;
+}
+
+.package-note {
+  color: var(--ion-color-warning-shade);
 }
 
 .label-note {

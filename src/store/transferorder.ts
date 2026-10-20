@@ -132,6 +132,14 @@ export const useTransferOrderStore = defineStore("transferorder", {
         data: payload
       });
     },
+    // Changes the box and/or the weight of one package of a transfer shipment. The backend refuses once a label is bought.
+    async updateShipmentPackage({ shipmentId, shipmentPackageSeqId, ...changes }: { shipmentId: string, shipmentPackageSeqId: string, shipmentBoxTypeId?: string, weight?: number, weightUomId?: string }) {
+      return api({
+        url: `poorti/transferShipments/${shipmentId}/packages/${shipmentPackageSeqId}`,
+        method: "put",
+        data: changes
+      })
+    },
     async printTransferOrderPicklist(orderId: string) {
       try {
         const resp: any = await api({
