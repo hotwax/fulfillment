@@ -290,8 +290,9 @@ const isLoadingRates = computed(() => !rateStream.value || (isRateLookupRunning.
 // A refresh keeps the list and only spins the refresh button.
 const isRefreshingRates = computed(() => isRateLookupRunning.value && !isStreamingRates.value && rawShippingRates.value.length > 0);
 const settledRateCount = computed(() => rateRows.value.filter((row) => row.status !== "pending").length);
-// A service that has not answered yet, and one that did not return a rate (only listed next to rates that did).
-const unratedRows = computed(() => rateRows.value.filter((row) => row.status === "pending" || (row.status === "failed" && displayRates.value.length)));
+// A service that has not answered yet, and one that did not return a rate. When none did (the carrier is down) they are all listed,
+// each with its own retry.
+const unratedRows = computed(() => rateRows.value.filter((row) => row.status === "pending" || row.status === "failed"));
 const labelError = ref("");
 const isLabelWindowBlocked = ref(false);
 const isOrderShipped = ref(false);
