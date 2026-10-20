@@ -2,7 +2,9 @@
   <ion-card class="step-progress">
     <ion-card-header>
       <ion-card-title>{{ title }}</ion-card-title>
-      <ion-card-subtitle v-if="subtitle">{{ subtitle }}</ion-card-subtitle>
+      <ion-card-subtitle v-if="subtitle">
+        {{ subtitle }}
+      </ion-card-subtitle>
     </ion-card-header>
 
     <ion-progress-bar :type="isFinished ? 'determinate' : 'indeterminate'" :value="isFinished ? 1 : 0" :color="isFinished ? 'success' : 'primary'" />
