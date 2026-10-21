@@ -1,4 +1,4 @@
-import { commonDomains } from "@common/db/seed/seedDomains";
+import { commonDomains } from "@common/db/domain/commonDomains";
 import type { ActiveDomain } from "@common/db/sync/syncRegistry";
 import type { SyncDomain } from "@common/db/types";
 import { OPEN_ORDERS_DOMAIN, openOrdersDomain } from "./openOrdersDomain";

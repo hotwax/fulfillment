@@ -1,4 +1,4 @@
-import type { Entity } from "@common/db/schema/defineEntity";
+import type { Entity } from "@common/db/model/defineEntity";
 import { canonicalKey, entityKeyOf } from "@common/db/storage/projection";
 import type { DbRow } from "@common/db/types";
 

@@ -1,9 +1,9 @@
 // Imported by the sync worker too: no DOM, Vue or Pinia imports, and only deep `@common/db/...` imports.
 
-import { defineAppDb } from "@common/db/schema/defineAppDb";
-import { defineEntity } from "@common/db/schema/defineEntity";
-import { defineSchema, mergeSchemas } from "@common/db/schema/defineSchema";
-import { commonSchema } from "@common/db/seed/seedSchema";
+import { defineAppDb } from "@common/db/model/defineAppDb";
+import { defineEntity } from "@common/db/model/defineEntity";
+import { defineSchema, mergeSchemas } from "@common/db/model/defineSchema";
+import { commonSchema } from "@common/db/schema/commonSchema";
 import type { BaseDB } from "@common/db/storage/baseDb";
 
 export const ORDER_STAGE = {

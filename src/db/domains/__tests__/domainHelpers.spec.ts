@@ -1,4 +1,4 @@
-import { defineEntity } from "@common/db/schema/defineEntity";
+import { defineEntity } from "@common/db/model/defineEntity";
 import { canonicalKey, entityKeyOf, projectRows } from "@common/db/storage/projection";
 import { activationKey } from "@common/db/sync/syncRegistry";
 import { describe, expect, it } from "vitest";
