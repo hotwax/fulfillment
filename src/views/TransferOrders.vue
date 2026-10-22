@@ -44,6 +44,10 @@
             </ion-item>
           </ion-list>
         </div>
+        <div v-else-if="packedShipments.hasError" class="empty-state" data-testid="packed-shipments-error-state">
+          <p>{{ translate("Failed to fetch packed shipments") }}</p>
+          <ion-button fill="outline" @click="retryPackedShipments()">{{ translate("Retry") }}</ion-button>
+        </div>
         <div v-else class="empty-state" data-testid="packed-shipments-empty-state">
           <p>{{ searchedQuery ? translate("No results found for .", { searchedQuery }) : translate("No packed shipments waiting to ship") }}</p>
         </div>
@@ -79,7 +83,7 @@
 </template>
 
 <script setup lang="ts">
-import { IonBadge, IonIcon, IonContent, IonFab, IonFabButton, IonHeader, IonInfiniteScroll, IonInfiniteScrollContent, IonItem, IonLabel, IonList, IonMenuButton, IonPage, IonSearchbar, IonSegment, IonSegmentButton, IonTitle, IonToolbar, modalController, onIonViewDidLeave, onIonViewWillEnter } from "@ionic/vue";
+import { IonBadge, IonButton, IonIcon, IonContent, IonFab, IonFabButton, IonHeader, IonInfiniteScroll, IonInfiniteScrollContent, IonItem, IonLabel, IonList, IonMenuButton, IonPage, IonSearchbar, IonSegment, IonSegmentButton, IonTitle, IonToolbar, modalController, onIonViewDidLeave, onIonViewWillEnter } from "@ionic/vue";
 import { computed, ref } from "vue";
 import { addOutline, informationCircleOutline } from "ionicons/icons";
 import { emitter, translate } from "@common";
@@ -198,6 +202,12 @@ const initialiseTransferOrderQuery = async () => {
     transferOrdersQuery.shipmentStatusId = "";
   }
   await Promise.all([useTransferOrderStore().updateTransferOrderQuery({ ...transferOrdersQuery }), packedShipmentsRequest]);
+};
+
+const retryPackedShipments = async () => {
+  emitter.emit("presentLoader");
+  await useTransferOrderStore().findPackedShipments(transferOrders.value.query.queryString);
+  emitter.emit("dismissLoader");
 };
 
 // Opens the existing ship flow for a shipment that was packed earlier but never shipped
