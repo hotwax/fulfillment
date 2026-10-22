@@ -387,7 +387,9 @@ export const useCarrierStore = defineStore("carrier", {
           method: "PUT",
           data: {
             shipmentGatewayConfigId: shipmentMethod.shipmentGatewayConfigId,
-            isTrackingRequired: shipmentMethod.isTrackingRequired,
+            isTrackingRequired: typeof shipmentMethod.isTrackingRequired === "boolean"
+              ? (shipmentMethod.isTrackingRequired ? "Y" : "N")
+              : shipmentMethod.isTrackingRequired,
             productStoreShipMethId: shipmentMethod.productStoreShipMethId,
           }
         })
