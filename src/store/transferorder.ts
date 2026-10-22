@@ -36,6 +36,7 @@ interface TransferOrderState {
   packedShipments: {
     list: any[]
     total: number
+    hasError: boolean
   }
   returnSegment: string
 }
@@ -61,7 +62,8 @@ export const useTransferOrderStore = defineStore("transferorder", {
     rejectReasons: [],
     packedShipments: {
       list: [],
-      total: 0
+      total: 0,
+      hasError: false
     },
     returnSegment: ""
   }),
@@ -125,10 +127,12 @@ export const useTransferOrderStore = defineStore("transferorder", {
     setPackedShipments(payload: any) {
       this.packedShipments.list = payload.list
       this.packedShipments.total = payload.total
+      this.packedShipments.hasError = false
     },
     clearPackedShipments() {
       this.packedShipments.list = []
       this.packedShipments.total = 0
+      this.packedShipments.hasError = false
     },
     setReturnSegment(segment: string) {
       this.returnSegment = segment
@@ -147,56 +151,72 @@ export const useTransferOrderStore = defineStore("transferorder", {
      * The packages endpoint returns one row per shipment package, so rows are grouped by shipment here.
      */
     async findPackedShipments(queryString = "") {
-      let shipments: any[] = []
+      const limit = 250
+      // Guards against an endlessly paging response; 50 pages is 12,500 packages
+      const maxPages = 50
+      let shipmentPackages: any[] = []
 
       try {
-        const params: any = {
-          originFacilityId: useAppProductStore().getCurrentFacility?.facilityId,
-          shipmentStatusId: "SHIPMENT_PACKED",
-          limit: 250,
-          pageIndex: 0
-        }
-        if(queryString) {
-          params.orderName = queryString
-        }
-
-        const resp = await api({
-          url: "poorti/transferShipments/packages",
-          method: "get",
-          params
-        })
-
-        if(commonUtil.hasError(resp)) {
-          throw resp.data
-        }
-
-        const shipmentsById = (resp.data?.shipmentPackages || []).reduce((shipmentsById: Record<string, any>, shipmentPackage: any) => {
-          const shipment = shipmentsById[shipmentPackage.shipmentId]
-          if(shipment) {
-            shipment.packageCount += 1
-            if(shipmentPackage.shipmentPackageCreatedDate && (!shipment.packedDate || shipmentPackage.shipmentPackageCreatedDate < shipment.packedDate)) {
-              shipment.packedDate = shipmentPackage.shipmentPackageCreatedDate
-            }
-          } else {
-            shipmentsById[shipmentPackage.shipmentId] = {
-              shipmentId: shipmentPackage.shipmentId,
-              orderId: shipmentPackage.orderId,
-              orderName: shipmentPackage.orderName,
-              orderExternalId: shipmentPackage.orderExternalId,
-              packedDate: shipmentPackage.shipmentPackageCreatedDate,
-              packageCount: 1
-            }
+        let previousFirstPackage = ""
+        for (let pageIndex = 0; pageIndex < maxPages; pageIndex++) {
+          const params: any = {
+            originFacilityId: useAppProductStore().getCurrentFacility?.facilityId,
+            shipmentStatusId: "SHIPMENT_PACKED",
+            limit,
+            pageIndex
+          }
+          if (queryString) {
+            params.orderName = queryString
           }
 
-          return shipmentsById
-        }, {})
+          const resp = await api({
+            url: "poorti/transferShipments/packages",
+            method: "get",
+            params
+          })
 
-        // Oldest packed shipment first, it has been waiting the longest
-        shipments = Object.values(shipmentsById).sort((a: any, b: any) => (a.packedDate || 0) - (b.packedDate || 0))
+          if (commonUtil.hasError(resp)) {
+            throw resp.data
+          }
+
+          const page = resp.data?.shipmentPackages || []
+          // Stop if the endpoint returned the same page again, so it can never loop on a response that ignores pageIndex
+          const firstPackage = page.length ? JSON.stringify(page[0]) : ""
+          if (pageIndex > 0 && firstPackage === previousFirstPackage) break
+          previousFirstPackage = firstPackage
+
+          shipmentPackages = shipmentPackages.concat(page)
+          if (page.length < limit) break
+        }
       } catch (err) {
         logger.error("Failed to fetch packed transfer order shipments", err)
+        // Keep the shipments already shown and flag the failure, so the page does not claim that nothing is waiting to ship
+        this.packedShipments.hasError = true
+        return this.packedShipments.list
       }
 
+      const shipmentsById = shipmentPackages.reduce((shipmentsById: Record<string, any>, shipmentPackage: any) => {
+        const shipment = shipmentsById[shipmentPackage.shipmentId]
+        if (shipment) {
+          shipment.packageCount += 1
+          if (shipmentPackage.shipmentPackageCreatedDate && (!shipment.packedDate || shipmentPackage.shipmentPackageCreatedDate < shipment.packedDate)) {
+            shipment.packedDate = shipmentPackage.shipmentPackageCreatedDate
+          }
+        } else {
+          shipmentsById[shipmentPackage.shipmentId] = {
+            shipmentId: shipmentPackage.shipmentId,
+            orderId: shipmentPackage.orderId,
+            orderName: shipmentPackage.orderName,
+            orderExternalId: shipmentPackage.orderExternalId,
+            packedDate: shipmentPackage.shipmentPackageCreatedDate,
+            packageCount: 1
+          }
+        }
+        return shipmentsById
+      }, {})
+
+      // Oldest packed shipment first, it has been waiting the longest
+      const shipments = Object.values(shipmentsById).sort((a: any, b: any) => (a.packedDate || 0) - (b.packedDate || 0))
       this.setPackedShipments({ list: shipments, total: shipments.length })
 
       return shipments
