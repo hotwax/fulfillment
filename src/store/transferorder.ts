@@ -9,6 +9,10 @@ import { useUserStore } from "@/store/user";
 import { useZebraPrinter } from "@/composables/useZebraPrinter";
 import Actions from "@/authorization/actions";
 
+// Only the latest packed shipments request may commit its result, so a slow response for a previously selected
+// facility (or an overlapping page-entry and facility-change request) cannot overwrite the current list
+let packedRequestId = 0
+
 interface TransferOrderState {
   transferOrder: {
     list: any[]
@@ -144,6 +148,7 @@ export const useTransferOrderStore = defineStore("transferorder", {
      * The packages endpoint returns one row per shipment package, so rows are grouped by shipment here.
      */
     async findPackedShipments(queryString = "") {
+      const requestId = ++packedRequestId
       const limit = 250
       // Guards against an endlessly paging response; 50 pages is 12,500 packages
       const maxPages = 50
@@ -183,10 +188,13 @@ export const useTransferOrderStore = defineStore("transferorder", {
         }
       } catch (err) {
         logger.error("Failed to fetch packed transfer order shipments", err)
+        if (requestId !== packedRequestId) return this.packedShipments.list
         // Keep the shipments already shown and flag the failure, so the page does not claim that nothing is waiting to ship
         this.packedShipments.hasError = true
         return this.packedShipments.list
       }
+
+      if (requestId !== packedRequestId) return this.packedShipments.list
 
       const shipmentsById = shipmentPackages.reduce((shipmentsById: Record<string, any>, shipmentPackage: any) => {
         const shipment = shipmentsById[shipmentPackage.shipmentId]
