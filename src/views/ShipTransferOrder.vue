@@ -162,6 +162,7 @@ import { useUserStore } from "@/store/user";
 import router from "@/router";
 
 const route = router.currentRoute.value;
+const isPackedShipmentFlow = route?.query?.from === "packed";
 const productIdentificationPref = computed(() => useAppProductStore().getProductIdentificationPref);
 
 const userStore = useUserStore();
@@ -210,6 +211,12 @@ onIonViewWillEnter(async () => {
 });
 
 onBeforeRouteLeave(async () => {
+  // Opened from the Packed segment of Transfer Orders: the shipment was packed earlier, so leaving without shipping
+  // keeps it packed (it stays listed in the Packed segment) instead of discarding it.
+  if (isPackedShipmentFlow) {
+    transferOrderStore.setReturnSegment("packed");
+    return true;
+  }
   if (isOrderShipped.value) return true;
   if (route?.params?.orderId) {
     let canLeave = false;
