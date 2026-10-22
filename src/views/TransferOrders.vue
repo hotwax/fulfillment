@@ -33,7 +33,7 @@
                 <p>{{ translate("These shipments are packed but not shipped. The transfer order is not fulfilled until the shipment is shipped.") }}</p>
               </ion-label>
             </ion-item>
-            <ion-item v-for="shipment in visiblePackedShipments" :key="shipment.shipmentId" :data-testid="`packed-shipment-${shipment.shipmentId}`" @click="shipPackedShipment(shipment)" button detail>
+            <ion-item v-for="shipment in visiblePackedShipments" :key="shipment.shipmentId" :data-testid="`packed-shipment-${shipment.shipmentId}`" @click="shipPackedShipment(shipment)" :button="canShipPackedShipments" :detail="canShipPackedShipments">
               <ion-label>
                 <p class="overline">{{ shipment.orderId }}</p>
                 {{ shipment.orderName || shipment.orderExternalId || shipment.orderId }}
@@ -102,13 +102,13 @@
 
 <script setup lang="ts">
 import { translate } from "@common";
-import { IonBadge, IonContent, IonFab, IonFabButton, IonHeader, IonIcon, IonInfiniteScroll, IonInfiniteScrollContent, IonItem, IonLabel, IonList, IonMenuButton, IonPage, IonSearchbar, IonSegment, IonSegmentButton, IonSkeletonText, IonTitle, IonToolbar, modalController, onIonViewWillEnter } from "@ionic/vue";
+import { IonBadge, IonButton, IonContent, IonFab, IonFabButton, IonHeader, IonIcon, IonInfiniteScroll, IonInfiniteScrollContent, IonItem, IonLabel, IonList, IonMenuButton, IonPage, IonSearchbar, IonSegment, IonSegmentButton, IonSkeletonText, IonTitle, IonToolbar, modalController, onIonViewWillEnter } from "@ionic/vue";
 import { computed, ref, watch } from "vue";
-import { IonBadge, IonButton, IonIcon, IonContent, IonFab, IonFabButton, IonHeader, IonInfiniteScroll, IonInfiniteScrollContent, IonItem, IonLabel, IonList, IonMenuButton, IonPage, IonSearchbar, IonSegment, IonSegmentButton, IonTitle, IonToolbar, modalController, onIonViewDidLeave, onIonViewWillEnter } from "@ionic/vue";
-import { computed, ref } from "vue";
 import { addOutline, informationCircleOutline } from "ionicons/icons";
 
 import { useProductStore as useAppProductStore } from "@/store/productStore";
+import { useUserStore } from "@/store/user";
+import Actions from "@/authorization/actions";
 import { DateTime } from "luxon";
 import CreateTransferOrderModal from "@/components/CreateTransferOrderModal.vue";
 import { useLiveTransferOrders } from "@/composables/useLiveTransferOrders";
@@ -127,6 +127,8 @@ const infiniteScrollRef = ref();
 // The transfer orders are read from the app database, which the sync keeps current, so the page never fetches its own list.
 const currentFacility = computed(() => useAppProductStore().getCurrentFacility);
 const currentFacilityId = computed(() => currentFacility.value?.facilityId as string | undefined);
+// Shipping a packed shipment opens the ship page, which has no permission check of its own, so the entry needs the same permission as creating a shipment from the transfer order detail
+const canShipPackedShipments = computed(() => useUserStore().hasPermission(Actions.APP_TRANSFER_ORDER_UPDATE));
 const currentProductStoreId = computed(() => useAppProductStore().getCurrentProductStore?.productStoreId as string | undefined);
 const live = useLiveTransferOrders({ facilityId: currentFacilityId, productStoreId: currentProductStoreId, stage: selectedSegment, query: queryString });
 const isLoaded = live.loaded;
@@ -150,6 +152,10 @@ const fetchPackedShipments = async () => {
   await useTransferOrderStore().findPackedShipments();
   isPackedLoaded.value = true;
 };
+const retryPackedShipments = async () => {
+  isPackedLoaded.value = false;
+  await fetchPackedShipments();
+};
 watch(selectedSegment, (segment) => {
   if(segment === "packed") {
     fetchPackedShipments();
@@ -162,6 +168,7 @@ watch(currentFacilityId, () => {
 
 // Opens the existing ship flow for a shipment that was packed earlier but never shipped
 const shipPackedShipment = (shipment: any) => {
+  if(!canShipPackedShipments.value) return;
   router.push({ path: `/ship-transfer-order/${shipment.shipmentId}`, query: { from: "packed" } });
 };
 
@@ -208,65 +215,6 @@ const loadMoreTransferOrders = async (event: any) => {
 
 const isTransferOrdersScrollable = () => {
   return visibleOrders.value.length < live.orders.value.length;
-  return transferOrders.value.list?.length > 0 && transferOrders.value.list?.length < transferOrders.value.total;
-};
-
-const updateQueryString = async (queryString: string) => {
-  const transferOrdersQuery = JSON.parse(JSON.stringify(transferOrders.value.query));
-
-  if (selectedSegment.value === "packed") {
-    transferOrdersQuery.queryString = queryString.trim();
-    await useTransferOrderStore().updateTransferOrderIndex({ ...transferOrdersQuery });
-    await useTransferOrderStore().findPackedShipments(transferOrdersQuery.queryString);
-    searchedQuery.value = queryString;
-    return;
-  }
-
-  transferOrdersQuery.viewIndex = 0;
-  transferOrdersQuery.viewSize = 20;
-  transferOrdersQuery.queryString = queryString.trim();
-  if (selectedSegment.value === "completed") {
-    transferOrdersQuery.orderStatusId = "";
-    transferOrdersQuery.shipmentStatusId = "SHIPMENT_SHIPPED";
-  } else {
-    transferOrdersQuery.orderStatusId = "ORDER_APPROVED";
-    transferOrdersQuery.shipmentStatusId = "";
-  }
-
-  await useTransferOrderStore().updateTransferOrderQuery({ ...transferOrdersQuery });
-  searchedQuery.value = queryString;
-};
-
-const initialiseTransferOrderQuery = async () => {
-  const transferOrdersQuery = JSON.parse(JSON.stringify(transferOrders.value.query));
-  // Packed shipments are always fetched so the Packed segment label shows how many shipments are waiting to be shipped;
-  // the search only narrows them while the Packed segment is open.
-  const packedShipmentsRequest = useTransferOrderStore().findPackedShipments(selectedSegment.value === "packed" ? transferOrdersQuery.queryString : "");
-  if (selectedSegment.value === "packed") {
-    await packedShipmentsRequest;
-    return;
-  }
-  transferOrdersQuery.viewIndex = 0;
-  transferOrdersQuery.viewSize = 20;
-  if (selectedSegment.value === "completed") {
-    transferOrdersQuery.orderStatusId = "";
-    transferOrdersQuery.shipmentStatusId = "SHIPMENT_SHIPPED";
-  } else {
-    transferOrdersQuery.orderStatusId = "ORDER_APPROVED";
-    transferOrdersQuery.shipmentStatusId = "";
-  }
-  await Promise.all([useTransferOrderStore().updateTransferOrderQuery({ ...transferOrdersQuery }), packedShipmentsRequest]);
-};
-
-const retryPackedShipments = async () => {
-  emitter.emit("presentLoader");
-  await useTransferOrderStore().findPackedShipments(transferOrders.value.query.queryString);
-  emitter.emit("dismissLoader");
-};
-
-// Opens the existing ship flow for a shipment that was packed earlier but never shipped
-const shipPackedShipment = (shipment: any) => {
-  router.push({ path: `/ship-transfer-order/${shipment.shipmentId}`, query: { from: "packed" } });
 };
 
 const viewTransferOrderDetail = async (order: any) => {
