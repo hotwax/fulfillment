@@ -138,6 +138,8 @@ export const useUserStore = defineStore("user", {
           if (resp.status === 200 && resp.data.docs?.length && !commonUtil.hasError(resp)) {
             serverPermissions.push(...resp.data.docs.map((permission: any) => permission.permissionId))
             viewIndex++
+            // A short page is the last one, so skip the extra request that would come back empty
+            if (resp.data.docs.length < viewSize) resp = null
           } else {
             resp = null
           }
@@ -235,20 +237,38 @@ export const useUserStore = defineStore("user", {
     async postLogin() {
       try {
         const productStore = useProductStore();
-        await this.fetchPermissions()
-        await this.fetchUserProfile()
+
+        // Calls that do not depend on the session data below start straight away and are awaited at the end,
+        // so their round trips overlap the chain instead of adding to it. The guarded copy keeps an early
+        // rejection from being reported as unhandled if the chain fails first; the original is still awaited.
+        const overlap = (request: Promise<any>) => {
+          request.catch(() => {})
+          return request
+        }
+        const carrierBoxTypesRequest = overlap(useUtilStore().fetchCarrierShipmentBoxTypes())
+
+        // Permissions and profile are independent of each other
+        await Promise.all([this.fetchPermissions(), this.fetchUserProfile()])
+
+        // Each of these needs the result of the one before it
         await productStore.fetchUserFacilities()
         await productStore.fetchFacilityPreference();
+
+        // Needs the current facility, but nothing the product store calls produce
+        const autoShippingLabelRequest = overlap(productStore.fetchAutoShippingLabelConfig())
+
         await productStore.fetchProductStores()
         await productStore.fetchProductStorePreference();
         await productStore.fetchProductStoreDependencies(productStore.getCurrentProductStore.productStoreId)
 
-        await useUtilStore().fetchCarrierShipmentBoxTypes()
-        await productStore.fetchAutoShippingLabelConfig()
+        // Notification setup registers the device with the server, so it only starts once the facility and product
+        // store validation has succeeded, as it did before; it then overlaps the calls still running
+        const notificationsRequest = overlap((async () => {
+          await useNotificationStore().fetchAllNotificationPrefs(import.meta.env.VITE_NOTIF_APP_ID as any, this.current.userId)
+          await firebaseUtil.initialiseFirebaseMessaging();
+        })())
 
-        const notificationStore = useNotificationStore();
-        await notificationStore.fetchAllNotificationPrefs(import.meta.env.VITE_NOTIF_APP_ID as any, this.current.userId)
-        await firebaseUtil.initialiseFirebaseMessaging();
+        await Promise.all([carrierBoxTypesRequest, notificationsRequest, autoShippingLabelRequest])
 
         const facilityId = router.currentRoute.value.query.facilityId
         if (facilityId) {
