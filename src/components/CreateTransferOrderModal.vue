@@ -181,7 +181,7 @@ async function createTransferOrder() {
     }
   } catch(error: any) {
     const serverError = commonUtil.getErrorMessage(error);
-    logger.error("Failed to create order", serverError);
+    logger.error(error);
     commonUtil.showToast(`${translate("Failed to create order.")} ${serverError}`);
   }
   closeModal();

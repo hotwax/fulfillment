@@ -124,7 +124,7 @@ const retryShippingLabel = async (order: any, showSuccessToast = true) => {
     const errorMsg = await useOrderStore().fetchShipmentLabelError(order.shipmentId);
     if (errorMsg) {
       logger.error("Failed to generate shipping label", errorMsg);
-      commonUtil.showToast(`${translate("Failed to generate shipping label.")} ${errorMsg}`);
+      commonUtil.showToast(`${translate("Failed to generate shipping label")}. ${errorMsg}`);
     } else {
       commonUtil.showToast(translate("Failed to generate shipping label"));
     }

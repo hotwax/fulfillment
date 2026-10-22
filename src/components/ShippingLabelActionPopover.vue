@@ -49,8 +49,8 @@ const orderStore = useOrderStore();
       await useOrderStore().updateShipmentPackageDetail(order);
     } catch (err) {
       const serverError = commonUtil.getErrorMessage(err);
-      logger.error("Failed to void shipping label", serverError);
-      commonUtil.showToast(`${translate("Failed to void shipping label.")} ${serverError}`);
+      logger.error("Failed to void shipping label", err);
+      commonUtil.showToast(`${translate("Failed to void shipping label")}. ${serverError}`);
     }
     popoverController.dismiss();
   };

@@ -144,8 +144,8 @@ const printPicklist = async () => {
     }
   } catch (err) {
     const serverError= commonUtil.getErrorMessage(err);
-    logger.error("Failed to create picklist for orders", serverError);
-    commonUtil.showToast(`${translate("Failed to create picklist for orders.")} ${serverError}`);
+    logger.error("Failed to create picklist for orders", err);
+    commonUtil.showToast(`${translate("Failed to create picklist for orders")}. ${serverError}`);
   }
 
   emitter.emit("dismissLoader");

@@ -612,8 +612,8 @@ const rejectEntireOrder = async (currentOrder: any, updateParameter?: string) =>
     return true;
   } catch (err) {
     const serverError = commonUtil.getErrorMessage(err);
-    logger.error("Failed to reject order", serverError);
-    commonUtil.showToast(`${translate("Failed to reject order.")} ${serverError}`);
+    logger.error("Failed to reject order", err);
+    commonUtil.showToast(`${translate("Failed to reject order")}. ${serverError}`);
   } finally {
     emitter.emit("dismissLoader");
   }
@@ -720,8 +720,8 @@ const executePackOrder = async (currentOrder: any, updateParameter?: string, tra
     if (toast) toast.dismiss();
     emitter.emit("dismissLoader");
     const serverError = commonUtil.getErrorMessage(err);
-    commonUtil.showToast(`${translate("Failed to pack order.")} ${serverError}`);
-    logger.error("Failed to pack order", serverError);
+    commonUtil.showToast(`${translate("Failed to pack order")}. ${serverError}`);
+    logger.error("Failed to pack order", err);
     return { isPacked: false, errors: err?.response?.data?.errors };
   } finally {
     emitter.emit("dismissLoader");
@@ -895,8 +895,8 @@ const addShipmentBox = async (currentOrder: any) => {
     }
   } catch (err) {
     const serverError = commonUtil.getErrorMessage(err);
-    commonUtil.showToast(`${translate("Failed to add box.")} ${serverError}`);
-    logger.error("Failed to add box", serverError);
+    commonUtil.showToast(`${translate("Failed to add box")}. ${serverError}`);
+    logger.error("Failed to add box", err);
   }
   addingBoxForShipmentIds.value.splice(addingBoxForShipmentIds.value.indexOf(currentOrder.shipmentId), 1);
 };
@@ -1052,8 +1052,8 @@ const shipOrder = async (currentOrder: any) => {
     }
   } catch (err) {
     const serverError = commonUtil.getErrorMessage(err);
-    commonUtil.showToast(`${translate("Failed to ship order.")} ${serverError}`);
-    logger.error("Failed to ship the order.", serverError);
+    commonUtil.showToast(`${translate("Failed to ship order")}. ${serverError}`);
+    logger.error("Failed to ship the order", err);
   } finally {
     emitter.emit("dismissLoader");
   }
@@ -1203,8 +1203,8 @@ const unpackOrder = async(order: any) => {
             }
           } catch(err) {
             const serverError = commonUtil.getErrorMessage(err)
-            logger.error('Failed to unpack the order', serverError)
-            commonUtil.showToast(`${translate('Failed to unpack the order.')} ${serverError}`);
+            logger.error('Failed to unpack the order', err)
+            commonUtil.showToast(`${translate('Failed to unpack the order')}. ${serverError}`);
           }
         }
       }]
@@ -1304,7 +1304,7 @@ const updateCarrierAndShippingMethod = async (carrierPartyId: string, shipmentMe
 
     emitter.emit("dismissLoader");
     const serverError = commonUtil.getErrorMessage(err);
-    logger.error('Failed to update carrier and method', serverError);
+    logger.error('Failed to update carrier and method', err);
     commonUtil.showToast(`${translate("Failed to update shipment method detail.")} ${serverError}`);
   }
 }

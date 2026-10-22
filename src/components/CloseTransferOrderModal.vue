@@ -77,7 +77,7 @@ const closeOrderItems = async () => {
     return true;
   } catch (error) {
     const serverError = commonUtil.getErrorMessage(error);
-    logger.error("Failed to update the status of transfer order items", serverError);
+    logger.error(error);
     commonUtil.showToast(`${translate("Failed to update the status of transfer order items.")} ${serverError}`);
     return false;
   }

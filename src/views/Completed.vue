@@ -332,8 +332,8 @@ const shipOrder = async (order: any) => {
     }
   } catch (err) {
     const serverError= commonUtil.getErrorMessage(err);
-    logger.error("Failed to ship order", serverError);
-    commonUtil.showToast(`${translate("Failed to ship order.")} ${serverError}`);
+    logger.error("Failed to ship order", err);
+    commonUtil.showToast(`${translate("Failed to ship order")}. ${serverError}`);
   }
 };
 
@@ -384,8 +384,8 @@ const bulkShipOrders = async () => {
             }
           } catch (err) {
             const serverError = commonUtil.getErrorMessage(err);
-            logger.error("Failed to ship orders", serverError);
-            commonUtil.showToast(`${translate("Failed to ship orders.")} ${serverError}`);
+            logger.error("Failed to ship orders", err);
+            commonUtil.showToast(`${translate("Failed to ship orders")}. ${serverError}`);
           }
         }
       }]
@@ -499,8 +499,8 @@ const unpackOrder = async (order: any) => {
             }
           } catch (err) {
             const serverError = commonUtil.getErrorMessage(err);
-            logger.error("Failed to unpack the order", serverError);
-            commonUtil.showToast(`${translate("Failed to unpack the order.")} ${serverError}`);
+            logger.error("Failed to unpack the order", err);
+            commonUtil.showToast(`${translate("Failed to unpack the order")}. ${serverError}`);
           }
         }
       }]
@@ -716,7 +716,7 @@ const generateCarrierManifest = async () => {
   } catch (err) {
     const serverError = commonUtil.getErrorMessage(err);
     logger.error("Failed to generate manifest", serverError);
-    commonUtil.showToast(`${translate("Failed to generate manifest.")} ${serverError}`);
+    commonUtil.showToast(`${translate("Failed to generate manifest")}. ${serverError}`);
   }
   isGeneratingManifest.value = false;
 };

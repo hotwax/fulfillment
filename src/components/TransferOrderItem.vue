@@ -244,8 +244,8 @@ const updateItemQuantity = async (selectedItem: any) => {
     }
   } catch (err) {
     const serverError = commonUtil.getErrorMessage(err);
-    logger.error("Failed to update item quantity", serverError);
-    commonUtil.showToast(`${translate("Failed to update item quantity.")} ${serverError}`);
+    logger.error(err);
+    commonUtil.showToast(`${translate("Failed to update item quantity")}. ${serverError}`);
   }
 };
 
@@ -264,8 +264,8 @@ const removeOrderItem = async (selectedItem: any) => {
     }
   } catch (err) {
     const serverError = commonUtil.getErrorMessage(err);
-    logger.error("Failed to remove item from order", serverError);
-    commonUtil.showToast(`${translate("Failed to remove item from order.")} ${serverError}`);
+    logger.error(err);
+    commonUtil.showToast(`${translate("Failed to remove item from order")}. ${serverError}`);
   }
 };
 </script>

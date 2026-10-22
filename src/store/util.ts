@@ -904,13 +904,13 @@ export const useUtilStore = defineStore("util", {
           commonUtil.showToast(translate("Configuration updated"));
         } else {
           const serverError = commonUtil.getErrorMessage(response);
-          logger.error("Failed to update configuration", serverError);
-          commonUtil.showToast(`${translate("Failed to update configuration.")} ${serverError}`);
+          logger.error("Failed to update configuration", response);
+          commonUtil.showToast(`${translate("Failed to update configuration")}. ${serverError}`);
         }
       } catch (error) {
         const serverError = commonUtil.getErrorMessage(error);
-        logger.error("Failed to update configuration", serverError);
-        commonUtil.showToast(`${translate("Failed to update configuration.")} ${serverError}`);
+        logger.error("Failed to update configuration", error);
+        commonUtil.showToast(`${translate("Failed to update configuration")}. ${serverError}`);
       }
     }
   },

@@ -427,8 +427,8 @@ const rejectEntireOrder = async (order: any, updateParameter?: string) => {
     return true;
   } catch (err) {
     const serverError = commonUtil.getErrorMessage(err);
-    commonUtil.showToast(`${translate("Failed to reject order.")} ${serverError}`);
-    logger.error("Failed to reject order", serverError);
+    commonUtil.showToast(`${translate("Failed to reject order")}. ${serverError}`);
+    logger.error("Failed to reject order", err);
   } finally {
     emitter.emit("dismissLoader");
   }
@@ -539,8 +539,8 @@ const executePackOrder = async (order: any, updateParameter?: string, trackingCo
   } catch (err: any) {
     if (toast) toast.dismiss();
     const serverError = commonUtil.getErrorMessage(err);
-    commonUtil.showToast(`${translate("Failed to pack order.")} ${serverError}`);
-    logger.error("Failed to pack order", serverError);
+    commonUtil.showToast(`${translate("Failed to pack order")}. ${serverError}`);
+    logger.error("Failed to pack order", err);
     return { isPacked: false, errors: err?.response?.data?.errors };
   } finally {
     emitter.emit("dismissLoader");
@@ -655,8 +655,8 @@ const packOrders = async () => {
             if (toast) toast.dismiss();
             emitter.emit("dismissLoader");
             const serverError = commonUtil.getErrorMessage(err);
-            commonUtil.showToast(`${translate("Failed to pack orders.")} ${serverError}`);
-            logger.error("Failed to pack orders", serverError);
+            commonUtil.showToast(`${translate("Failed to pack orders")}. ${serverError}`);
+            logger.error("Failed to pack orders", err);
           } finally {
             emitter.emit("dismissLoader");
           }
@@ -990,8 +990,8 @@ const addShipmentBox = async (order: any) => {
     }
   } catch (err) {
     const serverError = commonUtil.getErrorMessage(err);
-    commonUtil.showToast(`${translate("Failed to add box.")} ${serverError}`);
-    logger.error("Failed to add box", serverError);
+    commonUtil.showToast(`${translate("Failed to add box")}. ${serverError}`);
+    logger.error("Failed to add box", err);
   }
   addingBoxForShipmentIds.value.splice(addingBoxForShipmentIds.value.indexOf(order.shipmentId), 1);
 };
@@ -1089,8 +1089,8 @@ const recycleInProgressOrders = async () => {
           }
         } catch (err) {
           const serverError = commonUtil.getErrorMessage(err);
-          commonUtil.showToast(`${translate("Failed to reject in progress orders.")} ${serverError}`);
-          logger.error("Failed to reject in progress orders", serverError);
+          commonUtil.showToast(`${translate("Failed to reject in progress orders")}. ${serverError}`);
+          logger.error("Failed to reject in progress orders", err);
         }
         emitter.emit("dismissLoader");
       }

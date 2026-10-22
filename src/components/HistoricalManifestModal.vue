@@ -85,8 +85,8 @@ const downloadCarrierManifest = async (manifest: any) => {
         }
       } catch(err) {
         const serverError = commonUtil.getErrorMessage(err);
-        logger.error("Failed to print manifest", serverError);
-        commonUtil.showToast(`${translate("Failed to print manifest.")} ${serverError}`);
+        logger.error("Failed to print manifest", err);
+        commonUtil.showToast(`${translate("Failed to print manifest")}. ${serverError}`);
       }
       loadingContentId.value = null;
 };

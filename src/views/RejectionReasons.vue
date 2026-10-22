@@ -170,7 +170,7 @@ const saveReasonsOrder = async () => {
   if (isFailedToUpdateSomeReason) {
     const failedReason = (responses.find((r) => r.status === "rejected") as any)?.reason;
     const serverError = commonUtil.getErrorMessage(failedReason);
-    logger.error("Failed to update sequence for some rejection reasons", serverError);
+    logger.error(failedReason);
     commonUtil.showToast(`${translate("Failed to update sequence for some rejection reasons.")} ${serverError}`);
   } else {
     commonUtil.showToast(translate("Sequence for rejection reasons updated successfully."));
@@ -208,7 +208,7 @@ const updateFulfillmentRejectReasonAssocStatus = async (event: any, reason: any)
     }
   } catch (error: any) {
     const serverError = commonUtil.getErrorMessage(error);
-    logger.error("Failed to update reason association with fulfillment group", serverError);
+    logger.error(error);
     commonUtil.showToast(`${translate("Failed to update reason association with fulfillment group.")} ${serverError}`);
   }
 };
