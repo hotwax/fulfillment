@@ -231,6 +231,7 @@
     <ion-footer>
       <ion-toolbar>
         <ion-buttons slot="end">
+          <ion-button v-if="isPackedShipmentFlow" data-testid="cancel-shipment-btn-ship-transfer-order-page" :disabled="isLabelAccepted || isBusy" fill="outline" color="danger" @click="cancelPackedShipment()">{{ translate("Cancel shipment") }}</ion-button>
           <ion-button data-testid="ship-later-btn-ship-transfer-order-page" :disabled="isLabelAccepted || isBusy" fill="outline" color="primary" @click="shipLater()">
             {{ translate("Ship later") }}
           </ion-button>
@@ -926,6 +927,41 @@ async function voidShippingLabelAlert() {
     ]
   });
   return alert.present();
+}
+
+// Opened from the Packed segment: the user decided not to ship this packed shipment, so cancel it. Its items go back to the
+// transfer order, the same as discarding a shipment right after packing, and the shipment leaves the Packed segment.
+async function cancelPackedShipment() {
+  const alert = await alertController.create({
+    header: translate("Cancel shipment"),
+    message: translate("This shipment will be cancelled and its items will go back to the transfer order. You can pack it again later."),
+    buttons: [
+      {
+        text: translate("Go back"),
+        role: "cancel"
+      },
+      {
+        text: translate("Cancel shipment"),
+        role: "destructive",
+        handler: async () => {
+          try {
+            const resp = await useTransferOrderStore().cancelTransferOrderShipment(shipmentDetails.value.shipmentId);
+            if (commonUtil.hasError(resp)) {
+              throw resp.data;
+            }
+            commonUtil.showToast(translate("Shipment is cancelled."));
+            transferOrderStore.setReturnSegment("packed");
+            router.replace({ path: "/transfer-orders" });
+          } catch (err) {
+            commonUtil.showToast(translate("Failed to cancel shipment"));
+            logger.error("Failed to cancel packed transfer order shipment", err);
+            return false;
+          }
+        }
+      }
+    ]
+  });
+  await alert.present();
 }
 
 async function shipLater() {
