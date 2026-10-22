@@ -250,12 +250,6 @@ export const useUserStore = defineStore("user", {
         // Permissions and profile are independent of each other
         await Promise.all([this.fetchPermissions(), this.fetchUserProfile()])
 
-        // Needs the user id from the profile only
-        const notificationsRequest = overlap((async () => {
-          await useNotificationStore().fetchAllNotificationPrefs(import.meta.env.VITE_NOTIF_APP_ID as any, this.current.userId)
-          await firebaseUtil.initialiseFirebaseMessaging();
-        })())
-
         // Each of these needs the result of the one before it
         await productStore.fetchUserFacilities()
         await productStore.fetchFacilityPreference();
@@ -266,6 +260,13 @@ export const useUserStore = defineStore("user", {
         await productStore.fetchProductStores()
         await productStore.fetchProductStorePreference();
         await productStore.fetchProductStoreDependencies(productStore.getCurrentProductStore.productStoreId)
+
+        // Notification setup registers the device with the server, so it only starts once the facility and product
+        // store validation has succeeded, as it did before; it then overlaps the calls still running
+        const notificationsRequest = overlap((async () => {
+          await useNotificationStore().fetchAllNotificationPrefs(import.meta.env.VITE_NOTIF_APP_ID as any, this.current.userId)
+          await firebaseUtil.initialiseFirebaseMessaging();
+        })())
 
         await Promise.all([carrierBoxTypesRequest, notificationsRequest, autoShippingLabelRequest])
 
