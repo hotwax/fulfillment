@@ -87,13 +87,26 @@ describe("findPackedShipments", () => {
     expect(apiMock).toHaveBeenCalledTimes(2);
   });
 
-  it("flags the failure and keeps the shipments already shown when the request fails", async () => {
+  it("clears the list and flags the failure when the first page fails", async () => {
     apiMock.mockResolvedValueOnce({ data: { shipmentPackages: [{ orderId: "M1", shipmentId: "S1", shipmentPackageSeqId: "01", shipmentPackageCreatedDate: 100 }] } });
     const { useTransferOrderStore } = await import("@/store/transferorder");
     const store = useTransferOrderStore();
     await store.findPackedShipments();
 
     apiMock.mockRejectedValue(new Error("Network Error"));
+    await store.findPackedShipments();
+
+    expect(store.getPackedShipments).toEqual({ list: [], total: 0, hasError: true });
+  });
+
+  it("keeps the shipments already shown and flags the failure when a later page fails", async () => {
+    const firstPage = Array.from({ length: 250 }, (_, i) => ({ orderId: `M${i}`, shipmentId: `S${i}`, shipmentPackageSeqId: "01", shipmentPackageCreatedDate: i }))
+    apiMock.mockResolvedValueOnce({ data: { shipmentPackages: [{ orderId: "M1", shipmentId: "S1", shipmentPackageSeqId: "01", shipmentPackageCreatedDate: 100 }] } });
+    const { useTransferOrderStore } = await import("@/store/transferorder");
+    const store = useTransferOrderStore();
+    await store.findPackedShipments();
+
+    apiMock.mockResolvedValueOnce({ data: { shipmentPackages: firstPage } }).mockRejectedValueOnce(new Error("Network Error"));
     await store.findPackedShipments();
 
     expect(store.getPackedShipments.hasError).toBe(true);
