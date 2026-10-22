@@ -160,10 +160,11 @@ export const useTransferOrderStore = defineStore("transferorder", {
       // Guards against an endlessly paging response; 50 pages is 12,500 packages
       const maxPages = 50
       let shipmentPackages: any[] = []
+      let pageIndex = 0
 
       try {
         let previousFirstPackage = ""
-        for (let pageIndex = 0; pageIndex < maxPages; pageIndex++) {
+        for (; pageIndex < maxPages; pageIndex++) {
           const params: any = {
             originFacilityId: useAppProductStore().getCurrentFacility?.facilityId,
             shipmentStatusId: "SHIPMENT_PACKED",
@@ -196,7 +197,8 @@ export const useTransferOrderStore = defineStore("transferorder", {
       } catch (err) {
         logger.error("Failed to fetch packed transfer order shipments", err)
         if (requestId !== packedRequestId) return this.packedShipments.list
-        // Keep the shipments already shown and flag the failure, so the page does not claim that nothing is waiting to ship
+        // Clear the shipments list only when the first page fails, as a later page failing still leaves the previously fetched shipments valid
+        if (pageIndex === 0) this.clearPackedShipments()
         this.packedShipments.hasError = true
         return this.packedShipments.list
       }
