@@ -268,6 +268,7 @@ import { TRANSFER_ORDERS_DOMAIN } from "@/db/domains";
 
 const route = router.currentRoute.value;
 const shipmentId = route?.params?.shipmentId as string;
+const isPackedShipmentFlow = route?.query?.from === "packed";
 const productIdentificationPref = computed(() => useAppProductStore().getProductIdentificationPref);
 
 const orderStore = useOrderStore();
@@ -417,6 +418,13 @@ onBeforeRouteLeave(async () => {
     commonUtil.showToast(translate("Generating label"));
 
     return false;
+  }
+  // Opened from the Packed segment of Transfer Orders: the shipment was packed earlier, so leaving without shipping
+  // keeps it packed (it stays listed in the Packed segment) instead of discarding it.
+  if(isPackedShipmentFlow) {
+    transferOrderStore.setReturnSegment("packed");
+
+    return true;
   }
 
   const hasLabel = isLabelAccepted.value;

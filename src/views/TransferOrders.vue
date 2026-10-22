@@ -3,7 +3,8 @@
     <ion-header :translucent="true">
       <ion-toolbar>
         <ion-menu-button menu="start" slot="start" />
-        <ion-title v-if="!transferOrders.total">{{ transferOrders.total }} {{ translate('orders') }}</ion-title>
+        <ion-title v-if="selectedSegment === 'packed'">{{ visiblePackedShipments.length }} {{ translate('packed shipments') }}</ion-title>
+        <ion-title v-else-if="!transferOrders.total">{{ transferOrders.total }} {{ translate('orders') }}</ion-title>
         <ion-title v-else>{{ visibleOrders.length }} {{ translate('of') }} {{ transferOrders.total }} {{ translate('orders') }}</ion-title>
       </ion-toolbar>
       <div class="filters">
@@ -11,6 +12,9 @@
         <ion-segment v-model="selectedSegment" @ionChange="resetPage()">
           <ion-segment-button data-testid="open-transfer-orders-tab" value="open">
             <ion-label>{{ translate("Open") }}</ion-label>
+          </ion-segment-button>
+          <ion-segment-button data-testid="packed-transfer-orders-tab" value="packed">
+            <ion-label>{{ translate("Packed") }}<template v-if="packedShipments.total"> ({{ packedShipments.total }})</template></ion-label>
           </ion-segment-button>
           <ion-segment-button data-testid="completed-transfer-orders-tab" value="completed">
             <ion-label>{{ translate("Completed") }}</ion-label>
@@ -20,7 +24,40 @@
     </ion-header>
 
     <ion-content ref="contentRef" :scroll-events="true" @ionScroll="enableScrolling()" id="transfer-order-filters">
-      <div v-if="transferOrders.total">
+      <template v-if="selectedSegment === 'packed'">
+        <div v-if="visiblePackedShipments.length" class="results" data-testid="packed-shipments-list">
+          <ion-list>
+            <ion-item lines="full">
+              <ion-icon :icon="informationCircleOutline" slot="start" color="warning" />
+              <ion-label class="ion-text-wrap">
+                <p>{{ translate("These shipments are packed but not shipped. The transfer order is not fulfilled until the shipment is shipped.") }}</p>
+              </ion-label>
+            </ion-item>
+            <ion-item v-for="shipment in visiblePackedShipments" :key="shipment.shipmentId" :data-testid="`packed-shipment-${shipment.shipmentId}`" @click="shipPackedShipment(shipment)" button detail>
+              <ion-label>
+                <p class="overline">{{ shipment.orderId }}</p>
+                {{ shipment.orderName || shipment.orderExternalId || shipment.orderId }}
+                <p>{{ translate("Shipment ID") }}: {{ shipment.shipmentId }}<template v-if="shipment.packageCount > 1"> · {{ shipment.packageCount }} {{ translate("packages") }}</template></p>
+                <p v-if="shipment.packedDate">{{ translate("Packed on", { packedDate: getTime(shipment.packedDate) }) }}</p>
+              </ion-label>
+              <ion-badge slot="end" color="warning">{{ translate("Packed, not shipped") }}</ion-badge>
+            </ion-item>
+          </ion-list>
+        </div>
+        <ion-list v-else-if="!isPackedLoaded" data-testid="packed-shipments-loading">
+          <ion-item v-for="row in 3" :key="row">
+            <ion-label>
+              <ion-skeleton-text animated class="skeleton-short" />
+              <ion-skeleton-text animated class="skeleton-long" />
+            </ion-label>
+            <ion-skeleton-text slot="end" animated class="skeleton-badge" />
+          </ion-item>
+        </ion-list>
+        <div v-else class="empty-state" data-testid="packed-shipments-empty-state">
+          <p>{{ queryString ? translate("No results found for .", { searchedQuery: queryString }) : translate("No packed shipments waiting to ship") }}</p>
+        </div>
+      </template>
+      <div v-else-if="transferOrders.total">
         <div class="results">
           <ion-list>
             <ion-item v-for="order in visibleOrders" :key="order.orderId" @click="viewTransferOrderDetail(order)" button>
@@ -63,7 +100,7 @@
 import { translate } from "@common";
 import { IonBadge, IonContent, IonFab, IonFabButton, IonHeader, IonIcon, IonInfiniteScroll, IonInfiniteScrollContent, IonItem, IonLabel, IonList, IonMenuButton, IonPage, IonSearchbar, IonSegment, IonSegmentButton, IonSkeletonText, IonTitle, IonToolbar, modalController, onIonViewWillEnter } from "@ionic/vue";
 import { computed, ref, watch } from "vue";
-import { addOutline } from "ionicons/icons";
+import { addOutline, informationCircleOutline } from "ionicons/icons";
 
 import { useProductStore as useAppProductStore } from "@/store/productStore";
 import { DateTime } from "luxon";
@@ -90,6 +127,37 @@ const isLoaded = live.loaded;
 const visibleOrders = computed(() => live.orders.value.slice(0, (viewIndex.value + 1) * TRANSFER_ORDER_PAGE_SIZE));
 // Shaped as the page has always read it.
 const transferOrders = computed(() => ({ list: live.orders.value, total: live.orders.value.length }));
+
+// Packed shipments are not part of the synced transfer orders: they are fetched when the page is entered and when the Packed
+// segment is opened, so the segment label shows how many shipments still have to be shipped.
+const packedShipments = computed(() => useTransferOrderStore().getPackedShipments);
+const isPackedLoaded = ref(false);
+const visiblePackedShipments = computed(() => {
+  const search = queryString.value.trim().toLowerCase();
+  if(!search) {
+    return packedShipments.value.list;
+  }
+
+  return packedShipments.value.list.filter((shipment: any) => [shipment.orderId, shipment.orderName, shipment.orderExternalId, shipment.shipmentId].some((value) => value?.toLowerCase().includes(search)));
+});
+const fetchPackedShipments = async () => {
+  await useTransferOrderStore().findPackedShipments();
+  isPackedLoaded.value = true;
+};
+watch(selectedSegment, (segment) => {
+  if(segment === "packed") {
+    fetchPackedShipments();
+  }
+});
+watch(currentFacilityId, () => {
+  isPackedLoaded.value = false;
+  fetchPackedShipments();
+});
+
+// Opens the existing ship flow for a shipment that was packed earlier but never shipped
+const shipPackedShipment = (shipment: any) => {
+  router.push({ path: `/ship-transfer-order/${shipment.shipmentId}`, query: { from: "packed" } });
+};
 
 // A new search or segment starts again from the top.
 const resetPage = () => { viewIndex.value = 0; };
@@ -148,6 +216,16 @@ const getTime = (time: any) => {
 onIonViewWillEnter(() => {
   isScrollingEnabled.value = false;
   viewIndex.value = 0;
+  // Returning from the ship flow of a packed shipment brings the user back to the Packed segment
+  const previousSegment = selectedSegment.value;
+  const returnSegment = useTransferOrderStore().consumeReturnSegment();
+  if(returnSegment) {
+    selectedSegment.value = returnSegment;
+  }
+  // A segment change fetches through the watcher
+  if(selectedSegment.value === previousSegment) {
+    fetchPackedShipments();
+  }
 });
 </script>
 
