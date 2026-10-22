@@ -114,6 +114,24 @@ describe("findPackedShipments", () => {
   });
 });
 
+describe("findPackedShipments overlapping requests", () => {
+  it("keeps the latest request's shipments when an earlier request finishes last", async () => {
+    let finishFirst: (value: any) => void = () => {}
+    apiMock
+      .mockImplementationOnce(() => new Promise((resolve) => { finishFirst = resolve }))
+      .mockResolvedValueOnce({ data: { shipmentPackages: [{ orderId: "M2", shipmentId: "NEW", shipmentPackageSeqId: "01", shipmentPackageCreatedDate: 2 }] } })
+    const { useTransferOrderStore } = await import("@/store/transferorder");
+    const store = useTransferOrderStore();
+
+    const first = store.findPackedShipments()
+    await store.findPackedShipments()
+    finishFirst({ data: { shipmentPackages: [{ orderId: "M1", shipmentId: "OLD", shipmentPackageSeqId: "01", shipmentPackageCreatedDate: 1 }] } })
+    await first
+
+    expect(store.getPackedShipments.list.map((shipment: any) => shipment.shipmentId)).toEqual(["NEW"]);
+  });
+});
+
 describe("consumeReturnSegment", () => {
   it("hands the segment back once", async () => {
     const { useTransferOrderStore } = await import("@/store/transferorder");

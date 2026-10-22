@@ -33,7 +33,7 @@
                 <p>{{ translate("These shipments are packed but not shipped. The transfer order is not fulfilled until the shipment is shipped.") }}</p>
               </ion-label>
             </ion-item>
-            <ion-item v-for="shipment in packedShipments.list" :key="shipment.shipmentId" :data-testid="`packed-shipment-${shipment.shipmentId}`" @click="shipPackedShipment(shipment)" button detail>
+            <ion-item v-for="shipment in packedShipments.list" :key="shipment.shipmentId" :data-testid="`packed-shipment-${shipment.shipmentId}`" @click="shipPackedShipment(shipment)" :button="canShipPackedShipments" :detail="canShipPackedShipments">
               <ion-label>
                 <p class="overline">{{ shipment.orderId }}</p>
                 {{ shipment.orderName || shipment.orderExternalId || shipment.orderId }}
@@ -89,6 +89,8 @@ import { addOutline, informationCircleOutline } from "ionicons/icons";
 import { emitter, translate } from "@common";
 
 import { useProductStore as useAppProductStore } from "@/store/productStore";
+import { useUserStore } from "@/store/user";
+import Actions from "@/authorization/actions";
 import { DateTime } from "luxon";
 import CreateTransferOrderModal from "@/components/CreateTransferOrderModal.vue";
 import { useTransferOrderStore } from "@/store/transferorder";
@@ -105,6 +107,8 @@ const infiniteScrollRef = ref();
 const transferOrders = computed(() => useTransferOrderStore().getTransferOrders);
 const packedShipments = computed(() => useTransferOrderStore().getPackedShipments);
 const currentFacility = computed(() => useAppProductStore().getCurrentFacility);
+// Shipping a packed shipment opens the ship page, which has no permission check of its own, so the entry needs the same permission as creating a shipment from the transfer order detail
+const canShipPackedShipments = computed(() => useUserStore().hasPermission(Actions.APP_TRANSFER_ORDER_UPDATE));
 
 const openCreateTransferOrderModal = async () => {
   const createTransferOrderModal = await modalController.create({
@@ -212,6 +216,7 @@ const retryPackedShipments = async () => {
 
 // Opens the existing ship flow for a shipment that was packed earlier but never shipped
 const shipPackedShipment = (shipment: any) => {
+  if (!canShipPackedShipments.value) return;
   router.push({ path: `/ship-transfer-order/${shipment.shipmentId}`, query: { from: "packed" } });
 };
 
