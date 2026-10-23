@@ -574,7 +574,7 @@ async function shipOrder() {
     isProcessingShipment.value = false;
     isOrderShipped.value = false;
     const serverError = commonUtil.getErrorMessage(err);
-    logger.error("Failed to ship the shipment.", serverError);
+    logger.error("Failed to ship the shipment.", err);
     commonUtil.showToast(`${translate("Something went wrong, could not ship the shipment")}. ${serverError}`);
   }
 }

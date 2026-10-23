@@ -715,7 +715,7 @@ const generateCarrierManifest = async () => {
     await fetchCarrierManifestInformation([selectedCarrierPartyId.value]);
   } catch (err) {
     const serverError = commonUtil.getErrorMessage(err);
-    logger.error("Failed to generate manifest", serverError);
+    logger.error("Failed to generate manifest", err);
     commonUtil.showToast(`${translate("Failed to generate manifest")}. ${serverError}`);
   }
   isGeneratingManifest.value = false;

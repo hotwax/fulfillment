@@ -71,7 +71,7 @@ const saveTrackingCode = async () => {
     }
   } catch (error: any) {
     const serverError = commonUtil.getErrorMessage(error);
-    logger.error("Failed to add tracking code", serverError);
+    logger.error("Failed to add tracking code", error);
     commonUtil.showToast(`${translate("Failed to add tracking code.")} ${serverError}`);
   }
 };

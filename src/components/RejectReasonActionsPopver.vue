@@ -55,7 +55,7 @@ const removeRejectionReason = async () => {
             }
           } catch (err) {
             const serverError = commonUtil.getErrorMessage(err);
-            logger.error("Failed to remove rejection reason", serverError);
+            logger.error(err);
             commonUtil.showToast(`${translate("Failed to remove rejection reason.")} ${serverError}`);
           }
           popoverController.dismiss();
