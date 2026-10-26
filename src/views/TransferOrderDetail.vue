@@ -8,7 +8,7 @@
     </ion-header>
 
     <ion-content>
-      <main v-if="currentOrder.orderId">
+      <main v-if="isCurrentOrderShown">
         <ion-item lines="none">
           <ion-label>
             <p class="overline">{{ currentOrder.orderId }}</p>
@@ -38,7 +38,20 @@
           </ion-segment-button>
         </ion-segment>
         <div class="segments" v-if="currentOrder">
-          <template v-if="selectedSegment === 'open'">
+          <template v-if="isLoading">
+            <ion-card v-for="row in 2" :key="row" data-testid="transfer-order-items-loading">
+              <ion-item lines="none">
+                <ion-thumbnail slot="start">
+                  <ion-skeleton-text animated />
+                </ion-thumbnail>
+                <ion-label>
+                  <ion-skeleton-text animated class="skeleton-short" />
+                  <ion-skeleton-text animated class="skeleton-long" />
+                </ion-label>
+              </ion-item>
+            </ion-card>
+          </template>
+          <template v-else-if="selectedSegment === 'open'">
             <template v-if="getTOItems('open')?.length > 0">
               <TransferOrderItem v-for="item in getTOItems('open')" :key="currentOrder.orderId + item.orderItemSeqId + 'ship' + item.shippedQuantity" :itemDetail="item" :class="item.internalName === lastScannedId ? 'scanned-item' : ''" :id="item.internalName" isRejectionSupported="true" />
             </template>
@@ -110,9 +123,17 @@
           </template>
         </div>
       </main>
-      <div class="empty-state" v-else>
+      <div v-else-if="!isLoading" class="empty-state">
         <p>{{ translate('No data available') }}</p>
       </div>
+      <main v-else data-testid="transfer-order-loading">
+        <ion-item lines="none">
+          <ion-label>
+            <ion-skeleton-text animated class="skeleton-short" />
+            <ion-skeleton-text animated class="skeleton-long" />
+          </ion-label>
+        </ion-item>
+      </main>
     </ion-content>
     <ion-footer v-if="currentOrder.statusId === 'ORDER_APPROVED' && selectedSegment === 'open'">
       <ion-toolbar>
@@ -139,14 +160,14 @@
 </template>
 
 <script setup lang="ts">
-import { IonBadge, IonBackButton, IonButton, IonButtons, IonCard, IonChip, IonContent, IonFooter, IonHeader, IonIcon, IonItem, IonInput, IonLabel, IonPage, IonSegment, IonSegmentButton, IonSpinner, IonThumbnail, IonTitle, IonToolbar, alertController, modalController, onIonViewDidLeave, onIonViewWillEnter } from "@ionic/vue";
+import { IonBackButton, IonBadge, IonButton, IonButtons, IonCard, IonChip, IonContent, IonFooter, IonHeader, IonIcon, IonInput, IonItem, IonLabel, IonPage, IonSegment, IonSegmentButton, IonSkeletonText, IonSpinner, IonThumbnail, IonTitle, IonToolbar, alertController, modalController, onIonViewDidLeave, onIonViewWillEnter } from "@ionic/vue";
 import { computed, ref } from "vue";
 import { barcodeOutline, pricetagOutline, printOutline, trashOutline } from "ionicons/icons";
 import { commonUtil, DxpShopifyImg, useEmbeddedAppStore, emitter, logger, translate, useShopify } from "@common";
+import { useCarrierStore } from "@/store/carrier";
 import { useProductStore as useAppProductStore } from "@/store/productStore";
 import Scanner from "@/components/Scanner.vue";
 import { DateTime } from "luxon";
-import { useOrderStore } from "@/store/order";
 
 import TransferOrderItem from "@/components/TransferOrderItem.vue";
 import ShippingLabelErrorModal from "@/components/ShippingLabelErrorModal.vue";
@@ -157,9 +178,10 @@ import { useUtilStore } from "@/store/util";
 import { useProductStore } from "@/store/product";
 import router from "@/router";
 import Actions from "@/authorization/actions";
+import { refreshLiveOrders } from "@/db/appDbSync";
+import { TRANSFER_ORDERS_DOMAIN } from "@/db/domains";
 
 const userStore = useUserStore();
-const orderStore = useOrderStore();
 const transferOrderStore = useTransferOrderStore();
 
 const getProductIdentificationValue = commonUtil.getProductIdentificationValue;
@@ -170,8 +192,12 @@ const selectedSegment = ref("open");
 const isCreatingShipment = ref(false);
 const lastScannedId = ref("");
 const defaultRejectReasonId = "NO_VARIANCE_LOG";
+// True until the order has been read. The order the list handed over is shown meanwhile, and its items are skeletons.
+const isLoading = ref(true);
 
 const currentOrder = computed(() => useTransferOrderStore().getCurrent);
+// The store can still hold another order, and that one must not show while this one loads.
+const isCurrentOrderShown = computed(() => currentOrder.value.orderId && currentOrder.value.orderId === route.params.orderId);
 const getStatusDesc = (statusId: string) => useUtilStore().getStatusDesc(statusId);
 const getProduct = (productId: string) => useProductStore().getProduct(productId);
 const productIdentificationPref = computed(() => useAppProductStore().getProductIdentificationPref);
@@ -207,11 +233,14 @@ const getTOItems = (orderType: string) => {
 const createShipment = async () => {
   isCreatingShipment.value = true;
   const shipmentId = await useTransferOrderStore().createOutboundTransferShipment(currentOrder.value);
-  isCreatingShipment.value = false;
   if (shipmentId) {
+    // Rate shopping takes seconds. It starts now, and the Ship page picks up the request that is already running.
+    useCarrierStore().prefetchShippingRates(shipmentId);
     await useTransferOrderStore().clearCurrentTransferShipment();
-    router.push({ path: `/transfer-order-details/${currentOrder.value.orderId}/ship-transfer-order/${shipmentId}` });
+    // The button stays off until the page has changed, so a second click cannot create a second shipment.
+    await router.push({ path: `/transfer-order-details/${currentOrder.value.orderId}/ship-transfer-order/${shipmentId}` });
   }
+  isCreatingShipment.value = false;
 };
 
 const confirmCreateShipment = async () => {
@@ -314,26 +343,37 @@ const regenerateShippingLabel = async (currentShipment: any) => {
   }
 
   currentShipment.isGeneratingShippingLabel = true;
-  let shippingLabelPdfUrls = currentShipment?.labelImageUrls;
 
-  if (!currentShipment.trackingIdNumber) {
-    await orderStore.retryShippingLabel(currentShipment.shipmentId);
+  try {
+    if(currentShipment.trackingIdNumber) {
+      await transferOrderStore.printShippingLabel([currentShipment.shipmentId], currentShipment.labelImageUrls, currentShipment.packages);
 
-    await useTransferOrderStore().fetchTransferOrderDetail({ orderId: currentOrder.value.orderId });
-    currentShipment = currentOrder.value?.shipments?.find((shipment: any) => shipment.shipmentId === currentShipment.shipmentId);
-    shippingLabelPdfUrls = currentShipment?.labelImageUrls;
+      return;
+    }
 
-    if (currentShipment.trackingIdNumber) {
+    await transferOrderStore.generateShippingLabel(currentShipment.shipmentId);
+
+    // Only this shipment is read back, and its card is updated where it is, instead of reloading the whole order.
+    const resp = await transferOrderStore.fetchTransferShipmentDetails({ shipmentId: currentShipment.shipmentId });
+    const shipment = resp.data?.shipments?.[0];
+
+    if(shipment?.carrierServiceStatusId === "SHRSCS_ACCEPTED" && shipment.trackingIdNumber) {
+      const packages = shipment.packages || [];
+      currentShipment.trackingIdNumber = shipment.trackingIdNumber;
+      currentShipment.packages = packages;
+      currentShipment.labelImageUrls = packages.filter((shipmentPackage: any) => shipmentPackage.labelImageUrl).map((shipmentPackage: any) => shipmentPackage.labelImageUrl);
       commonUtil.showToast(translate("Shipping Label generated successfully"));
-      await transferOrderStore.printShippingLabel([currentShipment.shipmentId], shippingLabelPdfUrls, currentShipment?.shipmentPackages);
+      await transferOrderStore.printShippingLabel([currentShipment.shipmentId], currentShipment.labelImageUrls, packages);
     } else {
       commonUtil.showToast(translate("Failed to generate shipping label"));
     }
-  } else {
-    await transferOrderStore.printShippingLabel([currentShipment.shipmentId], shippingLabelPdfUrls, currentShipment?.shipmentPackages);
+  } catch (err) {
+    const serverError = commonUtil.getErrorMessage(err);
+    logger.error(err);
+    commonUtil.showToast(`${translate("Failed to generate shipping label")}. ${serverError}`);
+  } finally {
+    currentShipment.isGeneratingShippingLabel = false;
   }
-
-  currentShipment.isGeneratingShippingLabel = false;
 };
 
 const rejectItems = async () => {
@@ -380,11 +420,18 @@ const closeTOItems = async () => {
 };
 
 onIonViewWillEnter(async () => {
-  emitter.emit("presentLoader");
-  await useTransferOrderStore().fetchRejectReasons();
-  await useTransferOrderStore().fetchTransferOrderDetail({ orderId: route.params.orderId });
+  selectedSegment.value = route.params.category === "completed" ? "completed" : "open";
+  isLoading.value = true;
+  // Reject reasons and the order do not depend on each other. Nothing waits behind a loader: the order the list handed over is on screen.
+  const results = await Promise.allSettled([
+    useTransferOrderStore().fetchRejectReasons(),
+    useTransferOrderStore().fetchTransferOrderDetail({ orderId: route.params.orderId })
+  ]);
+  if(results[1].status === "rejected") {
+    console.error("Failed to fetch the transfer order", results[1].reason);
+  }
   selectedSegment.value = hasOpenItems.value ? (route.params.category === "completed" ? "completed" : "open") : "completed";
-  emitter.emit("dismissLoader");
+  isLoading.value = false;
 });
 
 onIonViewDidLeave(() => {
@@ -393,6 +440,11 @@ onIonViewDidLeave(() => {
     useTransferOrderStore().clearTransferOrderFilters();
   }
 });
+
+// Leaving after a shipment, a label or a new transfer order: the list the user returns to is read again.
+onIonViewDidLeave(() => {
+  void refreshLiveOrders([TRANSFER_ORDERS_DOMAIN]);
+});
 </script>
 
 <style scoped>
@@ -400,6 +452,12 @@ ion-content > main {
   max-width: 1110px;
   margin-right: auto;
   margin-left: auto;
+}
+.skeleton-short {
+  width: 25%;
+}
+.skeleton-long {
+  width: 60%;
 }
 .scanned-item {
   outline: 2px solid var( --ion-color-medium-tint);

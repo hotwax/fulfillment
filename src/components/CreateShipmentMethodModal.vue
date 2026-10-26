@@ -68,12 +68,9 @@ import { commonUtil, logger, translate } from "@common";
       await carrierStore.checkAssociatedProductStoreShipmentMethods();
       modalController.dismiss();
     } catch (err: any) {
-      let errorMessage = translate("Failed to create shipment method");
-      if (err?.response?.data?.error?.message) {
-        errorMessage = err.response.data.error.message;
-      }
-      logger.error("error", err);
-      commonUtil.showToast(errorMessage);
+      const serverError = commonUtil.getErrorMessage(err);
+      logger.error(err);
+      commonUtil.showToast(`${translate("Failed to create shipment method")}. ${serverError}`);
     }
   };
   </script>
