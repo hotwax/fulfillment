@@ -1206,7 +1206,7 @@ export const useOrderStore = defineStore("order", {
 
       } catch (err) {
         const serverError = commonUtil.getErrorMessage(err);
-        logger.error("Failed to print packing slip", err);
+        logger.error("Failed to load packing slip", err);
         commonUtil.showToast(`${translate('Failed to print packing slip')}. ${serverError}`);
       }
     },
@@ -1258,7 +1258,7 @@ export const useOrderStore = defineStore("order", {
 
       } catch (err) {
         const serverError = commonUtil.getErrorMessage(err);
-        logger.error("Failed to print shipping label", err);
+        logger.error("Failed to load shipping label", err);
         commonUtil.showToast(`${translate('Failed to print shipping label')}. ${serverError}`);
       }
     },
@@ -1276,7 +1276,7 @@ export const useOrderStore = defineStore("order", {
         });
       } catch (err) {
         const serverError = commonUtil.getErrorMessage(err);
-        logger.error("Failed to print custom document", err);
+        logger.error("Failed to load custom document", err);
         commonUtil.showToast(`${translate('Failed to print custom document')}. ${serverError}`);
       }
     },
@@ -1317,7 +1317,7 @@ export const useOrderStore = defineStore("order", {
 
       } catch (err) {
         const serverError = commonUtil.getErrorMessage(err);
-        logger.error("Failed to print shipping label and packing slip", err);
+        logger.error("Failed to load shipping label and packing slip", err);
         commonUtil.showToast(`${translate('Failed to print shipping label and packing slip')}. ${serverError}`);
       }
     },

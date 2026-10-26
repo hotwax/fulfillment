@@ -904,12 +904,12 @@ export const useUtilStore = defineStore("util", {
           commonUtil.showToast(translate("Configuration updated"));
         } else {
           const serverError = commonUtil.getErrorMessage(response);
-          logger.error("Failed to update configuration", response);
+          logger.error(response);
           commonUtil.showToast(`${translate("Failed to update configuration")}. ${serverError}`);
         }
       } catch (error) {
         const serverError = commonUtil.getErrorMessage(error);
-        logger.error("Failed to update configuration", error);
+        logger.error("Error updating product store setting:", error);
         commonUtil.showToast(`${translate("Failed to update configuration")}. ${serverError}`);
       }
     }

@@ -796,7 +796,7 @@ async function packAndShipOrder() {
     }
   } catch (error) {
     const serverError = commonUtil.getErrorMessage(error);
-    logger.error("Failed to create shipment", error);
+    logger.error(error);
     commonUtil.showToast(`${translate("Failed to create shipment")}. ${serverError}`);
     preventLeave.value = false;
   } finally {

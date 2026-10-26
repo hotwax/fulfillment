@@ -167,7 +167,7 @@ export const useTransferOrderStore = defineStore("transferorder", {
         }
       } catch (err) {
         const serverError = commonUtil.getErrorMessage(err);
-        logger.error("Failed to print picklist", err);
+        logger.error("Failed to load picklist", err);
         commonUtil.showToast(`${translate("Failed to print picklist")}. ${serverError}`);
       }
     },
@@ -254,7 +254,7 @@ export const useTransferOrderStore = defineStore("transferorder", {
         return isOpened;
       } catch (err) {
         const serverError = commonUtil.getErrorMessage(err);
-        logger.error("Failed to print shipping label", err);
+        logger.error("Failed to load shipping label", err);
         commonUtil.showToast(`${translate("Failed to print shipping label")}. ${serverError}`);
         return false;
 

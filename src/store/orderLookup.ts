@@ -465,7 +465,7 @@ export const useOrderLookupStore = defineStore("orderLookup", {
 
       } catch (err) {
         const serverError = commonUtil.getErrorMessage(err);
-        logger.error("Failed to print shipping label", err);
+        logger.error("Failed to load shipping label", err);
         commonUtil.showToast(`${translate('Failed to print shipping label')}. ${serverError}`);
       }
     }

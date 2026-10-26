@@ -62,7 +62,7 @@ const createCarrier = async () => {
     }
   } catch (err: any) {
     const serverError = commonUtil.getErrorMessage(err);
-    logger.error("Failed to create carrier", err);
+    logger.error("error", err);
     commonUtil.showToast(`${translate("Failed to create carrier.")} ${serverError}`);
   }
 };
