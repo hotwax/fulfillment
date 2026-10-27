@@ -16,7 +16,7 @@ const orderCategoryParameters = {
       'OP': 'NOT'
     },
     'fulfillmentStatus': {
-      'value': 'Cancelled',
+      'value': ['Cancelled', 'Rejected', 'Completed', 'InProgress'],
       'OP': 'NOT'
     },
     'orderStatusId': {
@@ -27,23 +27,27 @@ const orderCategoryParameters = {
     }
   },
   'In Progress': {
-    'picklistItemStatusId': {
-      'value': 'PICKITEM_PENDING',
+    'shipmentStatusId': {
+      'value': 'SHIPMENT_PACKED',
+      'OP': 'NOT',
     },
     'shipmentMethodTypeId': {
       'value': 'STOREPICKUP',
       'OP': 'NOT'
     },
     'fulfillmentStatus': {
-      'value': 'Rejected',
-      'OP': 'NOT'
+      'value': 'InProgress',
     },
   },
   'Completed': {
     // Array to denote ORing
-    'picklistItemStatusId': {
-      'value': ['PICKITEM_PICKED', 'PICKITEM_COMPLETED'],
+    'shipmentStatusId': {
+      'value': ['SHIPMENT_PACKED', 'SHIPMENT_SHIPPED'],
       'OP': 'OR'
+    },
+    'fulfillmentStatus': {
+      'value': 'Cancelled',
+      'OP': 'NOT'
     },
     'shipmentMethodTypeId': {
       'value': 'STOREPICKUP',
