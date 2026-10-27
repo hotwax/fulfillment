@@ -1412,7 +1412,8 @@ export default defineComponent({
         sort: 'orderDate asc',
         defType: "edismax",
         filters: {
-          picklistItemStatusId: { value: '(PICKITEM_PICKED OR (PICKITEM_COMPLETED AND itemShippedDate: [NOW/DAY TO NOW/DAY+1DAY]))' },
+          shipmentStatusId: { value: '(SHIPMENT_PACKED OR (SHIPMENT_SHIPPED AND itemShippedDate: [NOW/DAY TO NOW/DAY+1DAY]))' },
+          '-fulfillmentStatus': { value: 'Cancelled' },
           '-shipmentMethodTypeId': { value: 'STOREPICKUP' },
           productStoreId: { value: this.currentEComStore.productStoreId },
           ...getFacilityFilter(this.currentFacility?.facilityId)

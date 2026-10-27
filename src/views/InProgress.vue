@@ -932,8 +932,8 @@ export default defineComponent({
         viewSize: '0',  // passing viewSize as 0 as we don't need any data
         groupBy: 'picklistBinId',
         filters: {
-          picklistItemStatusId: { value: 'PICKITEM_PENDING' },
-          '-fulfillmentStatus': { value: ['Rejected', 'Cancelled', 'Completed'] },
+          '-shipmentStatusId': { value: 'SHIPMENT_PACKED' },
+          'fulfillmentStatus': { value: 'InProgress' },
           '-shipmentMethodTypeId': { value: 'STOREPICKUP' },
           productStoreId: { value: this.currentEComStore.productStoreId },
           ...getFacilityFilter(this.currentFacility?.facilityId)

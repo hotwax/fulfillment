@@ -324,8 +324,8 @@ const actions: ActionTree<OrderState, RootState> = {
         sort: 'orderDate asc',
         groupBy: 'picklistBinId',
         filters: {
-          picklistItemStatusId: { value: 'PICKITEM_PENDING' },
-          '-fulfillmentStatus': { value: ['Rejected', 'Cancelled', 'Completed'] },
+          '-shipmentStatusId': { value: 'SHIPMENT_PACKED' },
+          'fulfillmentStatus': { value: 'InProgress' },
           '-shipmentMethodTypeId': { value: 'STOREPICKUP' },
           productStoreId: { value: getProductStoreId() },
           ...getFacilityFilter(escapeSolrSpecialChars(getCurrentFacilityId()))
@@ -418,7 +418,7 @@ const actions: ActionTree<OrderState, RootState> = {
         quantityNotAvailable: { value: 0 },
         isPicked: { value: 'N' },
         '-shipmentMethodTypeId': { value: 'STOREPICKUP' },
-        '-fulfillmentStatus': { value: ['Cancelled', 'Rejected', 'Completed']},
+        '-fulfillmentStatus': { value: ['Cancelled', 'Rejected', 'Completed', 'InProgress']},
         orderStatusId: { value: 'ORDER_APPROVED' },
         orderTypeId: { value: 'SALES_ORDER' },
         productStoreId: { value: getProductStoreId() },
@@ -493,10 +493,11 @@ const actions: ActionTree<OrderState, RootState> = {
       queryString: completedOrderQuery.queryString,
       viewSize: completedOrderQuery.viewSize,
       groupBy: 'picklistBinId',
-      sort: 'picklistItemStatusId desc, orderDate asc',
+      sort: 'shipmentStatusId desc, orderDate asc',
       filters: {
-        picklistItemStatusId: { value: '(PICKITEM_PICKED OR (PICKITEM_COMPLETED AND itemShippedDate: [NOW/DAY TO NOW/DAY+1DAY]))' },
+        shipmentStatusId: { value: '(SHIPMENT_PACKED OR (SHIPMENT_SHIPPED AND itemShippedDate: [NOW/DAY TO NOW/DAY+1DAY]))' },
         '-shipmentMethodTypeId': { value: 'STOREPICKUP' },
+        '-fulfillmentStatus': { value: 'Cancelled' },
         productStoreId: { value: getProductStoreId() },
         ...getFacilityFilter(escapeSolrSpecialChars(getCurrentFacilityId()))
       }
@@ -768,7 +769,7 @@ const actions: ActionTree<OrderState, RootState> = {
         isPicked: { value: 'N' },
         shipGroupSeqId: { value: payload.shipGroupSeqId },
         '-shipmentMethodTypeId': { value: 'STOREPICKUP' },
-        '-fulfillmentStatus': { value: ['Cancelled', 'Rejected', 'Completed']},
+        '-fulfillmentStatus': { value: ['Cancelled', 'Rejected', 'Completed', 'InProgress']},
         orderStatusId: { value: 'ORDER_APPROVED' },
         orderTypeId: { value: 'SALES_ORDER' },
         productStoreId: { value: getProductStoreId() },
@@ -820,9 +821,9 @@ const actions: ActionTree<OrderState, RootState> = {
         groupBy: 'picklistBinId',
         filters: {
           orderId: { value: payload.orderId },
-          picklistItemStatusId: { value: 'PICKITEM_PENDING' },
+          '-shipmentStatusId': { value: 'SHIPMENT_PACKED' },
           shipGroupSeqId: { value: payload.shipGroupSeqId },
-          '-fulfillmentStatus': { value: ['Cancelled', 'Rejected', 'Completed']},
+          'fulfillmentStatus': { value: 'InProgress'},
           '-shipmentMethodTypeId': { value: 'STOREPICKUP' },
           productStoreId: { value: getProductStoreId() },
           ...getFacilityFilter(escapeSolrSpecialChars(getCurrentFacilityId()))
@@ -876,8 +877,9 @@ const actions: ActionTree<OrderState, RootState> = {
         sort: 'orderDate asc',
         filters: {
           orderId: { value: payload.orderId },
-          picklistItemStatusId: { value: '(PICKITEM_PICKED OR (PICKITEM_COMPLETED AND itemShippedDate: [NOW/DAY TO NOW/DAY+1DAY]))' },
+          shipmentStatusId: { value: '(SHIPMENT_PACKED OR (SHIPMENT_SHIPPED AND itemShippedDate: [NOW/DAY TO NOW/DAY+1DAY]))' },
           '-shipmentMethodTypeId': { value: 'STOREPICKUP' },
+          '-fulfillmentStatus': { value: 'Cancelled' },
           shipGroupSeqId: { value: payload.shipGroupSeqId },
           productStoreId: { value: getProductStoreId() },
           ...getFacilityFilter(escapeSolrSpecialChars(getCurrentFacilityId()))

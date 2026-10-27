@@ -323,7 +323,7 @@ export default defineComponent({
           quantityNotAvailable: { value: 0 },
           isPicked: { value: 'N' },
           '-shipmentMethodTypeId': { value: 'STOREPICKUP' },
-          '-fulfillmentStatus': { value: ['Cancelled', 'Rejected', 'Completed']},
+          '-fulfillmentStatus': { value: ['Cancelled', 'Rejected', 'Completed', 'InProgress']},
           orderStatusId: { value: 'ORDER_APPROVED' },
           orderTypeId: { value: 'SALES_ORDER' },
           productStoreId: { value: this.currentEComStore.productStoreId },
