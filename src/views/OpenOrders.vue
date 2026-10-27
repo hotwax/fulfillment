@@ -240,15 +240,25 @@ const toggleKitComponents = (order: any, item: any) => {
 const assignPickers = async () => {
   if(isStale()) {
     emitter.emit("presentLoader");
+    let refreshError: any = null;
     try {
       await refreshLiveOrders();
       await nextTick();
+    } catch (err) {
+      refreshError = err;
+      logger.error("Failed to refresh live orders before assigning pickers:", err);
     } finally {
       emitter.emit("dismissLoader");
     }
     // The refresh failed, so the orders on screen may have left the queue.
     if(isStale()) {
-      commonUtil.showToast(translate("Failed to create picklist for orders"));
+      if (refreshError) {
+        const serverError = commonUtil.getErrorMessage(refreshError);
+        commonUtil.showToast(`${translate("Failed to create picklist for orders")}. ${serverError}`);
+      } else {
+        logger.error("Orders on screen are stale; cannot create picklist for orders");
+        commonUtil.showToast(translate("Failed to create picklist for orders"));
+      }
 
       return;
     }

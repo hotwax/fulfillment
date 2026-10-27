@@ -304,7 +304,7 @@ const scanCode = async () => {
       const scannedCode = await useShopify().openPosScanner();
       if (scannedCode) updateProductCount(scannedCode);
     } catch(err) {
-      console.error("POS Scanner error:", err);
+      logger.error("POS Scanner error:", err);
     }
   } else {
     if (!(await commonUtil.hasWebcamAccess())) {
@@ -428,7 +428,7 @@ onIonViewWillEnter(async () => {
     useTransferOrderStore().fetchTransferOrderDetail({ orderId: route.params.orderId })
   ]);
   if(results[1].status === "rejected") {
-    console.error("Failed to fetch the transfer order", results[1].reason);
+    logger.error("Failed to fetch the transfer order", results[1].reason);
   }
   selectedSegment.value = hasOpenItems.value ? (route.params.category === "completed" ? "completed" : "open") : "completed";
   isLoading.value = false;

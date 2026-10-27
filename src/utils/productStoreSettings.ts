@@ -24,7 +24,7 @@ export function resolveProductStoreSettings(rawEnv?: string): Record<string, Pro
   try {
     fromEnv = JSON.parse(rawEnv || "{}");
   } catch (error) {
-    console.error("VITE_DEFAULT_PRODUCT_STORE_SETTINGS is not valid JSON, using built-in defaults", error);
+    logger.error("VITE_DEFAULT_PRODUCT_STORE_SETTINGS is not valid JSON, using built-in defaults", error);
   }
 
   const settings = { ...PRODUCT_STORE_SETTINGS };

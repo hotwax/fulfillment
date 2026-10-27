@@ -1367,6 +1367,7 @@ const printShippingLabel = async (order: any) => {
   );
 
   if(!shipmentIds?.length) {
+    logger.error("Failed to generate shipping label: shipmentIds is empty", order);
     commonUtil.showToast(translate('Failed to generate shipping label'))
     return;
   }
@@ -1380,6 +1381,7 @@ const printShippingLabel = async (order: any) => {
 const regenerateShippingLabel = async (order: any) => {
   // If there are no product store shipment method configured, then not generating the label and displaying an error toast
   if(productStoreShipmentMethCount.value <= 0) {
+    logger.error("Unable to generate shipping label: missing product store shipping method configuration", { productStoreShipmentMethCount: productStoreShipmentMethCount.value, order });
     commonUtil.showToast(translate('Unable to generate shipping label due to missing product store shipping method configuration'))
     return;
   }

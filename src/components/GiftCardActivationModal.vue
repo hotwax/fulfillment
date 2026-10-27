@@ -143,7 +143,7 @@ const scan = async () => {
       const scannedCode = await useShopify().openPosScanner();
       if (scannedCode) activationCode.value = scannedCode;
     } catch(err) {
-      console.error("POS Scanner error:", err);
+      logger.error("POS Scanner error:", err);
     }
   } else {
     if (!(await commonUtil.hasWebcamAccess())) {

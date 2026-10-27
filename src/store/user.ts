@@ -200,7 +200,7 @@ export const useUserStore = defineStore("user", {
           this.timeZones = resp.data.timeZones.filter((timeZone: any) => DateTime.local().setZone(timeZone.id).isValid);
         }
       } catch (err) {
-        console.error('Error', err)
+        logger.error('Error', err)
       }
     },
 
@@ -226,7 +226,7 @@ export const useUserStore = defineStore("user", {
           });
         }
       } catch (error) {
-        console.error(error)
+        logger.error(error)
       } finally {
         i18n.global.locale.value = newLocale as any
         this.locale = newLocale
