@@ -389,7 +389,7 @@
 
 <script setup lang="ts">
 import { IonBackButton, IonBadge, IonButton, IonCard, IonCheckbox, IonChip, IonContent, IonHeader, IonIcon, IonItem, IonLabel, IonNote, IonPage, IonRow, IonSkeletonText, IonTitle, IonToolbar, IonThumbnail, alertController, popoverController, modalController, onIonViewDidEnter } from "@ionic/vue";
-import { computed, defineProps, onMounted, ref, shallowRef } from "vue";
+import { computed, defineProps, onMounted, ref, shallowRef, watch } from "vue";
 import { addOutline, archiveOutline, bagCheckOutline, cashOutline, caretDownOutline, checkmarkCircleOutline, chevronUpOutline, closeCircleOutline, cubeOutline, documentTextOutline, ellipsisVerticalOutline, fileTrayOutline, gift, giftOutline, informationCircleOutline, listOutline, locateOutline, personAddOutline, pricetagOutline, ribbonOutline, trashBinOutline } from "ionicons/icons";
 import { cookieHelper, commonUtil, DxpShopifyImg, emitter, logger, moduleFederationUtil, translate } from "@common";
 import { useProductStore } from "@/store/productStore";
@@ -456,6 +456,7 @@ const getProduct = (productId: string) => useProduct().getProduct(productId);
 const getProductStock = (productId: string, facilityId = "") => useStockStore().getProductStock(productId, facilityId);
 const inProgressOrders = computed(() => useOrderStore().getInProgressOrders);
 const order = computed(() => useOrderStore().getCurrent);
+const category = computed(() => order.value?.category || props.category);
 const rejectReasonOptions = computed(() => useUtilStore().getRejectReasonOptions);
 const userPreference = computed(() => useUserStore().getUserPreferenceState);
 const getPaymentMethodDesc = (paymentMethodTypeId: string) => useUtilStore().getPaymentMethodDesc(paymentMethodTypeId);
@@ -713,6 +714,7 @@ const executePackOrder = async (currentOrder: any, updateParameter?: string, tra
     } else {
       commonUtil.showToast(translate("Order packed successfully"));
     }
+    await orderStore.markCurrentAsPacked();
     router.replace(`/completed/shipment-detail/${props.orderId}/${props.shipmentId}`);
     return { isPacked: true };
   } catch (err: any) {
@@ -1193,6 +1195,7 @@ const unpackOrder = async(order: any) => {
 
             if(resp.status == 200 && !commonUtil.hasError(resp)) {
               commonUtil.showToast(translate('Order unpacked successfully'))
+              await useOrderStore().markCurrentAsUnpacked()
               router.replace(`/in-progress/shipment-detail/${props.orderId}/${props.shipmentId}`)
             } else {
               throw resp.data
@@ -1418,7 +1421,7 @@ const printPicklist = async(order: any) => {
   await orderStore.printPicklist(order.picklistId)
 }
 
-onIonViewDidEnter(async () => {
+const fetchOrderDetail = async () => {
   await useUtilStore().fetchRejectReasonOptions();
   if (props.category === "open") {
     await useOrderStore().getOpenOrder({ orderId: props.orderId, shipGroupSeqId: props.shipGroupSeqId });
@@ -1441,7 +1444,18 @@ onIonViewDidEnter(async () => {
   isCODPaymentPending.value = false;
   isOrderAdjustmentPending.value = false;
   fetchCODPaymentInfo();
+}
+
+onIonViewDidEnter(async () => {
+  await fetchOrderDetail();
 });
+
+watch(
+  () => [props.category, props.shipmentId],
+  async () => {
+    await fetchOrderDetail();
+  }
+);
 
 onMounted(async () => {
   const instance = commonUtil.getOmsURL().split("-")[0].replace(new RegExp("^(https|http)://"), "").replace(new RegExp("/api.*"), "").replace(new RegExp(":.*"), "");
