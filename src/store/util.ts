@@ -191,7 +191,7 @@ export const useUtilStore = defineStore("util", {
     },
     async fetchAdjustmentTypeDescription(payload: any): Promise<any> {
       return api({
-        url: `/oms/orderAdjustmentTypes`,
+        url: `/oms/shippingGateways/orderAdjustmentTypes`,
         method: "GET",
         params: payload,
       });

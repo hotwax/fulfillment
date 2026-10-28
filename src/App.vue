@@ -1,5 +1,8 @@
 <template>
   <ion-app>
+    <!-- Work in flight shows here and never blocks the page. -->
+    <ion-progress-bar v-if="isBusy" class="app-busy-bar" type="indeterminate" />
+    <div v-if="isBusy && busyMessage" class="app-busy-message">{{ busyMessage }}</div>
     <ion-split-pane content-id="main-content" when="lg">
       <ion-menu side="start" content-id="main-content" type="overlay" :disabled="!useAuth().isAuthenticated || (router.currentRoute.value.name as string) === 'Login'">
         <ion-header>
@@ -43,11 +46,12 @@
 </template>
 
 <script setup lang="ts">
-import { IonApp, IonContent, IonHeader, IonIcon, IonItem, IonItemDivider, IonLabel, IonList, IonMenu, IonMenuToggle, IonRouterOutlet, IonSplitPane, IonTitle, IonToolbar, loadingController, toastController } from "@ionic/vue";
+import { IonApp, IonContent, IonHeader, IonIcon, IonItem, IonItemDivider, IonLabel, IonList, IonMenu, IonMenuToggle, IonProgressBar, IonRouterOutlet, IonSplitPane, IonTitle, IonToolbar, toastController } from "@ionic/vue";
 import { computed, onMounted, onUnmounted, ref, watch } from "vue";
-import { translate, emitter, logger, useNotificationStore, useAuth } from "@common";
+import { translate, emitter, logger, useNotificationStore, useAuth, i18n } from "@common";
 import { Settings } from "luxon";
 import { init } from "@module-federation/runtime";
+import { focusLiveOrders, startLiveOrdersSync, syncMasterFacilities } from "@/db/appDbSync";
 import { useUserStore } from "@/store/user";
 import { useProductStore } from "@/store/productStore";
 import router from './router';
@@ -56,7 +60,14 @@ import { useRegisterSW } from 'virtual:pwa-register/vue'
 
 const { needRefresh, updateServiceWorker } = useRegisterSW()
 
-const loader = ref<any>(null);
+// Work in flight shows as a slim bar over the page rather than a blocking overlay. It only appears if the work outlasts
+// a short grace period, so quick calls never flash it, and it clears itself if a dismiss never arrives.
+const BUSY_DELAY_MS = 150;
+const BUSY_MAX_MS = 30_000;
+const isBusy = ref(false);
+const busyMessage = ref("");
+let busyDelayTimer: ReturnType<typeof setTimeout> | undefined;
+let busyMaxTimer: ReturnType<typeof setTimeout> | undefined;
 
 const userProfile = computed(() => useUserStore().getUserProfile);
 const allNotificationPrefs = computed(() => useNotificationStore().getAllNotificationPrefs);
@@ -84,36 +95,29 @@ const selectedIndex = computed(() => {
   return menuItems.value.findIndex((item) => item.url === path || item.childRoutes?.includes(path) || item.childRoutes?.some((route: any) => path.includes(route)));
 });
 
-const presentLoader = async (options = { message: "", backdropDismiss: false }) => {
-  if (options.message && loader.value) dismissLoader();
-
-  if (!loader.value) {
-    loader.value = await loadingController.create({
-      message: options.message ? translate(options.message) : (options.backdropDismiss ? translate("Click the backdrop to dismiss.") : translate("Loading...")),
-      translucent: true,
-      backdropDismiss: options.backdropDismiss || false
-    });
-  }
-  loader.value.present();
+const presentLoader = (options: { message?: string } = {}) => {
+  busyMessage.value = options?.message ? translate(options.message) : "";
+  clearTimeout(busyMaxTimer);
+  busyMaxTimer = setTimeout(dismissLoader, BUSY_MAX_MS);
+  if(isBusy.value || busyDelayTimer) {return;}
+  busyDelayTimer = setTimeout(() => {
+    busyDelayTimer = undefined;
+    isBusy.value = true;
+  }, BUSY_DELAY_MS);
 };
 
 const dismissLoader = () => {
-  if (loader.value) {
-    loader.value.dismiss();
-    loader.value = null;
-  }
+  clearTimeout(busyDelayTimer);
+  clearTimeout(busyMaxTimer);
+  busyDelayTimer = undefined;
+  isBusy.value = false;
+  busyMessage.value = "";
 };
 
 onMounted(async () => {
   init({
     name: "fulfillment",
     remotes: [{ name: "fulfillment_extensions", entry: import.meta.env.VITE_REMOTE_ENTRY as string, type: "module" }]
-  });
-
-  loader.value = await loadingController.create({
-    message: translate("Loading..."),
-    translucent: true,
-    backdropDismiss: false
   });
 
   emitter.on("presentLoader", (options: any) => presentLoader(options));
@@ -123,15 +127,36 @@ onMounted(async () => {
     Settings.defaultZone = userProfile.value.timeZone;
   }
 
+  if(userProfile.value?.userId) {
+    i18n.global.locale.value = useUserStore().getLocale
+  }
+
   const currentProductStore: any = useProductStore().getCurrentProductStore;
 
     if (useAuth().isAuthenticated.value && currentProductStore?.productStoreId) {
+      // A restored session skips postLogin, so the live order sync starts here too.
+      void startLiveOrdersSync(useProductStore().getFacilities, useProductStore().getCurrentFacility?.facilityId, useProductStore().getCurrentProductStore?.productStoreId);
+
       await useProductStore().fetchProductStoreSettings(currentProductStore.productStoreId).catch((error) => logger.error(error));
 
       if (allNotificationPrefs.value?.length) {
         await firebaseUtil.initialiseFirebaseMessaging();
       }
     }
+});
+
+// Before facilities load, the store holds `{}` rather than a list.
+const facilityIdsKey = () => {
+  const facilities = useProductStore().getFacilities;
+
+  return Array.isArray(facilities) ? facilities.map((facility: any) => facility.facilityId).join(",") : "";
+};
+watch(facilityIdsKey, () => {
+  void syncMasterFacilities(useProductStore().getFacilities);
+});
+// The sync follows the facility being worked in, so a switch made elsewhere has its orders in by the time Open shows them.
+watch(() => useProductStore().getCurrentFacility?.facilityId, (facilityId) => {
+  if(facilityId) {void focusLiveOrders(facilityId, useProductStore().getCurrentProductStore?.productStoreId);}
 });
 
 onUnmounted(() => {
@@ -162,6 +187,30 @@ watch(needRefresh, (newValue) => {
 </script>
 
 <style scoped>
+.app-busy-bar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 100000;
+  height: 3px;
+  pointer-events: none;
+}
+
+.app-busy-message {
+  position: fixed;
+  top: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 100000;
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 12px;
+  background: var(--ion-color-step-150, #262626);
+  color: var(--ion-color-step-850, #d9d9d9);
+  pointer-events: none;
+}
+
 ion-menu.md ion-item.selected ion-icon {
   color: var(--ion-color-secondary);
 }

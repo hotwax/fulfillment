@@ -22,7 +22,7 @@
 import { defineProps } from "vue";
 import { IonContent, IonIcon, IonItem, IonList, IonListHeader, modalController, popoverController } from "@ionic/vue";
 import { arrowForwardOutline, bagCheckOutline, copyOutline } from "ionicons/icons";
-import { commonUtil, emitter, translate } from "@common";
+import { commonUtil, translate } from "@common";
 import AssignPickerModal from "@/views/AssignPickerModal.vue";
 import { useOrderStore } from "@/store/order";
 import router from "@/router";
@@ -46,16 +46,15 @@ const assignPickers = async () => {
   return assignPickerModal.present();
 };
 
-const viewOrder = async () => {
-  emitter.emit("presentLoader");
-  useOrderStore().updateCurrent(props.order).then(() => {
-    closePopover();
-    emitter.emit("dismissLoader");
-    if (props.order.category === "open") {
-      router.push({ path: `${props.category}/order-detail/${props.order.orderId}/${props.order.shipGroupSeqId}` });
-    } else {
-      router.push({ path: `${props.category}/shipment-detail/${props.order.orderId}/${props.order.shipmentId}` });
-    }
-  });
+// The detail page fetches the order's detail and its other shipments as it opens, so it opens now with the order the list
+// already holds instead of waiting for those calls first.
+const viewOrder = () => {
+  useOrderStore().setCurrent(props.order);
+  closePopover();
+  if (props.order.category === "open") {
+    router.push({ path: `${props.category}/order-detail/${props.order.orderId}/${props.order.shipGroupSeqId}` });
+  } else {
+    router.push({ path: `${props.category}/shipment-detail/${props.order.orderId}/${props.order.shipmentId}` });
+  }
 };
 </script>

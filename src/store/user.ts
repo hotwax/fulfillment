@@ -1,6 +1,7 @@
 import { api, commonUtil, cookieHelper, i18n, logger, translate, useAuth, useNotificationStore, useEmbeddedAppStore } from "@common";
 import { defineStore } from "pinia"
 import { DateTime, Settings } from "luxon"
+import { startLiveOrdersSync, stopLiveOrdersSync } from "@/db/appDbSync";
 import router from "@/router";
 import { useUtilStore } from "@/store/util";
 import { useProductStore } from "@/store/productStore";
@@ -100,6 +101,18 @@ export const useUserStore = defineStore("user", {
         if (this.current.timeZone) {
           Settings.defaultZone = this.current.timeZone;
         }
+
+        if(this.current.locale) {
+          const localeOptions = Object.keys(this.localeOptions)
+          // If exact locale is not found, try to match the first two characters i.e primary code
+          const matchingLocale = localeOptions.find((option: string) => option === this.current.locale) ||
+            localeOptions.find((option: string) => option.slice(0, 2) === this.current.locale.slice(0, 2))
+
+          if(matchingLocale) {
+            i18n.global.locale.value = matchingLocale
+            this.locale = matchingLocale
+          }
+        }
       } catch (error: any) {
         const errorMessage = translate("Failed to fetch user profile information");
         commonUtil.showToast(errorMessage);
@@ -111,7 +124,8 @@ export const useUserStore = defineStore("user", {
     async fetchPermissions() {
       const permissionId = import.meta.env.VITE_APP_PERMISSION_ID
       const serverPermissions = [] as string[]
-      const viewSize = 50
+      // Large enough that most users' permissions come in one page.
+      const viewSize = 1000
       let viewIndex = 0
 
       try {
@@ -227,6 +241,8 @@ export const useUserStore = defineStore("user", {
         await this.fetchUserProfile()
         await productStore.fetchUserFacilities()
         await productStore.fetchFacilityPreference();
+        // Not awaited, and started once the facility is known: the first sync fills its orders while the rest of the login runs.
+        void startLiveOrdersSync(productStore.getFacilities, productStore.getCurrentFacility?.facilityId, productStore.getCurrentProductStore?.productStoreId)
         await productStore.fetchProductStores()
         await productStore.fetchProductStorePreference();
         await productStore.fetchProductStoreDependencies(productStore.getCurrentProductStore.productStoreId)
@@ -240,14 +256,21 @@ export const useUserStore = defineStore("user", {
 
         const facilityId = router.currentRoute.value.query.facilityId
         if (facilityId) {
-          const facility = this.current.facilities.find((facility: any) => facility.facilityId === facilityId);
+          const facility = productStore.getFacilities?.find((facility: any) => facility.facilityId === facilityId);
           if (facility) {
             productStore.currentFacility = facility
+            const orderId = router.currentRoute.value.query.orderId
+            if (orderId) {
+              localStorage.setItem("requestedPagePath", `/transfer-order-details/${orderId}/open`)
+            }
           } else {
             commonUtil.showToast(translate("Redirecting to home page due to incorrect information being passed."))
           }
         }
       } catch (error: any) {
+        // A login that fails after the sync started leaves nothing syncing.
+        await stopLiveOrdersSync();
+
         return Promise.reject(error);
       }
     },
@@ -267,6 +290,7 @@ export const useUserStore = defineStore("user", {
       }
     },
     async postLogout() {
+      await stopLiveOrdersSync();
       useNotificationStore().clearNotificationState();
       useCarrierStore().$reset();
       useOrderStore().$reset();

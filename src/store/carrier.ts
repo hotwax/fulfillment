@@ -3,6 +3,38 @@ import { commonUtil, logger, translate, api } from "@common";
 import { DateTime } from "luxon";
 
 import { useProductStore as useAppProductStore } from "@/store/productStore";
+import { isFreshCacheEntry, readShippingRatesCache, removeShippingRatesCache, writeShippingRatesCache } from "@/utils/shippingRates";
+import { type RateStreamRow, fetchWithRetries, runRateStream, toRateRows } from "@/utils/rateStream";
+
+// Rate shopping takes several seconds, so the rates of a shipment are kept in memory and in sessionStorage for a few minutes,
+// and a request that is already running (the Ship page opening while createShipment prefetched) is shared.
+const shippingRatesCache = new Map<string, { at: number, rates: any[] }>()
+const shippingRatesRequests = new Map<string, Promise<any>>()
+
+// null until the backend has been asked whether it can rate one service at a time (poorti/shippingRateOptions). A backend without
+// that endpoint answers 404 once, and the single request for all rates is used from then on.
+let rateOptionsSupported: boolean | null = null
+let rateStreamRunId = 0
+
+const getSessionStorage = () => {
+  try {
+    return window.sessionStorage
+  } catch {
+    return null
+  }
+}
+
+// The live state of one shipment's rate lookup. The Ship page reads it while the requests are running, so each rate shows
+// as soon as its carrier answers.
+//   pending: asking which services exist; stream: one request per service; single: one request for every rate;
+//   cached: the rates came from the cache.
+export interface RateStream {
+  status: "loading" | "done"
+  mode: "pending" | "stream" | "single" | "cached"
+  rows: RateStreamRow[]
+  rates: any[]
+  runId: number
+}
 
 interface CarrierState {
   carrier: {
@@ -16,6 +48,7 @@ interface CarrierState {
   facilityCarriers: any[]
   productStoreShipmentMethods: any[]
   shipmentGatewayConfigs: any
+  rateStreams: Record<string, RateStream>
 }
 
 export const useCarrierStore = defineStore("carrier", {
@@ -30,7 +63,8 @@ export const useCarrierStore = defineStore("carrier", {
     carrierShipmentMethodsByProductStore: {},
     facilityCarriers: [],
     productStoreShipmentMethods: [],
-    shipmentGatewayConfigs: []
+    shipmentGatewayConfigs: [],
+    rateStreams: {}
   }),
   getters: {
     getCarriers(state) {
@@ -320,18 +354,19 @@ export const useCarrierStore = defineStore("carrier", {
           facility.isChecked = false
           facility.fromDate = ""
         } else {
+          const fromDate = DateTime.now().toMillis()
           resp = await api({
             url: `/oms/facilities/${payload.facilityId}/parties`,
             method: "POST",
             data: {
               ...payload,
-              fromDate: DateTime.now().toMillis()
+              fromDate
             }
           });
           if (commonUtil.hasError(resp)) {
             throw resp.data;
           }
-          facility = { ...facility, ...payload, isChecked: true }
+          facility = { ...facility, ...payload, fromDate, isChecked: true }
         }
 
         if (!commonUtil.hasError(resp)) {
@@ -348,7 +383,7 @@ export const useCarrierStore = defineStore("carrier", {
     async updateProductStoreShipmentMethod(productStoreId: string, shipmentMethod: any) {
       try {
         const resp = await api({
-          url: `/admin/productStores/${productStoreId}/shipmentMethods`,
+          url: `/admin/productStores/${productStoreId}/shippingMethods`,
           method: "PUT",
           data: {
             shipmentGatewayConfigId: shipmentMethod.shipmentGatewayConfigId,
@@ -376,7 +411,7 @@ export const useCarrierStore = defineStore("carrier", {
         let resp;
         if (isChecked) {
           resp = await api({
-            url: `/admin/productStores/${productStoreId}/shipmentMethods`,
+            url: `/admin/productStores/${productStoreId}/shippingMethods`,
             method: "POST",
             data: {
               productStoreId,
@@ -388,7 +423,7 @@ export const useCarrierStore = defineStore("carrier", {
           })
         } else {
           resp = await api({
-            url: `/admin/productStores/${productStoreId}/shipmentMethods`,
+            url: `/admin/productStores/${productStoreId}/shippingMethods`,
             method: "PUT",
             data: {
               productStoreShipMethId: shipmentMethod.productStoreShipMethId,
@@ -559,23 +594,199 @@ export const useCarrierStore = defineStore("carrier", {
       }
       return logoUrls
     },
+    // `forceRefresh` skips the cache. Resolves with the response of poorti/shippingRate, or with only `shippingRates` from the cache.
     async fetchShippingRates(payload: any) {
+      const { forceRefresh, ...params } = payload
+      const shipmentId = params.shipmentId
+
+      if(shipmentId && !forceRefresh) {
+        const memoryEntry = shippingRatesCache.get(shipmentId)
+        const entry = isFreshCacheEntry(memoryEntry) ? memoryEntry : readShippingRatesCache(getSessionStorage(), shipmentId)
+        if(entry) {
+          shippingRatesCache.set(shipmentId, entry)
+
+          return Promise.resolve({ shippingRates: entry.rates })
+        }
+
+        const runningRequest = shippingRatesRequests.get(shipmentId)
+        if(runningRequest) {return runningRequest}
+      }
+
+      const fetchRates = async () => {
+        try {
+          const resp = await api({
+            url: "poorti/shippingRate/",
+            method: "GET",
+            params
+          })
+
+          if(!commonUtil.hasError(resp)) {
+            if(shipmentId && resp.data?.shippingRates?.length) {
+              const entry = { at: Date.now(), rates: resp.data.shippingRates }
+              shippingRatesCache.set(shipmentId, entry)
+              writeShippingRatesCache(getSessionStorage(), shipmentId, entry)
+            }
+
+            return Promise.resolve(resp.data)
+          } else {
+            throw resp.data
+          }
+        } catch (err) {
+          logger.error("Failed to fetch shipping rates", err)
+
+          return Promise.reject(err)
+        }
+      }
+
+      const request: Promise<any> = fetchRates().finally(() => {
+        if(shipmentId && shippingRatesRequests.get(shipmentId) === request) {shippingRatesRequests.delete(shipmentId)}
+      })
+      if(shipmentId) {shippingRatesRequests.set(shipmentId, request)}
+
+      return request
+    },
+    // The services the backend would rate for the shipment, answered without asking a carrier. Null when the backend cannot rate one
+    // service at a time (an older backend, or UNIGATE_ENABLED is not Y), and the caller asks for every rate in one request.
+    async fetchShippingRateOptions(shipmentId: string) {
+      if(rateOptionsSupported === false) {return null}
+
       try {
         const resp = await api({
-          url: "poorti/shippingRate/",
+          url: "poorti/shippingRateOptions",
           method: "GET",
-          params: payload
+          params: { shipmentId }
         })
+        if(commonUtil.hasError(resp)) {throw resp.data}
 
-        if (!commonUtil.hasError(resp)) {
-          return Promise.resolve(resp.data)
+        rateOptionsSupported = true
+        return resp.data?.isStreamable ? resp.data : null
+      } catch (err: any) {
+        if((err?.response?.status ?? err?.status) === 404) {rateOptionsSupported = false}
+        else {logger.error("Failed to fetch the shipping rate options", err)}
+
+        return null
+      }
+    },
+    // One service on its own. It does not touch the cache: a lone service is not the shipment's rates.
+    async fetchServiceShippingRates(shipmentId: string, row: Pick<RateStreamRow, "carrierPartyId" | "carrierServiceCode">) {
+      const resp = await api({
+        url: "poorti/shippingRate/",
+        method: "GET",
+        params: { shipmentId, carrierPartyId: row.carrierPartyId, carrierServiceCode: row.carrierServiceCode }
+      })
+      if(commonUtil.hasError(resp)) {throw resp.data}
+
+      return resp.data?.shippingRates || []
+    },
+    // One service, asked for again (a few times, with a growing pause) while the carrier answers with an error or no rate. The row says
+    // which attempt it is on.
+    fetchServiceRatesWithRetries(shipmentId: string, row: RateStreamRow, isCancelled: () => boolean = () => false) {
+      row.attempt = 1
+      return fetchWithRetries(() => this.fetchServiceShippingRates(shipmentId, row), {
+        isCancelled,
+        onRetry: (attempt, maxAttempts) => {
+          row.attempt = attempt
+          row.maxAttempts = maxAttempts
+        }
+      })
+    },
+    // Looks up the rates of a shipment and keeps the progress in `rateStreams[shipmentId]`. Where the backend can rate one service at
+    // a time every service is asked at once, and a rate shows as soon as its carrier answers. Elsewhere it is one request for all of
+    // them. A lookup that is running is shared, and a fresh cached lookup is not repeated, unless `forceRefresh`.
+    async streamShippingRates(shipmentId: string, { forceRefresh = false } = {}) {
+      const current = this.rateStreams[shipmentId]
+      if(!forceRefresh) {
+        if(current?.status === "loading") {return current}
+
+        const memoryEntry = shippingRatesCache.get(shipmentId)
+        const entry = isFreshCacheEntry(memoryEntry) ? memoryEntry : readShippingRatesCache(getSessionStorage(), shipmentId)
+        if(entry) {
+          shippingRatesCache.set(shipmentId, entry)
+          this.rateStreams[shipmentId] = { status: "done", mode: "cached", rows: [], rates: entry.rates, runId: 0 }
+
+          return this.rateStreams[shipmentId]
+        }
+        if(current?.status === "done" && current.rates.length) {return current}
+      }
+
+      const runId = ++rateStreamRunId
+      // A refresh keeps the rates on screen until the new ones are there.
+      const keptRates = current?.rates?.length ? current.rates : []
+      this.rateStreams[shipmentId] = { status: "loading", mode: "pending", rows: [], rates: keptRates, runId }
+      const live = () => this.rateStreams[shipmentId]
+      const isCancelled = () => live()?.runId !== runId
+
+      try {
+        const options = await this.fetchShippingRateOptions(shipmentId)
+        if(isCancelled()) {return live()}
+
+        const rows = toRateRows(options?.rateOptions)
+        if(rows.length) {
+          Object.assign(live(), { mode: "stream", rows, rates: [] })
+          await runRateStream(live().rows, (row) => this.fetchServiceRatesWithRetries(shipmentId, row, isCancelled), {
+            isCancelled,
+            onSettled: (row, { rates, error }) => {
+              if(error) {logger.error(`Failed to fetch the rates of ${row.key}`, error)}
+              // A service that answered with no rate is shown as having none, the same as one that failed.
+              row.status = error || !rates.length ? "failed" : "done"
+              live().rates.push(...rates)
+            }
+          })
+          if(isCancelled()) {return live()}
+
+          this.cacheCompleteRateStream(shipmentId)
         } else {
-          throw resp.data
+          live().mode = "single"
+          const data = await this.fetchShippingRates({ shipmentId, forceRefresh: true })
+          if(isCancelled()) {return live()}
+          live().rates = data?.shippingRates || []
         }
       } catch (err) {
         logger.error("Failed to fetch shipping rates", err)
-        return Promise.reject(err)
+        // A refresh that fails keeps the rates that are on screen.
+        if(!isCancelled() && live().mode !== "stream") {live().rates = keptRates}
       }
+      if(!isCancelled()) {live().status = "done"}
+
+      return live()
+    },
+    // Only a complete list is kept, otherwise the next visit would show a list with a service missing.
+    cacheCompleteRateStream(shipmentId: string) {
+      const stream = this.rateStreams[shipmentId]
+      if(!stream || stream.mode !== "stream" || !stream.rates.length || !stream.rows.every((row) => row.status === "done")) {return}
+
+      const cacheEntry = { at: Date.now(), rates: JSON.parse(JSON.stringify(stream.rates)) }
+      shippingRatesCache.set(shipmentId, cacheEntry)
+      writeShippingRatesCache(getSessionStorage(), shipmentId, cacheEntry)
+    },
+    // Asks again for one service that returned no rate, for the page's retry button. The others stay as they are.
+    async retryRateService(shipmentId: string, key: string) {
+      const stream = this.rateStreams[shipmentId]
+      const row = stream?.rows.find((candidate) => candidate.key === key)
+      if(!stream || !row || row.status !== "failed") {return}
+
+      const runId = stream.runId
+      row.status = "pending"
+      try {
+        const rates = await this.fetchServiceRatesWithRetries(shipmentId, row, () => this.rateStreams[shipmentId]?.runId !== runId)
+        if(this.rateStreams[shipmentId]?.runId !== runId) {return}
+        row.status = rates.length ? "done" : "failed"
+        stream.rates.push(...rates)
+      } catch (err) {
+        logger.error(`Failed to fetch the rates of ${row.key}`, err)
+        if(this.rateStreams[shipmentId]?.runId === runId) {row.status = "failed"}
+        return
+      }
+      this.cacheCompleteRateStream(shipmentId)
+    },
+    // Starts the rates lookup before the Ship page is open. Nothing to handle: the page reads the same running lookup.
+    prefetchShippingRates(shipmentId: string) {
+      return this.streamShippingRates(shipmentId).catch(() => null)
+    },
+    clearShippingRatesCache(shipmentId: string) {
+      shippingRatesCache.delete(shipmentId)
+      removeShippingRatesCache(getSessionStorage(), shipmentId)
+      delete this.rateStreams[shipmentId]
     },
     async fetchCarrierShipmentBoxTypes(params: any): Promise<any> {
       return api({
@@ -987,7 +1198,7 @@ export const useCarrierStore = defineStore("carrier", {
         }
 
         const resp = await api({
-          url: `/oms/shippingGateways/config`,
+          url: `/oms/shippingGateways/configs`,
           method: "GET",
           params: payload
         });
