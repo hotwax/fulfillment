@@ -437,7 +437,7 @@ export const useOrderStore = defineStore("order", {
     },
     async getInProgressOrder(payload: any) {
       emitter.emit("presentLoader")
-
+      try {
       const inProgressQuery = JSON.parse(JSON.stringify(this.inProgress.query))
       inProgressQuery.orderId = payload.orderId
       inProgressQuery.shipmentId = payload.shipmentId
@@ -445,13 +445,8 @@ export const useOrderStore = defineStore("order", {
 
       const { orders: inProgressOrders } = await this.findShipments(inProgressQuery)
 
-      let order = inProgressOrders[0]
-      if(!order) {
-        this.setCurrent(null)
-        emitter.emit("dismissLoader")
-
-        return
-      }
+        let order = inProgressOrders?.[0]
+        if (!order) return false
 
       order.category = "in-progress"
 
@@ -475,24 +470,22 @@ export const useOrderStore = defineStore("order", {
       order = await this.fetchGiftCardActivationDetails({ isDetailsPage: true, currentOrders: [order] })
 
       await this.updateCurrent(order)
+        return true
+      } finally {
       emitter.emit("dismissLoader")
+      }
     },
     async getCompletedOrder(payload: any) {
       emitter.emit("presentLoader")
-
+      try {
       const completedOrderQuery = JSON.parse(JSON.stringify(this.completed.query))
       completedOrderQuery.orderId = payload.orderId
       completedOrderQuery.shipmentId = payload.shipmentId
 
       const { orders: completedOrders } = await this.findShipments(completedOrderQuery)
 
-      let order = completedOrders[0]
-      if(!order) {
-        this.setCurrent(null)
-        emitter.emit("dismissLoader")
-
-        return
-      }
+        let order = completedOrders?.[0]
+        if (!order) return false
 
       order.category = "completed"
 
@@ -501,7 +494,10 @@ export const useOrderStore = defineStore("order", {
       useUtilStore().fetchShipmentMethodTypeDesc([order.shipmentMethodTypeId])
       order = await this.fetchGiftCardActivationDetails({ isDetailsPage: true, currentOrders: [order] })
       await this.updateCurrent(order)
+        return true
+      } finally {
       emitter.emit("dismissLoader")
+      }
     },
     async fetchOtherShipments() {
       let otherShipments: any[] = []
@@ -933,6 +929,14 @@ export const useOrderStore = defineStore("order", {
     },
     async updateCompletedOrderIndex(payload: any) {
       this.setCompletedQuery(payload)
+    },
+    async markCurrentAsPacked() {
+      if (!this.current?.shipmentId) return;
+      await this.updateCurrent({ ...this.current, statusId: "SHIPMENT_PACKED", category: "completed" });
+    },
+    async markCurrentAsUnpacked() {
+      if (!this.current?.shipmentId) return;
+      await this.updateCurrent({ ...this.current, statusId: "SHIPMENT_APPROVED", category: "in-progress" });
     },
     async updateCurrent(order: any) {
       this.setCurrent(order)
