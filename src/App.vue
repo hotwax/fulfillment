@@ -37,7 +37,7 @@
           </ion-list>
         </ion-content>
       </ion-menu>
-      <ion-router-outlet id="main-content" />
+      <ion-router-outlet id="main-content" :key="router.currentRoute.value.fullPath" />
     </ion-split-pane>
   </ion-app>
 </template>
