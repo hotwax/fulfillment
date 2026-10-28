@@ -11,7 +11,7 @@
       </ion-item>
       <ion-item button lines="none">
         <ion-icon slot="start" :icon="refresh" />
-        {{ translate("Reject order") }}
+        {{ translate("Reject") }}
       </ion-item>
     </ion-list>
   </ion-content>

@@ -181,7 +181,7 @@
                 <ion-button :color="order.hasAllRejectedItem || rejectionOutcome(order) === 'whole' ? 'danger' : ''" :disabled="rejectionOutcome(order) === 'checking'" @click="packOrder(order)">
                   <ion-spinner v-if="rejectionOutcome(order) === 'checking'" slot="start" name="crescent" />
                   <ion-icon v-else slot="start" :icon="archiveOutline" />
-                  {{ translate(order.hasAllRejectedItem || rejectionOutcome(order) === 'whole' ? "Reject order" : order.hasRejectedItem ? "Save and Pack Order" : "Pack order") }}
+                  {{ translate(order.hasAllRejectedItem || rejectionOutcome(order) === 'whole' ? "Reject" : order.hasRejectedItem ? "Save and Pack Order" : "Pack order") }}
                 </ion-button>
                 <ion-note v-if="rejectionNote(order)" class="ion-margin-start" :color="rejectionOutcome(order) === 'whole' ? 'danger' : undefined">
                   {{ rejectionNote(order) }}
