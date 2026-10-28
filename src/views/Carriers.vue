@@ -2,6 +2,7 @@
   <ion-page>
     <ion-header :translucent="true">
       <ion-toolbar>
+        <ion-menu-button menu="start" slot="start" />
         <ion-title>{{ translate('Carriers') }}</ion-title>
       </ion-toolbar>
     </ion-header>
@@ -35,7 +36,7 @@
 </template>
 
 <script setup lang="ts">
-import { IonContent, IonFab, IonFabButton, IonHeader, IonIcon, IonItem, IonLabel, IonList, IonNote, IonPage, IonTitle, IonToolbar, onIonViewWillEnter } from "@ionic/vue";
+import { IonContent, IonFab, IonFabButton, IonHeader, IonIcon, IonItem, IonLabel, IonMenuButton, IonList, IonNote, IonPage, IonTitle, IonToolbar, onIonViewWillEnter } from "@ionic/vue";
 import { computed, onUnmounted } from "vue";
 import { translate } from "@common";
 import { addOutline } from "ionicons/icons";

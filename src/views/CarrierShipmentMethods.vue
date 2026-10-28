@@ -2,6 +2,7 @@
   <ion-page>
     <ion-header :translucent="true">
       <ion-toolbar>
+        <ion-back-button slot="start" default-href="/carriers" />
         <ion-title>{{ translate("Setup methods") }}</ion-title>
       </ion-toolbar>
     </ion-header>
@@ -45,7 +46,7 @@
 </template>
 
 <script setup lang="ts">
-import { IonButton, IonButtons, IonContent, IonFooter, IonHeader, IonIcon, IonItem, IonLabel, IonList, IonPage, IonTitle, IonToggle, IonToolbar, modalController } from "@ionic/vue";
+import { IonBackButton, IonButton, IonButtons, IonContent, IonFooter, IonHeader, IonIcon, IonItem, IonLabel, IonList, IonPage, IonTitle, IonToggle, IonToolbar, modalController } from "@ionic/vue";
 import { computed, onMounted } from "vue";
 import { addCircleOutline, checkmarkDoneOutline, peopleOutline, shieldCheckmarkOutline } from "ionicons/icons";
 import { commonUtil, translate } from "@common";
