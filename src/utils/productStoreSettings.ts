@@ -1,3 +1,5 @@
+import { logger } from "@common";
+
 // In code because the state keys mirror `store/productStore.ts`. The env only overrides defaults, so an env
 // file that lacks a setting (older ones had no PRDT_IDEN_PREF) can't stop it from loading or saving.
 
