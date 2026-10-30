@@ -1162,6 +1162,7 @@ const fetchCODPaymentInfo = async () => {
     if (isPendingCODPayment) {
       isCODPaymentPending.value = true;
       orderHeaderAdjustmentTotal.value = 0;
+      adjustmentsByGroup.value = {};
       orderAdjustments.value = order.value?.adjustments.filter((adjustment: any) => {
         if ((adjustment.orderItemSeqId === "_NA_" || !adjustment.orderItemSeqId) && !adjustment.billingShipmentId) {
           orderHeaderAdjustmentTotal.value += adjustment.amount;
