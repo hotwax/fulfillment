@@ -86,7 +86,7 @@ export const useCarrierStore = defineStore("carrier", {
 
       if (query.showSelected) {
         shipmentMethods = shipmentMethods.filter((shipmentMethod: any) => shipmentMethod.isChecked)
-        commonUtil.sortItems(shipmentMethods, "sequenceNumber")
+        commonUtil.sortSequence(shipmentMethods, "sequenceNumber")
       }
       return shipmentMethods
     },
