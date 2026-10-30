@@ -628,8 +628,9 @@ const rejectEntireOrder = async (currentOrder: any, updateParameter?: string) =>
     commonUtil.showToast(translate("Order rejected successfully"));
     return true;
   } catch (err) {
+    const serverError = commonUtil.getErrorMessage(err);
     logger.error("Failed to reject order", err);
-    commonUtil.showToast(translate("Failed to reject order"));
+    commonUtil.showToast(`${translate("Failed to reject order")}. ${serverError}`);
   } finally {
     emitter.emit("dismissLoader");
   }
@@ -735,7 +736,8 @@ const executePackOrder = async (currentOrder: any, updateParameter?: string, tra
   } catch (err: any) {
     if (toast) toast.dismiss();
     emitter.emit("dismissLoader");
-    commonUtil.showToast(translate("Failed to pack order"));
+    const serverError = commonUtil.getErrorMessage(err);
+    commonUtil.showToast(`${translate("Failed to pack order")}. ${serverError}`);
     logger.error("Failed to pack order", err);
     return { isPacked: false, errors: err?.response?.data?.errors };
   } finally {
@@ -911,7 +913,8 @@ const addShipmentBox = async (currentOrder: any) => {
       throw resp.data;
     }
   } catch (err) {
-    commonUtil.showToast(translate("Failed to add box"));
+    const serverError = commonUtil.getErrorMessage(err);
+    commonUtil.showToast(`${translate("Failed to add box")}. ${serverError}`);
     logger.error("Failed to add box", err);
   }
   addingBoxForShipmentIds.value.splice(addingBoxForShipmentIds.value.indexOf(currentOrder.shipmentId), 1);
@@ -1087,8 +1090,9 @@ const shipOrder = async (currentOrder: any) => {
       throw resp.data;
     }
   } catch (err) {
-    commonUtil.showToast(translate("Something went wrong, could not ship the order"));
-    logger.error("Failed to ship the order.", err);
+    const serverError = commonUtil.getErrorMessage(err);
+    commonUtil.showToast(`${translate("Failed to ship order")}. ${serverError}`);
+    logger.error("Failed to ship the order", err);
   } finally {
     emitter.emit("dismissLoader");
   }
@@ -1237,8 +1241,9 @@ const unpackOrder = async(order: any) => {
               throw resp.data
             }
           } catch(err) {
+            const serverError = commonUtil.getErrorMessage(err)
             logger.error('Failed to unpack the order', err)
-            commonUtil.showToast(translate('Failed to unpack the order'))
+            commonUtil.showToast(`${translate('Failed to unpack the order')}. ${serverError}`);
           }
         }
       }]
@@ -1337,8 +1342,9 @@ const updateCarrierAndShippingMethod = async (carrierPartyId: string, shipmentMe
     shipmentMethodTypeId = order.value.shipmentPackages?.[0].shipmentMethodTypeId;
 
     emitter.emit("dismissLoader");
+    const serverError = commonUtil.getErrorMessage(err);
     logger.error('Failed to update carrier and method', err);
-    commonUtil.showToast(translate("Failed to update shipment method detail."));
+    commonUtil.showToast(`${translate("Failed to update shipment method detail.")} ${serverError}`);
   }
 }
 
@@ -1361,6 +1367,7 @@ const printShippingLabel = async (order: any) => {
   );
 
   if(!shipmentIds?.length) {
+    logger.error("Failed to generate shipping label: shipmentIds is empty", order);
     commonUtil.showToast(translate('Failed to generate shipping label'))
     return;
   }
@@ -1374,6 +1381,7 @@ const printShippingLabel = async (order: any) => {
 const regenerateShippingLabel = async (order: any) => {
   // If there are no product store shipment method configured, then not generating the label and displaying an error toast
   if(productStoreShipmentMethCount.value <= 0) {
+    logger.error("Unable to generate shipping label: missing product store shipping method configuration", { productStoreShipmentMethCount: productStoreShipmentMethCount.value, order });
     commonUtil.showToast(translate('Unable to generate shipping label due to missing product store shipping method configuration'))
     return;
   }

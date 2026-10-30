@@ -251,7 +251,7 @@ export const useProductStore = defineStore("product", {
           }
         });
       } catch (err) {
-        console.error(err)
+        logger.error(err)
       }
 
       return prefValue;

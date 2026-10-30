@@ -1175,8 +1175,9 @@ export const useOrderStore = defineStore("order", {
           commonUtil.showToast(translate('Unable to open as browser is blocking pop-ups.', { documentName: 'picklist' }), { icon: cogOutline });
         }
       } catch (err) {
-        commonUtil.showToast(translate('Failed to print picklist'))
-        logger.error("Failed to print picklist", err)
+        const serverError = commonUtil.getErrorMessage(err);
+        logger.error("Failed to print picklist", err);
+        commonUtil.showToast(`${translate('Failed to print picklist')}. ${serverError}`);
       }
     },
     async printPackingSlip(shipmentIds: Array<string>) {
@@ -1204,8 +1205,9 @@ export const useOrderStore = defineStore("order", {
         }
 
       } catch (err) {
-        commonUtil.showToast(translate('Failed to print packing slip'))
-        logger.error("Failed to load packing slip", err)
+        const serverError = commonUtil.getErrorMessage(err);
+        logger.error("Failed to load packing slip", err);
+        commonUtil.showToast(`${translate('Failed to print packing slip')}. ${serverError}`);
       }
     },
     async printShippingLabel(shipmentIds: Array<string>, shippingLabelPdfUrls?: Array<string>, shipmentPackages?: Array<any>, imageType?: string) {
@@ -1255,8 +1257,9 @@ export const useOrderStore = defineStore("order", {
         })
 
       } catch (err) {
-        commonUtil.showToast(translate('Failed to print shipping label'))
-        logger.error("Failed to load shipping label", err)
+        const serverError = commonUtil.getErrorMessage(err);
+        logger.error("Failed to load shipping label", err);
+        commonUtil.showToast(`${translate('Failed to print shipping label')}. ${serverError}`);
       }
     },
     async printCustomDocuments(internationalInvoiceUrls: Array<string>) {
@@ -1272,8 +1275,9 @@ export const useOrderStore = defineStore("order", {
           }
         });
       } catch (err) {
-        commonUtil.showToast(translate('Failed to print custom document'));
+        const serverError = commonUtil.getErrorMessage(err);
         logger.error("Failed to load custom document", err);
+        commonUtil.showToast(`${translate('Failed to print custom document')}. ${serverError}`);
       }
     },
     async printShippingLabelAndPackingSlip(shipmentIds: Array<string>, shipmentPackages: any) {
@@ -1312,8 +1316,9 @@ export const useOrderStore = defineStore("order", {
         }
 
       } catch (err) {
-        commonUtil.showToast(translate('Failed to print shipping label and packing slip'))
-        logger.error("Failed to load shipping label and packing slip", err)
+        const serverError = commonUtil.getErrorMessage(err);
+        logger.error("Failed to load shipping label and packing slip", err);
+        commonUtil.showToast(`${translate('Failed to print shipping label and packing slip')}. ${serverError}`);
       }
     },
     async addTrackingCode(payload: any) {

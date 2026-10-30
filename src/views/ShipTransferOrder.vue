@@ -461,7 +461,8 @@ onBeforeRouteLeave(async () => {
                 throw resp.data;
               }
             } catch (err) {
-              commonUtil.showToast(translate("Failed to discard transfer order shipment"));
+              const serverError = commonUtil.getErrorMessage(err);
+              commonUtil.showToast(`${translate("Failed to discard transfer order shipment")}. ${serverError}`);
               logger.error("Failed to discard transfer order shipment", err);
               canLeave = false;
             }
@@ -568,7 +569,8 @@ async function fetchShipmentOrderDetail(shipmentId: string) {
 
     return shipment;
   } catch (err) {
-    commonUtil.showToast(translate("Failed to update shipment status"));
+    const serverError = commonUtil.getErrorMessage(err);
+    commonUtil.showToast(`${translate("Failed to update shipment status")}. ${serverError}`);
     logger.error("Failed to fetch the shipment", err);
 
     return null;
@@ -664,8 +666,9 @@ async function savePackage(packageView: PackageView, changes: { shipmentBoxTypeI
     loadShippingRates(true);
     commonUtil.showToast(translate("Package updated"));
   } catch (err: any) {
-    logger.error("Failed to update the package", err);
-    commonUtil.showToast(err?.response?.data?.errors || translate("Failed to update the package"));
+     const serverError = commonUtil.getErrorMessage(err);
+     logger.error("Failed to update the package", err);
+     commonUtil.showToast(`${translate("Failed to update the package")}. ${serverError}`);
   }
   isSavingPackage.value = false;
 }
@@ -833,11 +836,12 @@ async function generateLabel(shippingRate: any) {
     printLabelInBackground();
     await new Promise((resolve) => setTimeout(resolve, LABEL_READY_HOLD_MS));
   } catch (error) {
+    const serverError = commonUtil.getErrorMessage(error);
     logger.error("Failed to generate shipping label", error);
     // The rates come back at once, the reason follows when the gateway has one.
     labelProgress.value = null;
     labelError.value = await fetchLabelErrorMessage();
-    commonUtil.showToast(translate("Failed to generate shipping label"));
+    commonUtil.showToast(`${translate("Failed to generate shipping label")}. ${serverError}`);
   } finally {
     labelProgress.value = null;
     selectedRateKey.value = "";
@@ -860,7 +864,8 @@ async function printShippingLabel() {
     const isOpened = await transferOrderStore.printShippingLabel([shipment.shipmentId], getLabelPdfUrls(shipment), shipment.packages);
     isLabelWindowBlocked.value = !isOpened;
   } catch (err) {
-    commonUtil.showToast(translate("Failed to print shipping label"));
+    const serverError = commonUtil.getErrorMessage(err);
+    commonUtil.showToast(`${translate("Failed to print shipping label")}. ${serverError}`);
     logger.error("Failed to print shipping label", err);
   }
   isPrintingLabel.value = false;
@@ -898,8 +903,9 @@ async function voidShippingLabel() {
       loadShippingRates();
     }
   } catch (err) {
+    const serverError = commonUtil.getErrorMessage(err);
     logger.error("Failed to void shipping label", err);
-    commonUtil.showToast(translate("Failed to void shipping label"));
+    commonUtil.showToast(`${translate("Failed to void shipping label")}. ${serverError}`);
   }
   isVoidingLabel.value = false;
 }
@@ -1019,8 +1025,9 @@ async function shipOrder() {
   } catch (err) {
     isProcessingShipment.value = false;
     isOrderShipped.value = false;
+    const serverError = commonUtil.getErrorMessage(err);
     logger.error("Failed to ship the shipment.", err);
-    commonUtil.showToast(translate("Something went wrong, could not ship the shipment"));
+    commonUtil.showToast(`${translate("Something went wrong, could not ship the shipment")}. ${serverError}`);
   }
 }
 

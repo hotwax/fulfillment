@@ -14,8 +14,9 @@ export function usePackedOrders() {
       if(commonUtil.hasError(resp)) {throw resp.data;}
       orders.value = Object.fromEntries((resp.data?.shipments ?? []).map((shipment: any) => [shipment.shipmentId, shipment]));
     } catch (error) {
+      const serverError = commonUtil.getErrorMessage(error);
       logger.error("Failed to get the packed orders", error);
-      commonUtil.showToast(translate("Failed to get the packed orders"));
+      commonUtil.showToast(`${translate("Failed to get the packed orders")}. ${serverError}`);
     }
     loading.value = false;
   }

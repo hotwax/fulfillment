@@ -109,8 +109,9 @@ const createReason = async () => {
       throw resp.data;
     }
   } catch (err) {
-    commonUtil.showToast(translate("Failed to create rejection reason."));
+    const serverError = commonUtil.getErrorMessage(err);
     logger.error(err);
+    commonUtil.showToast(`${translate("Failed to create rejection reason.")} ${serverError}`);
   }
 };
 

@@ -254,8 +254,9 @@ export function useOnePackageReroute() {
 
       return true;
     } catch (error) {
+      const serverError = commonUtil.getErrorMessage(error)
       logger.error("Failed to reject order", error);
-      commonUtil.showToast(translate("Failed to reject order"));
+      commonUtil.showToast(`${translate("Failed to reject order")}. ${serverError}`);
 
       return false;
     } finally {
