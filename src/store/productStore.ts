@@ -278,6 +278,16 @@ export const useProductStore = defineStore('productStore', {
         const facilityId = currentFacilityId ?? this.currentFacility.facilityId;
         const pageSize = 200;
 
+        // The store names come from a call that does not depend on the facility's stores, so both start together
+        const productStoresRequest = api({
+          url: "oms/productStores",
+          method: "GET",
+          params: {
+            pageSize: 200
+          }
+        }) as Promise<any>
+        productStoresRequest.catch(() => {})
+
         const resp = await api({
           url: `oms/facilities/${facilityId}/productStores`,
           method: "GET",
@@ -292,13 +302,7 @@ export const useProductStore = defineStore('productStore', {
         if (stores.length) {
           // Fetching all stores for the store name
           try {
-            const productStoresResp = await api({
-              url: "oms/productStores",
-              method: "GET",
-              params: {
-                pageSize: 200
-              }
-            }) as any;
+            const productStoresResp = await productStoresRequest
             const productStores = productStoresResp.data;
             const productStoresMap = {} as any;
             productStores.map((store: any) => productStoresMap[store.productStoreId] = store.storeName)
