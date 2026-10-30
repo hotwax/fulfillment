@@ -2,7 +2,7 @@
   <ion-page>
     <ion-header>
       <ion-toolbar>
-        <ion-back-button slot="start" :default-href="`/${category}`" />
+        <ion-back-button slot="start" :default-href="`/${props.category}`" />
         <ion-title>{{ translate("Order details") }}</ion-title>
       </ion-toolbar>
     </ion-header>
@@ -17,7 +17,7 @@
               <ion-icon :icon="pricetagOutline" />
               <ion-label>{{ order.orderId }}</ion-label>
             </ion-chip>
-            <ion-chip v-if="category !== 'open'" outline @click="printPicklist(order)">
+            <ion-chip v-if="props.category !== 'open'" outline @click="printPicklist(order)">
               <ion-icon :icon="documentTextOutline" />
               <ion-label>{{ translate('Linked picklist') }}: {{ order.picklistId }}</ion-label>
             </ion-chip>
@@ -27,7 +27,7 @@
             </ion-chip>
           </div>
           <div class="order-metadata">
-            <ion-badge>{{ category === 'open' ? translate('Open') : (category === 'in-progress' ? translate('In Progress') : translate('Completed')) }}</ion-badge>
+            <ion-badge>{{ props.category === 'open' ? translate('Open') : (props.category === 'in-progress' ? translate('In Progress') : translate('Completed')) }}</ion-badge>
           </div>
         </div>
 
@@ -36,7 +36,7 @@
             <div class="order-primary-info">
               <ion-label>
                 <strong>{{ order.customerName }}</strong>
-                <p>{{ translate("Ordered") }} {{ category === 'open' ? commonUtil.formatUtcDate(order.orderDate, userStore.currentTimeZoneId, 'dd MMMM yyyy hh:mm a ZZZZ') : getTime(order.orderDate) }}</p>
+                <p>{{ translate("Ordered") }} {{ props.category === 'open' ? commonUtil.formatUtcDate(order.orderDate, userStore.currentTimeZoneId, 'dd MMMM yyyy hh:mm a ZZZZ') : getTime(order.orderDate) }}</p>
               </ion-label>
             </div>
             <div class="order-tags">
@@ -54,7 +54,7 @@
             </div>
           </div>
 
-          <div v-if="category === 'in-progress'">
+          <div v-if="props.category === 'in-progress'">
             <div class="box-type desktop-only" v-if="!order.shipmentPackages">
               <ion-skeleton-text animated />
               <ion-skeleton-text animated />
@@ -89,7 +89,7 @@
               </ion-item>
             </div>
 
-            <div v-if="category === 'in-progress'" class="desktop-only ion-text-center">
+            <div v-if="props.category === 'in-progress'" class="desktop-only ion-text-center">
               <template v-if="item.rejectReason">
                 <ion-chip outline color="danger">
                   <ion-label> {{ getRejectionReasonDescription(item.rejectReason) }}</ion-label>
@@ -118,7 +118,7 @@
                 {{ translate('Check stock') }}
                 <ion-icon slot="end" :icon="cubeOutline" />
               </ion-button>
-              <ion-button v-if="category === 'in-progress'" @click="openRejectReasonPopover($event, item, order)" class="desktop-only" color="danger" fill="clear" size="small">
+              <ion-button v-if="props.category === 'in-progress'" @click="openRejectReasonPopover($event, item, order)" class="desktop-only" color="danger" fill="clear" size="small">
                 {{ translate('Report an issue') }}
                 <ion-icon slot="end" :icon="trashBinOutline" />
               </ion-button>
@@ -149,7 +149,7 @@
             </div>
           </div>
 
-          <div v-if="category === 'in-progress'" class="mobile-only">
+          <div v-if="props.category === 'in-progress'" class="mobile-only">
             <ion-item>
               <ion-button fill="clear" @click="packOrder(order)">{{ translate("Pack using default packaging") }}</ion-button>
               <ion-button slot="end" fill="clear" color="medium" @click="packagingPopover">
@@ -158,7 +158,7 @@
             </ion-item>
           </div>
 
-          <div v-else-if="category === 'completed'" class="mobile-only">
+          <div v-else-if="props.category === 'completed'" class="mobile-only">
             <ion-item>
               <ion-button :disabled="!canShipNow || order.hasMissingShipmentInfo || order.hasMissingPackageInfo || ((isTrackingRequiredForAnyShipmentPackage(order) && !order.trackingCode) && !userStore.hasPermission(Actions.APP_FORCE_SHIP_ORDER))" fill="clear" @click.stop="shipOrder(order)">{{ translate("Ship Now") }}</ion-button>
               <ion-button slot="end" fill="clear" color="medium" @click.stop="shippingPopover(order, $event)">
@@ -169,17 +169,17 @@
 
           <div class="actions">
             <div>
-              <template v-if="category === 'in-progress'">
+              <template v-if="props.category === 'in-progress'">
                 <ion-button :color="order.hasAllRejectedItem ? 'danger' : ''" @click="packOrder(order)">
                   <ion-icon slot="start" :icon="archiveOutline" />
                   {{ translate(order.hasAllRejectedItem ? "Reject order" : order.hasRejectedItem ? "Save and Pack Order" : "Pack order") }}
                 </ion-button>
               </template>
-              <ion-button v-else-if="category === 'open'" @click="assignPickers">
+              <ion-button v-else-if="props.category === 'open'" @click="assignPickers">
                 <ion-icon slot="start" :icon="personAddOutline" />
                 {{ translate("Pick order") }}
               </ion-button>
-              <div v-else-if="category === 'completed'" class="desktop-only">
+              <div v-else-if="props.category === 'completed'" class="desktop-only">
                 <ion-button v-if="!hasPackedShipments(order)" :disabled="true">
                   <ion-icon slot="start" :icon="bagCheckOutline" />
                   {{ translate("Shipped") }}
@@ -194,7 +194,7 @@
                 </ion-button>
               </div>
             </div>
-            <div class="desktop-only" v-if="category === 'completed'">
+            <div class="desktop-only" v-if="props.category === 'completed'">
               <ion-button :disabled="!canUnpack || order.hasMissingShipmentInfo || order.hasMissingPackageInfo || !hasPackedShipments(order)" fill="outline" color="danger" @click.stop="unpackOrder(order)">{{ translate("Unpack") }}</ion-button>
             </div>
           </div>
@@ -293,7 +293,7 @@
                   {{ shipmentLabelErrorMessage }}
                 </ion-label>
               </ion-item>
-              <template v-if="category === 'completed'">
+              <template v-if="props.category === 'completed'">
                 <ion-button :disabled="!shipmentMethodTypeId || !hasPackedShipments(order)" fill="outline" expand="block" class="ion-margin" @click.stop="regenerateShippingLabel(order)">
                   {{ shipmentLabelErrorMessage ? translate("Retry Label") : translate("Generate Label") }}
                   <ion-spinner color="primary" slot="end" data-spinner-size="medium" v-if="order.isGeneratingShippingLabel" name="crescent" />
@@ -314,7 +314,7 @@
             </ion-item>
           </ion-card>
 
-          <Component v-if="useUserStore().hasPermission(Actions.APP_INVOICING_STATUS_VIEW)" :is="orderInvoiceExt" :category="category" :order="order" :userProfile="userProfileWithFacilities" />
+          <Component v-if="useUserStore().hasPermission(Actions.APP_INVOICING_STATUS_VIEW)" :is="orderInvoiceExt" :category="props.category" :order="order" :userProfile="userProfileWithFacilities" />
         </div>
         
         <h4 class="ion-padding-top ion-padding-start" v-if="order.otherShipGroups?.length">{{ translate('Other shipments in this order') }}</h4>
@@ -389,7 +389,8 @@
 
 <script setup lang="ts">
 import { IonBackButton, IonBadge, IonButton, IonCard, IonCardHeader, IonCardSubtitle, IonCardTitle, IonCheckbox, IonChip, IonContent, IonHeader, IonIcon, IonItem, IonLabel, IonList, IonNote, IonPage, IonRow, IonSelect, IonSelectOption, IonSkeletonText, IonSpinner, IonTitle, IonToolbar, IonThumbnail, alertController, popoverController, modalController, onIonViewDidEnter } from "@ionic/vue";
-import { computed, defineProps, onMounted, ref, shallowRef } from "vue";
+import { computed, defineProps, onMounted, reactive, ref, shallowRef, watch } from "vue";
+import { useRoute } from "vue-router";
 import { addOutline, archiveOutline, bagCheckOutline, cashOutline, caretDownOutline, checkmarkCircleOutline, chevronUpOutline, closeCircleOutline, cubeOutline, documentTextOutline, ellipsisVerticalOutline, fileTrayOutline, gift, giftOutline, informationCircleOutline, listOutline, locateOutline, personAddOutline, pricetagOutline, ribbonOutline, trashBinOutline } from "ionicons/icons";
 import { cookieHelper, commonUtil, DxpShopifyImg, emitter, logger, moduleFederationUtil, translate } from "@common";
 import { useProductStore } from "@/store/productStore";
@@ -417,7 +418,13 @@ import TrackingCodeModal from "@/components/TrackingCodeModal.vue";
 import router from "@/router";
 import Actions from "@/authorization/actions";
 
-const props = defineProps(["category", "orderId", "shipGroupSeqId", "shipmentId"]);
+const routeProps = defineProps(["category", "orderId", "shipGroupSeqId", "shipmentId"]);
+// Ionic's outlet keeps this page, with the props of its first visit, when only the route params change (pack and unpack
+// replace /in-progress/shipment-detail/... with /completed/shipment-detail/... and back). So the page follows the route
+// params itself and reloads the order when they change.
+const route = useRoute();
+const props = reactive({ ...routeProps });
+let pagePath = route.path;
 
 const userStore = useUserStore();
 const orderStore = useOrderStore();
@@ -1155,6 +1162,7 @@ const fetchCODPaymentInfo = async () => {
     if (isPendingCODPayment) {
       isCODPaymentPending.value = true;
       orderHeaderAdjustmentTotal.value = 0;
+      adjustmentsByGroup.value = {};
       orderAdjustments.value = order.value?.adjustments.filter((adjustment: any) => {
         if ((adjustment.orderItemSeqId === "_NA_" || !adjustment.orderItemSeqId) && !adjustment.billingShipmentId) {
           orderHeaderAdjustmentTotal.value += adjustment.amount;
@@ -1418,7 +1426,7 @@ const printPicklist = async(order: any) => {
   await orderStore.printPicklist(order.picklistId)
 }
 
-onIonViewDidEnter(async () => {
+const loadOrderDetail = async () => {
   await useUtilStore().fetchRejectReasonOptions();
   if (props.category === "open") {
     await useOrderStore().getOpenOrder({ orderId: props.orderId, shipGroupSeqId: props.shipGroupSeqId });
@@ -1441,6 +1449,18 @@ onIonViewDidEnter(async () => {
   isCODPaymentPending.value = false;
   isOrderAdjustmentPending.value = false;
   fetchCODPaymentInfo();
+};
+
+onIonViewDidEnter(loadOrderDetail);
+
+// Only a navigation from this page's own path to another detail path is followed. Detail pages left behind in the
+// stack never see their path as the previous one, and a navigation to any other page is not this page's to follow.
+watch(() => route.path, (path, previousPath) => {
+  if(previousPath !== pagePath || !["OrderDetail", "ShipmentDetail"].includes(route.name as string)) {return;}
+  pagePath = path;
+  const { category, orderId, shipGroupSeqId, shipmentId } = route.params;
+  Object.assign(props, { category, orderId, shipGroupSeqId, shipmentId });
+  loadOrderDetail();
 });
 
 onMounted(async () => {
