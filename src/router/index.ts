@@ -1,5 +1,5 @@
 import { createRouter, createWebHistory } from '@ionic/vue-router';
-import { RouteRecordRaw } from 'vue-router';
+import { RouteRecordRaw, START_LOCATION } from 'vue-router';
 import Completed from '@/views/Completed.vue'
 import InProgress from '@/views/InProgress.vue'
 import OpenOrders from "@/views/OpenOrders.vue"
@@ -270,7 +270,13 @@ const router = createRouter({
   routes: routes as any
 })
 
-router.beforeEach((to, from) => {
+router.beforeEach(async (to, from) => {
+  // Re-read Company selection on open/reload, before applying a persisted version.
+  // Leave active counts, offline use and the login/embedded flows alone.
+  if (from === START_LOCATION && to.name !== "Login" && navigator.onLine &&
+      !commonUtil.isAppEmbedded() && useAuth().isAuthenticated.value) {
+    await useAuth().fetchAppVersion();
+  }
   // Enforce the canonical version URL on every navigation (no-op until the version is resolved, or if
   // already canonical). Redirect cancels this navigation. Logic lives in useAuth so it's shared.
   if (useAuth().checkAppVersionRedirect()) return false;
