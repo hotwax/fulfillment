@@ -9,12 +9,12 @@
     <ion-content>
       <main>
         <ion-item>
-          <ion-input label-placement="floating" v-model="carrier.groupName" @ionBlur="setCarrierPartyId($event)">
+          <ion-input label-placement="floating" v-model="carrier.groupName" @ionInput="setCarrierPartyId($event)">
             <div slot="label">{{ translate("Name") }} <ion-text color="danger">*</ion-text></div>
           </ion-input>
         </ion-item>
         <ion-item>
-          <ion-input label-placement="floating" :label="translate('ID')" v-model="carrier.partyId" />
+          <ion-input label-placement="floating" :label="translate('ID')" v-model="carrier.partyId" @ionInput="isPartyIdEdited = !!$event.target.value" />
         </ion-item>
         <ion-button class="ion-margin-top" @click="createCarrier()">
           {{ translate("Setup methods") }}
@@ -34,14 +34,19 @@ import { useCarrierStore } from "@/store/carrier";
 import router from "@/router";
 
 const carrier = ref({} as any);
+// Once the user types an ID, stop deriving it from the name; clearing it resumes auto-generation
+const isPartyIdEdited = ref(false);
 const carrierStore = useCarrierStore();
 
 const clearCarrierData = () => {
   carrier.value = {} as any;
+  isPartyIdEdited.value = false;
 };
 
 const setCarrierPartyId = (event: any) => {
-  carrier.value.partyId = commonUtil.generateInternalId(event.target.value);
+  if (!isPartyIdEdited.value) {
+    carrier.value.partyId = commonUtil.generateInternalId(event.target.value);
+  }
 };
 
 const createCarrier = async () => {

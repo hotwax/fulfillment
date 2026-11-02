@@ -14,6 +14,9 @@ export const useProductStore = defineStore('productStore', {
       productStores: []
     } as any,
     currentProductStore: {} as any,
+    // The user's saved choices, applied when the facility and product store lists load
+    preferredFacilityId: "",
+    preferredProductStoreId: "",
     productStoreShipmentMethCount: 0,
     settings: {
       forceScan: "",
@@ -117,44 +120,10 @@ export const useProductStore = defineStore('productStore', {
           }
         }
 
-        // 2. Filter or Fetch Group-associated facilities (Fulfillment Group)
-        if (facilityGroupId) {
-          let groupFilters: any = {};
-          if (facilityIds.length) {
-            groupFilters = {
-              facilityId: facilityIds.join(","),
-              facilityId_op: "in",
-              pageSize: facilityIds.length
-            };
-          }
-
-          let groupResp: any;
-          try {
-            groupResp = await api({
-              url: "oms/groupFacilities",
-              method: "GET",
-              params: {
-                facilityGroupId,
-                pageSize: 500,
-                ...groupFilters
-              }
-            } as any);
-          } catch (error) {
-            logger.error(error);
-            throw new Error(translate("Failed to fetch fulfillment group facilities."));
-          }
-
-          const activeGroupFacilities = groupResp.data.filter((facility: any) => !facility.thruDate);
-          facilityIds = activeGroupFacilities.map((facility: any) => facility.facilityId);
-
-          if (!facilityIds.length) {
-            throw new Error(translate("No active facilities found in the fulfillment group."));
-          }
-        }
-
-        // 3. Shopify POS Location filtering (if embedded in POS)
+        // 2. Shopify POS Location filtering (if embedded in POS): narrows the facilities to the location's one
         const shopifyLocationId = useEmbeddedAppStore().getPosLocationId;
-        if (commonUtil.isAppEmbedded() && shopifyLocationId) {
+        const isPosLocation = commonUtil.isAppEmbedded() && shopifyLocationId;
+        if (isPosLocation) {
           let locationFacilityId: string | null = null;
           try {
             locationFacilityId = await this.fetchShopifyShopLocation({
@@ -166,8 +135,9 @@ export const useProductStore = defineStore('productStore', {
             throw new Error(translate("Failed to fetch user facilities for Shopify POS location."));
           }
 
-          if (locationFacilityId) {
-            facilityIds = facilityIds.filter((id: any) => id === locationFacilityId);
+          // An admin has no party facilities to narrow, so the location's facility is the only one
+          if (locationFacilityId && (isAdminUser || !partyId || facilityIds.includes(locationFacilityId))) {
+            facilityIds = [locationFacilityId];
           } else {
             facilityIds = [];
           }
@@ -177,37 +147,47 @@ export const useProductStore = defineStore('productStore', {
           }
         }
 
-        // 4. Fetch the final details for resolved facilities
-        let finalFilters: any = {};
+        // 3. The fulfillment group's active facilities, with their details, excluding virtual ones. The group view carries
+        // the facility and its type, so one call does what a group call and a facility details call did
+        let groupFilters: any = {};
         if (facilityIds.length) {
-          finalFilters = {
+          groupFilters = {
             facilityId: facilityIds.join(","),
             facilityId_op: "in",
             pageSize: facilityIds.length
           };
         }
 
-        let finalResp: any;
+        let groupResp: any;
         try {
-          finalResp = await api({
-            url: "oms/facilities",
+          groupResp = await api({
+            url: "oms/groupFacilities",
             method: "GET",
             params: {
+              facilityGroupId,
               pageSize: 500,
               facilityTypeId: "VIRTUAL_FACILITY",
               facilityTypeId_not: "Y",
-              parentTypeId: "VIRTUAL_FACILITY",
-              parentTypeId_not: "Y",
-              ...finalFilters
+              parentFacilityTypeId: "VIRTUAL_FACILITY",
+              parentFacilityTypeId_not: "Y",
+              ...groupFilters
             }
-          });
+          } as any);
         } catch (error) {
           logger.error(error);
-          throw new Error(translate("Failed to fetch user facilities."));
+          throw new Error(translate("Failed to fetch fulfillment group facilities."));
         }
 
-        this.userFacilities = finalResp.data;
-        this.setCurrentFacility(finalResp.data[0]);
+        // The group view returns ended memberships too
+        const activeGroupFacilities = (groupResp.data || []).filter((facility: any) => !facility.thruDate);
+        if (!activeGroupFacilities.length) {
+          throw new Error(translate(isPosLocation ? "Failed to fetch user facilities for Shopify POS location." : "No active facilities found in the fulfillment group."));
+        }
+
+        this.userFacilities = activeGroupFacilities;
+        // The saved facility when the user still has it, otherwise the first one
+        const preferredFacility = activeGroupFacilities.find((facility: any) => facility.facilityId === this.preferredFacilityId);
+        this.setCurrentFacility(preferredFacility ?? activeGroupFacilities[0]);
 
       } catch (error: any) {
         return Promise.reject(error);
@@ -228,50 +208,31 @@ export const useProductStore = defineStore('productStore', {
       } catch (error) {
         logger.error('error', error)
       }
+      this.preferredFacilityId = payload.facilityId;
+      // A facility switch selects the new facility's first product store, so the saved one no longer applies
+      this.preferredProductStoreId = "";
       this.currentFacility = payload;
     },
+    // Only fetches the saved facility; fetchUserFacilities applies it, so call this first
     async fetchFacilityPreference() {
-      if (!this.userFacilities.length) return;
-      let facilityId: string | undefined;
+      this.preferredFacilityId = "";
+      // In Shopify POS the location decides the facility, and fetchUserFacilities already narrows the list to it
+      if (commonUtil.isAppEmbedded() && useEmbeddedAppStore().getPosLocationId) return;
+
       try {
-        const locationId = useEmbeddedAppStore().getPosLocationId;
-        if (commonUtil.isAppEmbedded() && locationId) {
-          facilityId = await this.fetchShopifyShopLocation({
-            shopifyLocationId: locationId,
+        const preferredFacilityResp = await api({
+          url: "admin/user/preferences",
+          method: "GET",
+          params: {
             pageSize: 1,
-          });
-          if (!facilityId) {
-            throw new Error("Failed to fetch location information. Please contact the administrator.");
-          }
-        } else {
-          const preferredFacilityResp = await api({
-            url: "admin/user/preferences",
-            method: "GET",
-            params: {
-              pageSize: 1,
-              userId: useUserStore().current.userId,
-              preferenceKey: "SELECTED_FACILITY"
-            },
-          }) as any;
-          facilityId = preferredFacilityResp.data?.[0]?.preferenceValue;
-        }
-        if (facilityId) {
-          const facility = this.userFacilities.find((f: any) => f.facilityId === facilityId);
-          if (!facility && commonUtil.isAppEmbedded() && locationId) {
-            throw new Error(
-              "User is not associated with this location. Please contact the administrator."
-            );
-          }
-          if (facility) {
-            this.setCurrentFacility(facility)
-            return;
-          }
-        }
+            userId: useUserStore().current.userId,
+            preferenceKey: "SELECTED_FACILITY"
+          },
+        }) as any;
+        this.preferredFacilityId = preferredFacilityResp.data?.[0]?.preferenceValue || "";
       } catch (error) {
-        logger.error("Failed to resolve facility preference:", error);
+        logger.error("Failed to fetch facility preference:", error);
       }
-      // In case app is not embedded and user has no facility preference on server
-      this.currentFacility = this.userFacilities[0];
     },
     async fetchProductStores(currentFacilityId?: string) {
       try {
@@ -287,33 +248,19 @@ export const useProductStore = defineStore('productStore', {
           }
         }) as any;
 
+        // Each row carries the store's details, its name included
         const stores = resp.data.filter((store: any) => !store.thruDate)
-
-        if (stores.length) {
-          // Fetching all stores for the store name
-          try {
-            const productStoresResp = await api({
-              url: "oms/productStores",
-              method: "GET",
-              params: {
-                pageSize: 200
-              }
-            }) as any;
-            const productStores = productStoresResp.data;
-            const productStoresMap = {} as any;
-            productStores.map((store: any) => productStoresMap[store.productStoreId] = store.storeName)
-            stores.map((store: any) => store.storeName = productStoresMap[store.productStoreId])
-          } catch (error) {
-            logger.error(error);
-          }
-        }
 
         this.currentFacility = {
           ...this.currentFacility,
           productStores: stores
         }
+        // The saved store when the facility has it, otherwise the first one. Only selects the store: callers fetch its details
         if (stores?.length) {
-          this.setCurrentProductStore(stores[0])
+          this.currentProductStore = stores.find((store: any) => store.productStoreId === this.preferredProductStoreId) ?? stores[0]
+        } else {
+          // A facility with no product store must not keep the previous facility's: its orders would be filtered by it.
+          this.currentProductStore = {}
         }
       } catch (error: any) {
         logger.error("error", error);
@@ -509,8 +456,10 @@ export const useProductStore = defineStore('productStore', {
       }
       this.productStores = stores
     },
+    // Only fetches the saved product store; fetchProductStores applies it, so call this first
     async fetchProductStorePreference() {
       const userStore = useUserStore();
+      this.preferredProductStoreId = "";
       try {
         const preferredStoreResp = await api({
           url: "admin/user/preferences",
@@ -521,11 +470,7 @@ export const useProductStore = defineStore('productStore', {
             preferenceKey: "SELECTED_BRAND"
           },
         }) as any;
-        const preferredStoreId = preferredStoreResp.data?.[0]?.preferenceValue
-        if (preferredStoreId) {
-          const store = this.currentFacility.productStores?.find((store: any) => store.productStoreId === preferredStoreId);
-          store && this.setCurrentProductStore(store)
-        }
+        this.preferredProductStoreId = preferredStoreResp.data?.[0]?.preferenceValue || "";
       } catch (err) {
         logger.error('Favourite product store not found', err)
       }
@@ -541,6 +486,11 @@ export const useProductStore = defineStore('productStore', {
     },
     async findProductStoreShipmentMethCount(productStoreId: string) {
       let productStoreShipmentMethCount = 0
+      if (!productStoreId) {
+        this.setProductStoreShipmentMethCount(productStoreShipmentMethCount)
+
+        return
+      }
       const params = {
         partyId: "_NA_",
         partyId_op: "equals",
@@ -584,6 +534,7 @@ export const useProductStore = defineStore('productStore', {
       } catch (error) {
         logger.error('error', error)
       }
+      this.preferredProductStoreId = payload.productStoreId;
       this.currentProductStore = payload;
     },
     async fetchProductStoreSettings(productStoreId: string) {

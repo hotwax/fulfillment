@@ -82,7 +82,7 @@
                   <ion-note class="config-label">{{ translate('gateway') }}</ion-note>
                 </div>
                 <div class="tablet">
-                  <ion-toggle :checked="shipmentMethod.isTrackingRequired" :disabled="!shipmentMethod.isChecked" @ionChange="updateTrackingRequired($event, shipmentMethod)" />
+                  <ion-toggle :checked="shipmentMethod.isTrackingRequired === 'Y'" :disabled="!shipmentMethod.isChecked" @ionChange="updateTrackingRequired($event, shipmentMethod)" />
                   <ion-note class="config-label">{{ translate("require tracking code") }}</ion-note>
                 </div>
                 <div class="tablet">
@@ -223,7 +223,7 @@ const updateShipmentGatewayConfigId = async (shipmentMethod: any) => {
 
 const updateTrackingRequired = async (event: any, shipmentMethod: any) => {
   event.stopPropagation();
-  const modifiedData = { fieldName: "isTrackingRequired", fieldValue: shipmentMethod.isTrackingRequired ? 'N' : 'Y' };
+  const modifiedData = { fieldName: "isTrackingRequired", fieldValue: shipmentMethod.isTrackingRequired === 'Y' ? 'N' : 'Y' };
   const messages = { successMessage: "Tracking code settings updated successfully.", errorMessage: "Failed to update tracking code settings." };
   updateProductStoreShipmentMethodInternal(shipmentMethod, modifiedData, messages);
 };

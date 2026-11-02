@@ -4,16 +4,22 @@ import { useProductStore as useAppProductStore } from "@/store/productStore";
 
 interface StockState {
   products: Record<string, any>
+  fetchingStatus: Record<string, boolean>
 }
 
 export const useStockStore = defineStore("stock", {
   state: (): StockState => ({
-    products: {}
+    products: {},
+    fetchingStatus: {}
   }),
   getters: {
     getProductStock: (state) => (productId: any, facilityId?: any) => {
       const id = facilityId ? facilityId : useAppProductStore().getCurrentFacility?.facilityId
       return state.products[productId] ? state.products[productId][id] ? state.products[productId][id] : {} : {}
+    },
+    isFetchingStock: (state) => (productId: any, facilityId?: any) => {
+      const id = facilityId ? facilityId : useAppProductStore().getCurrentFacility?.facilityId
+      return !!state.fetchingStatus[`${productId}_${id}`]
     }
   },
   actions: {
@@ -28,6 +34,13 @@ export const useStockStore = defineStore("stock", {
     },
     async fetchStock({ productId, facilityId = "" }: { productId: any; facilityId?: any }) {
       const id = facilityId ? facilityId : useAppProductStore().getCurrentFacility?.facilityId
+      const key = `${productId}_${id}`
+      // A fetch for this product and facility is already running
+      if (this.fetchingStatus[key]) {
+        return
+      }
+
+      this.fetchingStatus[key] = true
       try {
         const resp: any = await api({
           url: `/poorti/getInventoryAvailableByFacility`,
@@ -47,6 +60,8 @@ export const useStockStore = defineStore("stock", {
         logger.error(err);
         const serverError = commonUtil.getErrorMessage(err);
         commonUtil.showToast(`${translate("No data available")}. ${serverError}`);
+      } finally {
+        delete this.fetchingStatus[key]
       }
     }
   },

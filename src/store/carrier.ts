@@ -86,7 +86,7 @@ export const useCarrierStore = defineStore("carrier", {
 
       if (query.showSelected) {
         shipmentMethods = shipmentMethods.filter((shipmentMethod: any) => shipmentMethod.isChecked)
-        commonUtil.sortItems(shipmentMethods, "sequenceNumber")
+        commonUtil.sortSequence(shipmentMethods, "sequenceNumber")
       }
       return shipmentMethods
     },
@@ -320,7 +320,6 @@ export const useCarrierStore = defineStore("carrier", {
             if (!updatedMethodDetail[productStoreId]) {
               updatedMethodDetail[productStoreId] = {}
             }
-            productStoreShipmentMethod.isTrackingRequired = productStoreShipmentMethod.isTrackingRequired === "Y" ? true : false
             updatedMethodDetail[productStoreId][shipmentMethodTypeId] = productStoreShipmentMethod
             return updatedMethodDetail
           }, {})
@@ -902,7 +901,7 @@ export const useCarrierStore = defineStore("carrier", {
               shipmentMethod.isChecked = false
               productStoreShipmentMethodFields.forEach((field) => {
                 if (field === "isTrackingRequired") {
-                  shipmentMethod[field] = false
+                  shipmentMethod[field] = "N"
                 } else {
                   shipmentMethod[field] = ""
                 }

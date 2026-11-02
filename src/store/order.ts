@@ -1008,6 +1008,13 @@ export const useOrderStore = defineStore("order", {
         data: payload,
       });
     },
+    async updateShipmentPackage({ shipmentId, shipmentPackageSeqId, ...changes }: { shipmentId: string, shipmentPackageSeqId: string, shipmentBoxTypeId?: string }) {
+      return api({
+        url: `/poorti/shipments/${shipmentId}/shipmentPackages/${shipmentPackageSeqId}`,
+        method: "PUT",
+        data: changes,
+      });
+    },
     async shipOrder(payload: any) {
       return api({
         url: `/poorti/shipments/${payload.shipmentId}/ship`,

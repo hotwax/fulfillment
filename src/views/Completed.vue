@@ -103,10 +103,11 @@
                 <ion-button color="medium" fill="clear" size="small" v-if="item.productTypeId === 'GIFT_CARD'" @click="openGiftCardActivationModal(item)">
                   <ion-icon slot="icon-only" :icon="item.isGCActivated ? gift : giftOutline" />
                 </ion-button>
-                <ion-note v-if="getProductStock(item.productId).qoh">{{ getProductStock(item.productId).qoh }} {{ translate('pieces in stock') }}</ion-note>
-                <ion-button fill="clear" v-else size="small" @click.stop="fetchProductStock(item.productId)">
+                <ion-note v-if="getProductStock(item.productId).qoh >= 0">{{ getProductStock(item.productId).qoh }} {{ translate('pieces in stock') }}</ion-note>
+                <ion-button fill="clear" v-else-if="!isFetchingStock(item.productId)" size="small" @click.stop="fetchProductStock(item.productId)">
                   <ion-icon color="medium" slot="icon-only" :icon="cubeOutline" />
                 </ion-button>
+                <ion-spinner v-else color="medium" name="crescent" />
               </div>
               <div v-if="item.showKitComponents" class="kit-components">
                 <template v-if="!getProduct(item.productId)?.productComponents">
@@ -298,6 +299,7 @@ const getProduct = (productId: string) => useProduct().getProduct(productId);
 const getPartyName = (partyId: string) => useUtilStore().getPartyName(partyId);
 const getShipmentMethodDesc = (shipmentMethodId: string) => live.shipmentMethodLabels.value.get(shipmentMethodId) ?? useUtilStore().getShipmentMethodDesc(shipmentMethodId);
 const getProductStock = (productId: string) => useStockStore().getProductStock(productId);
+const isFetchingStock = (productId: string, facilityId = "") => useStockStore().isFetchingStock(productId, facilityId);
 const productStoreShipmentMethCount = computed(() => useProductStore().getProductStoreShipmentMethCount);
 const isProductStoreSettingEnabled = computed(() => (settingTypeEnumId: string) => useProductStore().isProductStoreSettingEnabled(settingTypeEnumId));
 const currentFacility = computed(() => useProductStore().getCurrentFacility);
@@ -310,6 +312,7 @@ const getTime = (time: any) => {
 };
 
 const getErrorMessage = () => {
+  if(!currentProductStoreId.value) {return translate("isn't linked to a product store. Link it to one to fulfill its orders.", { facilityName: currentFacility.value?.facilityName });}
   return queryString.value ? ((selectedCarrierPartyId.value || selectedShipmentMethods.value.length) ? translate("No results found for . Try using different filters.", { searchedQuery: queryString.value }) : translate("No results found for . Try searching In Progress or Open tab instead. If you still can't find what you're looking for, try switching stores.", { searchedQuery: queryString.value, lineBreak: "<br />" })) : translate("doesn't have any completed orders right now.", { facilityName: currentFacility.value?.facilityName });
 };
 

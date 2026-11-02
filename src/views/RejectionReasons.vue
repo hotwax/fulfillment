@@ -2,6 +2,7 @@
   <ion-page>
     <ion-header :translucent="true">
       <ion-toolbar>
+        <ion-menu-button menu="start" slot="start" />
         <ion-title>{{ translate("Rejection reasons") }}</ion-title>
       </ion-toolbar>
     </ion-header>
@@ -53,7 +54,7 @@
 </template>
 
 <script setup lang="ts">
-import { IonButton, IonContent, IonChip, IonFab, IonFabButton, IonHeader, IonIcon, IonItem, IonLabel, IonPage, IonReorder, IonReorderGroup, IonTitle, IonToggle, IonToolbar, alertController, modalController, onIonViewWillEnter, popoverController } from "@ionic/vue";
+import { IonButton, IonContent, IonChip, IonFab, IonFabButton, IonHeader, IonIcon, IonItem, IonLabel, IonMenuButton, IonPage, IonReorder, IonReorderGroup, IonTitle, IonToggle, IonToolbar, alertController, modalController, onIonViewWillEnter, popoverController } from "@ionic/vue";
 import { computed, ref } from "vue";
 import { onBeforeRouteLeave } from "vue-router";
 import { addOutline, caretDownOutline, ellipsisVerticalOutline } from "ionicons/icons";

@@ -133,10 +133,12 @@ onMounted(async () => {
 
   const currentProductStore: any = useProductStore().getCurrentProductStore;
 
-    if (useAuth().isAuthenticated.value && currentProductStore?.productStoreId) {
-      // A restored session skips postLogin, so the live order sync starts here too.
-      void startLiveOrdersSync(useProductStore().getFacilities, useProductStore().getCurrentFacility?.facilityId, useProductStore().getCurrentProductStore?.productStoreId);
+    // A restored session skips postLogin, so the live order sync starts here too, also for a facility with no product store.
+    if (useAuth().isAuthenticated.value) {
+      void startLiveOrdersSync(useProductStore().getFacilities, useProductStore().getCurrentFacility?.facilityId, currentProductStore?.productStoreId);
+    }
 
+    if (useAuth().isAuthenticated.value && currentProductStore?.productStoreId) {
       await useProductStore().fetchProductStoreSettings(currentProductStore.productStoreId).catch((error) => logger.error(error));
 
       if (allNotificationPrefs.value?.length) {
@@ -155,8 +157,9 @@ watch(facilityIdsKey, () => {
   void syncMasterFacilities(useProductStore().getFacilities);
 });
 // The sync follows the facility being worked in, so a switch made elsewhere has its orders in by the time Open shows them.
-watch(() => useProductStore().getCurrentFacility?.facilityId, (facilityId) => {
-  if(facilityId) {void focusLiveOrders(facilityId, useProductStore().getCurrentProductStore?.productStoreId);}
+// The product store follows too: a switch sets it only once the new facility's stores load.
+watch(() => [useProductStore().getCurrentFacility?.facilityId, useProductStore().getCurrentProductStore?.productStoreId], ([facilityId, productStoreId]) => {
+  if(facilityId) {void focusLiveOrders(facilityId, productStoreId);}
 });
 
 onUnmounted(() => {
