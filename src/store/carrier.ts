@@ -320,7 +320,6 @@ export const useCarrierStore = defineStore("carrier", {
             if (!updatedMethodDetail[productStoreId]) {
               updatedMethodDetail[productStoreId] = {}
             }
-            productStoreShipmentMethod.isTrackingRequired = productStoreShipmentMethod.isTrackingRequired === "Y" ? true : false
             updatedMethodDetail[productStoreId][shipmentMethodTypeId] = productStoreShipmentMethod
             return updatedMethodDetail
           }, {})
@@ -387,9 +386,7 @@ export const useCarrierStore = defineStore("carrier", {
           method: "PUT",
           data: {
             shipmentGatewayConfigId: shipmentMethod.shipmentGatewayConfigId,
-            isTrackingRequired: typeof shipmentMethod.isTrackingRequired === "boolean"
-              ? (shipmentMethod.isTrackingRequired ? "Y" : "N")
-              : shipmentMethod.isTrackingRequired,
+            isTrackingRequired: shipmentMethod.isTrackingRequired,
             productStoreShipMethId: shipmentMethod.productStoreShipMethId,
           }
         })
@@ -895,7 +892,7 @@ export const useCarrierStore = defineStore("carrier", {
               shipmentMethod.isChecked = false
               productStoreShipmentMethodFields.forEach((field) => {
                 if (field === "isTrackingRequired") {
-                  shipmentMethod[field] = false
+                  shipmentMethod[field] = "N"
                 } else {
                   shipmentMethod[field] = ""
                 }
