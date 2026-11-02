@@ -248,26 +248,8 @@ export const useProductStore = defineStore('productStore', {
           }
         }) as any;
 
+        // Each row carries the store's details, its name included
         const stores = resp.data.filter((store: any) => !store.thruDate)
-
-        if (stores.length) {
-          // Fetching all stores for the store name
-          try {
-            const productStoresResp = await api({
-              url: "oms/productStores",
-              method: "GET",
-              params: {
-                pageSize: 200
-              }
-            }) as any;
-            const productStores = productStoresResp.data;
-            const productStoresMap = {} as any;
-            productStores.map((store: any) => productStoresMap[store.productStoreId] = store.storeName)
-            stores.map((store: any) => store.storeName = productStoresMap[store.productStoreId])
-          } catch (error) {
-            console.error(error);
-          }
-        }
 
         this.currentFacility = {
           ...this.currentFacility,
