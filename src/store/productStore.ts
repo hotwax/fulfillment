@@ -178,14 +178,16 @@ export const useProductStore = defineStore('productStore', {
           throw new Error(translate("Failed to fetch fulfillment group facilities."));
         }
 
-        if (!groupResp.data?.length) {
+        // The group view returns ended memberships too
+        const activeGroupFacilities = (groupResp.data || []).filter((facility: any) => !facility.thruDate);
+        if (!activeGroupFacilities.length) {
           throw new Error(translate(isPosLocation ? "Failed to fetch user facilities for Shopify POS location." : "No active facilities found in the fulfillment group."));
         }
 
-        this.userFacilities = groupResp.data;
+        this.userFacilities = activeGroupFacilities;
         // The saved facility when the user still has it, otherwise the first one
-        const preferredFacility = groupResp.data.find((facility: any) => facility.facilityId === this.preferredFacilityId);
-        this.setCurrentFacility(preferredFacility ?? groupResp.data[0]);
+        const preferredFacility = activeGroupFacilities.find((facility: any) => facility.facilityId === this.preferredFacilityId);
+        this.setCurrentFacility(preferredFacility ?? activeGroupFacilities[0]);
 
       } catch (error: any) {
         return Promise.reject(error);
@@ -230,7 +232,8 @@ export const useProductStore = defineStore('productStore', {
         console.error("Failed to fetch facility preference:", error);
       }
     },
-    async fetchProductStores(currentFacilityId?: string) {
+    // Login passes useSavedStore to select the user's saved store; a facility switch selects the first one
+    async fetchProductStores(currentFacilityId?: string, useSavedStore = false) {
       try {
         const facilityId = currentFacilityId ?? this.currentFacility.facilityId;
         const pageSize = 200;
@@ -269,9 +272,10 @@ export const useProductStore = defineStore('productStore', {
           ...this.currentFacility,
           productStores: stores
         }
-        // The saved store when the facility has it, otherwise the first one. Only selects the store: callers fetch its details
+        // The saved store when asked for and the facility has it, otherwise the first one. Only selects the store: callers fetch its details
         if (stores?.length) {
-          this.currentProductStore = stores.find((store: any) => store.productStoreId === this.preferredProductStoreId) ?? stores[0]
+          const savedStore = useSavedStore ? stores.find((store: any) => store.productStoreId === this.preferredProductStoreId) : undefined
+          this.currentProductStore = savedStore ?? stores[0]
         } else {
           // A facility with no product store must not keep the previous facility's: its orders would be filtered by it.
           this.currentProductStore = {}

@@ -267,7 +267,7 @@ export const useUserStore = defineStore("user", {
 
         // The auto shipping label config and notification preferences only need the facility and user, not the product stores
         await Promise.all([
-          productStore.fetchProductStores(),
+          productStore.fetchProductStores(undefined, true),
           productStore.fetchAutoShippingLabelConfig(),
           notificationStore.fetchAllNotificationPrefs(import.meta.env.VITE_NOTIF_APP_ID as any, this.current.userId)
         ])
