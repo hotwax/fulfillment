@@ -20,7 +20,7 @@
 
 ## 3. Dependencies & Architecture
 **Tech Stack**:
-- **Frontend**: Vue 3, Ionic Vue, Vue Router, Vuex, TypeScript.
+- **Frontend**: Vue 3, Ionic Vue, Vue Router, Pinia, TypeScript.
 - **Mobile/PWA**: Capacitor, Ionic PWA tooling, service workers.
 - **Platform/Utilities**: HotWax OMS API client (`@hotwax/oms-api`), HotWax DXP components, Firebase, Module Federation runtime.
 
@@ -33,17 +33,22 @@
 
 ## 4. Technical Context
 **Run locally**:
-1. Install dependencies: `npm install`
+
+This app is developed and run from the [`accxui`](https://github.com/hotwax/accxui) pnpm workspace, not from this folder directly. See [Build Notes (Contributors)](#build-notes-contributors) below for the full setup, or the [accxui README](https://github.com/hotwax/accxui/blob/main/README.md) for the complete workspace guide.
+
+1. Place this app at `apps/fulfillment` inside an `accxui` workspace checkout.
 2. Copy `.env.example` to `.env` and set required environment values.
-3. Start the app: `ionic serve` (or `npm run serve`).
+3. Install dependencies from the `accxui` root: `pnpm install`
+4. Start the app from the `accxui` root: `pnpm --filter fulfillment dev`
 
 **Key environment configuration** (see `.env.example`):
-- `VUE_APP_BASE_URL`: Base URL for OMS API calls.
-- `VUE_APP_LOGIN_URL`: Login entry for HotWax Launchpad.
-- `VUE_APP_FIREBASE_CONFIG`: Firebase configuration for notifications.
-- `VUE_APP_FIREBASE_VAPID_KEY`: Firebase VAPID key for notifications.
-- `VUE_APP_REMOTE_ENTRY`: Remote entry for module federation extensions.
-- `VUE_APP_DEFAULT_PRODUCT_STORE_SETTINGS`: Default store-level fulfillment flags.
+- `VITE_BASE_URL`: Base URL for OMS API calls.
+- `VITE_LOGIN_URL`: Login entry for HotWax Launchpad.
+- `VITE_APP_VERSION_CONFIG`: Multi-version app hosting config as a single JSON object; `buildVersion` of `""` is the root bootstrap and `"vX.Y.Z"` is a versioned build. Required — the Vite config fails to load without it.
+- `VITE_FIREBASE_CONFIG`: Firebase configuration for notifications.
+- `VITE_FIREBASE_VAPID_KEY`: Firebase VAPID key for notifications.
+- `VITE_REMOTE_ENTRY`: Remote entry for module federation extensions.
+- `VITE_DEFAULT_PRODUCT_STORE_SETTINGS`: Default store-level fulfillment flags.
 
 ---
 
@@ -52,28 +57,42 @@ This README is structured to help automated release notes systems classify chang
 ---
 
 ## Prerequisite
-Ionic CLI - If you don't have the ionic CLI installed refer [official documentation](https://ionicframework.com/docs/intro/cli) for the installation instructions.
+
+- Node `v22.12.0` or higher
+- `pnpm`
 
 
 # Build Notes (Users)
 
-1. Download the app from [release](https://github.com/hotwax/fulfillment-pwa/releases) page and extract it.
-2. Go to the app directory.
-3. Run following command to download dependencies  
-    `npm i`
-4. Create a `.env` file by taking reference from the `.env.example`.
-5. To run the app in browser use the command: `ionic serve`
+This app is developed and run from the [`accxui`](https://github.com/hotwax/accxui) pnpm workspace. It is not started by running commands inside this app folder directly.
+
+1. Open a Terminal window.
+2. Clone the workspace using the command: `git clone https://github.com/hotwax/accxui.git`
+3. Go to the workspace root using command: `cd accxui`
+4. Download the app from the [release](https://github.com/hotwax/fulfillment/releases) page, extract it, and place it at `apps/fulfillment`.
+5. Create a `.env` file in `apps/fulfillment` by taking reference from its `.env.example`.
+6. Run following command from the `accxui` root to download dependencies  
+    `pnpm install`
+7. To run the app in browser use the command from the `accxui` root:  
+    `pnpm --filter fulfillment dev`
 
 
 # Build Notes (Contributors)
 
-1. Open a Terminal window
-2. Clone app using the command: `git clone https://github.com/hotwax/fulfillment-pwa.git <repository-name>`
-3. Go to the <repository-name> directory using command: `cd <repository-name>`
-4. Run following command to download dependencies
-    `npm i`
-5. Create a `.env` file by taking reference from the `.env.example`.
-6. To run the app in browser use the command: `ionic serve`
+1. Open a Terminal window.
+2. Clone the workspace using the command: `git clone https://github.com/hotwax/accxui.git`
+3. Go to the workspace root using command: `cd accxui`
+4. Clone this app under `apps/` using the command:  
+    `git clone https://github.com/hotwax/fulfillment.git apps/fulfillment`
+5. Create a `.env` file in `apps/fulfillment` by taking reference from its `.env.example`.
+6. Run following command from the `accxui` root to download dependencies  
+    `pnpm install`
+7. To run the app in browser use the command from the `accxui` root:  
+    `pnpm --filter fulfillment dev`
+8. To build the app use the command from the `accxui` root:  
+    `pnpm --filter fulfillment build`
+
+Run `pnpm install` from the `accxui` root again whenever you add another app under `apps/`. See the [accxui README](https://github.com/hotwax/accxui/blob/main/README.md) for the full workspace guide.
 
 
 # Contribution Guideline

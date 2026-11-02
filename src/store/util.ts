@@ -3,6 +3,7 @@ import { api, commonUtil, logger } from "@common";
 
 import { useProductStore as useAppProductStore } from "@/store/productStore";
 import { useUserStore } from "@/store/user"
+import Actions from "@/authorization/actions"
 
 interface UtilState {
   rejectReasons: any[]
@@ -190,7 +191,7 @@ export const useUtilStore = defineStore("util", {
     },
     async fetchAdjustmentTypeDescription(payload: any): Promise<any> {
       return api({
-        url: `/oms/orderAdjustmentTypes`,
+        url: `/oms/shippingGateways/orderAdjustmentTypes`,
         method: "GET",
         params: payload,
       });
@@ -275,7 +276,7 @@ export const useUtilStore = defineStore("util", {
       this.setRejectReasons(rejectReasons)
     },
     async fetchRejectReasonOptions() {
-      const isAdminUser = useUserStore().hasPermission("STOREFULFILLMENT_ADMIN")
+      const isAdminUser = useUserStore().hasPermission(Actions.APP_STOREFULFILLMENT_ADMIN)
       const isApiSuccess = isAdminUser ? await this.fetchRejectReasons() : await this.fetchFulfillmentRejectReasons(true)
 
       this.setRejectReasonOptions(((!isAdminUser && isApiSuccess) ? Object.values(this.fulfillmentRejectReasons) : this.rejectReasons))

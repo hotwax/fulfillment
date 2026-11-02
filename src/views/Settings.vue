@@ -4,6 +4,12 @@
       <ion-toolbar>
         <ion-menu-button slot="start" />
         <ion-title>{{ translate("Settings") }}</ion-title>
+        <ion-buttons slot="end">
+          <ion-button fill="clear" @click="openLogs()">
+            <ion-icon slot="start" :icon="documentTextOutline" />
+            {{ translate("View logs") }}
+          </ion-button>
+        </ion-buttons>
       </ion-toolbar>
     </ion-header>
 
@@ -16,7 +22,7 @@
             </ion-avatar>
             <ion-card-header class="ion-no-padding ion-padding-vertical">
               <ion-card-subtitle>{{ userProfile?.username }}</ion-card-subtitle>
-              <ion-card-title>{{ userProfile?.partyName }}</ion-card-title>
+              <ion-card-title>{{ userProfile?.userFullName }}</ion-card-title>
             </ion-card-header>
           </ion-item>
           <ion-button v-if="!commonUtil.isAppEmbedded()" color="danger" @click="logout()">{{ translate("Logout") }}</ion-button>
@@ -32,7 +38,7 @@
       </div>
 
       <section>
-        <DxpOmsInstanceNavigator :is-embedded="commonUtil.isAppEmbedded()" :has-oms-access="useUserStore().hasPermission('COMMERCEUSER_VIEW')"/>
+        <DxpOmsInstanceNavigator :is-embedded="commonUtil.isAppEmbedded()" :has-oms-access="useUserStore().hasPermission(Actions.APP_COMMERCE_VIEW)"/>
         <DxpProductStoreSelector @updateProductStore="refreshProductStoreData($event)" />
         <DxpFacilitySwitcher @updateFacility="fetchFacilityDependencies($event)" />
 
@@ -50,15 +56,15 @@
           <ion-item lines="none" v-if="orderLimitType === 'custom'">
             <ion-text>{{ currentFacilityDetails?.orderCount }}</ion-text>
             <ion-progress-bar class="ion-margin" :value="currentFacilityDetails?.orderCount / (fulfillmentOrderLimit as any)"></ion-progress-bar>
-            <ion-chip :disabled="!userStore.hasPermission('COMMON_ADMIN')" :outline="true" @click="changeOrderLimitPopover">{{ currentFacilityDetails?.maximumOrderLimit }}</ion-chip>
+            <ion-chip :disabled="!userStore.hasPermission(Actions.APP_UPDT_STR_FULFLMNT_CONFIG)" :outline="true" @click="changeOrderLimitPopover">{{ currentFacilityDetails?.maximumOrderLimit }}</ion-chip>
           </ion-item>
           <ion-item lines="none" v-else-if="orderLimitType === 'unlimited'">
             <ion-label>{{ translate("orders allocated today", { orderCount: currentFacilityDetails?.orderCount }) }}</ion-label>
-            <ion-chip :disabled="!userStore.hasPermission('COMMON_ADMIN')" :outline="true" @click="changeOrderLimitPopover">{{ translate("Unlimited") }}</ion-chip>
+            <ion-chip :disabled="!userStore.hasPermission(Actions.APP_UPDT_STR_FULFLMNT_CONFIG)" :outline="true" @click="changeOrderLimitPopover">{{ translate("Unlimited") }}</ion-chip>
           </ion-item>
           <ion-item lines="none" v-else>
             <ion-label>{{ translate("orders in fulfillment queue", { orderCount: currentFacilityDetails?.orderCount }) }}</ion-label>
-            <ion-chip :disabled="!userStore.hasPermission('COMMON_ADMIN')" :outline="true" @click="changeOrderLimitPopover" color="danger" fill="outline">{{ fulfillmentOrderLimit }}</ion-chip>
+            <ion-chip :disabled="!userStore.hasPermission(Actions.APP_UPDT_STR_FULFLMNT_CONFIG)" :outline="true" @click="changeOrderLimitPopover" color="danger" fill="outline">{{ fulfillmentOrderLimit }}</ion-chip>
           </ion-item>
         </ion-card>
 
@@ -71,7 +77,7 @@
           <ion-card-content>
             {{ translate("Control whether the store's inventory should be made available for online sales or not.") }}
           </ion-card-content>
-          <ion-item lines="none" :disabled="!userStore.hasPermission('COMMON_ADMIN') || !facilityGroupDetails?.facilityGroupId">
+          <ion-item lines="none" :disabled="!userStore.hasPermission(Actions.APP_UPDT_ECOM_INV_CONFIG) || !facilityGroupDetails?.facilityGroupId">
             <ion-toggle label-placement="start" v-model="isEComInvEnabled" @click.prevent="updateEComInvStatus($event)">{{ translate("Sell online") }}</ion-toggle>
           </ion-item>
         </ion-card>
@@ -103,6 +109,20 @@
           </ion-item>
         </ion-card>
 
+        <ion-card>
+          <ion-card-header>
+            <ion-card-title>
+              {{ translate("Open order filters") }}
+            </ion-card-title>
+          </ion-card-header>
+          <ion-card-content>
+            {{ translate("Choose which filters appear on the Open page. Applies to this device.") }}
+          </ion-card-content>
+          <ion-item v-for="dimension in OPEN_ORDER_FILTER_DIMENSIONS" :key="dimension.id" lines="none">
+            <ion-toggle label-placement="start" :checked="deviceSettings.openOrderFilterDimensions.includes(dimension.id)" @ionChange="setOpenOrderFilterDimension(dimension.id, $event.detail.checked)">{{ translate(dimension.label) }}</ion-toggle>
+          </ion-item>
+        </ion-card>
+
         <ion-card v-if="notificationPrefs.length">
           <ion-card-header>
             <ion-card-title>
@@ -126,10 +146,10 @@
             </ion-card-title>
           </ion-card-header>
           <ion-card-content v-html="barcodeContentMessage"></ion-card-content>
-          <ion-item lines="none" :disabled="!userStore.hasPermission('COMMON_ADMIN')">
+          <ion-item lines="none" :disabled="!userStore.hasPermission(Actions.APP_UPDT_FULFILL_FORCE_SCAN_CONFIG)">
             <ion-toggle label-placement="start" :checked="isProductStoreSettingEnabled('FULFILL_FORCE_SCAN')" @click.prevent="updateForceScanStatus($event)">{{ translate("Require scan") }}</ion-toggle>
           </ion-item>
-          <ion-item lines="none" :disabled="!userStore.hasPermission('COMMON_ADMIN')">
+          <ion-item lines="none" :disabled="!userStore.hasPermission(Actions.APP_BARCODE_IDENTIFIER_UPDATE)">
             <ion-select :label="translate('Barcode Identifier')" interface="popover" :placeholder="translate('Select')" :value="barcodeIdentificationPref" @ionChange="setBarcodeIdentificationPref($event.detail.value)">
               <ion-select-option v-for="identification in barcodeIdentificationOptions" :key="identification" :value="identification.goodIdentificationTypeId">{{ identification.description ? identification.description : identification.goodIdentificationTypeId }}</ion-select-option>
             </ion-select>
@@ -145,7 +165,7 @@
           <ion-card-content>
             {{ translate("Individual items within an order will be rejected without affecting the other items in the order.") }}
           </ion-card-content>
-          <ion-item lines="none" :disabled="!userStore.hasPermission('COMMON_ADMIN')">
+          <ion-item lines="none" :disabled="!userStore.hasPermission(Actions.APP_PARTIAL_ORDER_REJECTION_CONFIG_UPDATE)">
             <ion-toggle label-placement="start" :checked="isProductStoreSettingEnabled('FULFILL_PART_ODR_REJ')" @click.prevent="confirmPartialOrderRejection($event)">{{ translate("Partial rejections") }}</ion-toggle>
           </ion-item>
         </ion-card>
@@ -158,7 +178,7 @@
           <ion-card-content>
             {{ translate('When rejecting an item, automatically reject all other orders for that item as well.') }}
           </ion-card-content>
-          <ion-item lines="none" :disabled="!userStore.hasPermission('COMMON_ADMIN')">
+          <ion-item lines="none" :disabled="!userStore.hasPermission(Actions.APP_COLLATERAL_REJECTION_CONFIG_UPDATE)">
             <ion-toggle label-placement="start" :checked="isProductStoreSettingEnabled('FF_COLLATERAL_REJ')" @click.prevent="confirmCollateralRejection($event)">{{ translate("Auto reject related items") }}</ion-toggle>
           </ion-item>
         </ion-card>
@@ -171,7 +191,7 @@
           <ion-card-content>
             {{ translate('Adjust the QOH along with ATP on rejection.') }}
           </ion-card-content>
-          <ion-item lines="none" :disabled="!userStore.hasPermission('COMMON_ADMIN')">
+          <ion-item lines="none" :disabled="!userStore.hasPermission(Actions.APP_AFFECT_QOH_CONFIG_UPDATE)">
             <ion-toggle label-placement="start" :checked="isProductStoreSettingEnabled('AFFECT_QOH_ON_REJ')" @click.prevent="confirmAffectQohConfig($event)">{{ translate("Affect QOH") }}</ion-toggle>
           </ion-item>
         </ion-card>
@@ -181,10 +201,11 @@
 </template>
 
 <script setup lang="ts">
-import { IonAvatar, IonButton, IonCard, IonCardContent, IonCardHeader, IonCardTitle, IonCardSubtitle, IonChip, IonContent, IonHeader, IonIcon, IonItem, IonLabel, IonList, IonMenuButton, IonPage, IonProgressBar, IonSelect, IonSelectOption, IonTitle, IonText, IonToggle, IonToolbar, alertController, popoverController, onIonViewWillEnter } from "@ionic/vue";
+import { IonAvatar, IonButtons, IonButton, IonCard, IonCardContent, IonCardHeader, IonCardTitle, IonCardSubtitle, IonChip, IonContent, IonHeader, IonIcon, IonItem, IonLabel, IonList, IonMenuButton, IonPage, IonProgressBar, IonSelect, IonSelectOption, IonTitle, IonText, IonToggle, IonToolbar, alertController, popoverController, onIonViewWillEnter, modalController } from "@ionic/vue";
 import { computed, ref } from "vue";
-import { openOutline } from "ionicons/icons";
-import { commonUtil, DxpShopifyImg, emitter, firebaseMessaging,logger, translate, useNotificationStore, useAuth } from "@common";
+import { openOutline, documentTextOutline } from "ionicons/icons";
+import { commonUtil, DxpShopifyImg, emitter, firebaseMessaging,logger, translate, useNotificationStore, useAuth, DxpLogsModal } from "@common";
+import { deviceSettings, setOpenOrderFilterDimension } from "@/db/deviceSettings";
 import { useProductStore } from "@/store/productStore";
 import { useUserStore } from "@/store/user";
 
@@ -201,6 +222,8 @@ import DxpLanguageSwitcher from "@/components/DxpLanguageSwitcher.vue";
 import { useOrderStore } from "@/store/order";
 import router from "@/router";
 import { firebaseUtil } from "@/utils/firebaseUtil"
+import Actions from "@/authorization/actions"
+import { OPEN_ORDER_FILTER_DIMENSIONS } from "@/utils/openOrderFilters"
 
 const userStore = useUserStore();
 
@@ -631,6 +654,13 @@ onIonViewWillEnter(async () => {
   await useProductStore().fetchProductStoreSettings(preferredStore.value.productStoreId);
   await notificationStore.fetchNotificationPreferences(import.meta.env.VITE_NOTIF_ENUM_TYPE_ID, import.meta.env.VITE_NOTIF_APP_ID, userStore.getUserProfile.userLoginId, (enumId: string) => firebaseMessaging.generateTopicName(commonUtil.getOMSInstanceName(), productStore.getCurrentFacility.facilityId, enumId));
 });
+
+async function openLogs() {
+  const logsModal = await modalController.create({
+    component: DxpLogsModal
+  });
+  return logsModal.present();
+}
 </script>
 
 <style scoped>

@@ -52,7 +52,7 @@ import { commonUtil, translate } from "@common";
   
   onMounted(() => {
     const methods = shipmentMethods.value.filter((shipmentMethod: any) => shipmentMethod.isChecked);
-    commonUtil.sortItems(methods, "sequenceNumber");
+    commonUtil.sortSequence(methods, "sequenceNumber");
     filteredShipmentMethods.value = methods;
   });
   

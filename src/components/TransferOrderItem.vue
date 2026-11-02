@@ -188,7 +188,6 @@ const getErrorText = () => {
 };
 
 const openRejectReasonPopover = async (ev: Event, selectedItem: any) => {
-  console.log("===rejectReasons===", rejectReasons.value)
   const reportIssuePopover = await popoverController.create({
     component: ReportIssuePopover,
     componentProps: { rejectReasons: rejectReasons.value },

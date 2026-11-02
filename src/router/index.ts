@@ -1,6 +1,7 @@
 import { createRouter, createWebHistory } from '@ionic/vue-router';
 import { RouteRecordRaw } from 'vue-router';
 import Completed from '@/views/Completed.vue'
+import Dashboard from "@/views/Dashboard.vue"
 import InProgress from '@/views/InProgress.vue'
 import OpenOrders from "@/views/OpenOrders.vue"
 import Settings from "@/views/Settings.vue"
@@ -19,10 +20,11 @@ import Notifications from '@/views/Notifications.vue'
 import CreateTransferOrder from '@/views/CreateTransferOrder.vue';
 import ShipTransferOrder from '@/views/ShipTransferOrder.vue';
 
-import { businessOutline, mailUnreadOutline, mailOpenOutline, checkmarkDoneOutline, settingsOutline } from "ionicons/icons";
+import { businessOutline, mailUnreadOutline, mailOpenOutline, checkmarkDoneOutline, settingsOutline, statsChartOutline } from "ionicons/icons";
 import OrderLookup from '@/views/OrderLookup.vue';
 import OrderLookupDetail from '@/views/OrderLookupDetail.vue';
 import Rejections from '@/views/Rejections.vue';
+import Actions from "@/authorization/actions";
 
 const authGuard = async (to: any, from: any, next: any) => {
   const { isAuthenticated } = useAuth()
@@ -40,15 +42,26 @@ const routes: Array<RouteRecordRaw> = [
     redirect: '/open'
   },
   {
+    path: "/dashboard",
+    name: "Dashboard",
+    component: Dashboard,
+    beforeEnter: authGuard,
+    meta: {
+      title: "Dashboard",
+      icon: statsChartOutline,
+      menuIndex: 1
+    }
+  },
+  {
     path: '/open',
     name: 'OpenOrders',
     component: OpenOrders,
     beforeEnter: authGuard,
     meta: {
-      permissionId: "",
+      permissionId: Actions.APP_OPEN_ORDERS_VIEW,
       title: "Open",
       icon: mailUnreadOutline,
-      menuIndex: 1,
+      menuIndex: 2,
       childRoutes: ["/open/"]
     }
   },
@@ -58,10 +71,10 @@ const routes: Array<RouteRecordRaw> = [
     component: InProgress,
     beforeEnter: authGuard,
     meta: {
-      permissionId: "",
+      permissionId: Actions.APP_IN_PROGRESS_ORDERS_VIEW,
       title: "In Progress",
       icon: mailOpenOutline,
-      menuIndex: 2,
+      menuIndex: 3,
       childRoutes: ["/in-progress/"]
     }
   },
@@ -71,10 +84,10 @@ const routes: Array<RouteRecordRaw> = [
     component: Completed,
     beforeEnter: authGuard,
     meta: {
-      permissionId: "",
+      permissionId: Actions.APP_COMPLETED_ORDERS_VIEW,
       title: "Completed",
       icon: checkmarkDoneOutline,
-      menuIndex: 3,
+      menuIndex: 4,
       childRoutes: ["/completed/"]
     }
   },
@@ -84,10 +97,10 @@ const routes: Array<RouteRecordRaw> = [
     component: TransferOrders,
     beforeEnter: authGuard,
     meta: {
-      permissionId: "ORD_TRANSFER_ORDER_VIEW OR ORD_TRANSFER_ORDER_ADMIN",
+      permissionId: Actions.APP_TRANSFER_ORDERS_VIEW,
       title: "Transfer Orders",
       icon: businessOutline,
-      menuIndex: 4,
+      menuIndex: 5,
       childRoutes: ["/transfer-order-details", "/create-transfer-order", "/ship-transfer-order"]
     }
   },
@@ -112,7 +125,7 @@ const routes: Array<RouteRecordRaw> = [
     beforeEnter: authGuard,
     props: true,
     meta: {
-      permissionId: "ORD_TRANSFER_ORDER_VIEW OR ORD_TRANSFER_ORDER_ADMIN"
+      permissionId: Actions.APP_TRANSFER_ORDER_DETAIL_VIEW
     }
   },
   {
@@ -129,7 +142,7 @@ const routes: Array<RouteRecordRaw> = [
     beforeEnter: authGuard,
     props: true,
     meta: {
-      permissionId: ""
+      permissionId: Actions.APP_ORDER_DETAIL_VIEW
     }
   },
   {
@@ -139,7 +152,7 @@ const routes: Array<RouteRecordRaw> = [
     beforeEnter: authGuard,
     props: true,
     meta: {
-      permissionId: ""
+      permissionId: Actions.APP_SHIPMENT_DETAIL_VIEW
     }
   },
   {
@@ -155,7 +168,7 @@ const routes: Array<RouteRecordRaw> = [
     meta: {
       title: "Settings",
       icon: settingsOutline,
-      menuIndex: 5
+      menuIndex: 6
     }
   },
 
@@ -165,9 +178,9 @@ const routes: Array<RouteRecordRaw> = [
     component: RejectionReasons,
     beforeEnter: authGuard,
     meta: {
-      permissionId: "STOREFULFILLMENT_ADMIN",
+      permissionId: Actions.APP_REJECTION_REASONS_VIEW,
       title: "Rejection reasons",
-      menuIndex: 6,
+      menuIndex: 7,
       groupMenuName: "Organization",
       childRoutes: ["/rejection-reasons/"]
     }
@@ -178,9 +191,9 @@ const routes: Array<RouteRecordRaw> = [
     component: OrderLookup,
     beforeEnter: authGuard,
     meta: {
-      permissionId: "FF_ORDER_LOOKUP_VIEW",
+      permissionId: Actions.APP_ORDER_LOOKUP_VIEW,
       title: "Order Lookup",
-      menuIndex: 8,
+      menuIndex: 9,
       groupMenuName: "Organization",
       childRoutes: ["/order-lookup/"]
     }
@@ -192,7 +205,7 @@ const routes: Array<RouteRecordRaw> = [
     beforeEnter: authGuard,
     props: true,
     meta: {
-      permissionId: "FF_ORDER_LOOKUP_VIEW"
+      permissionId: Actions.APP_ORDER_LOOKUP_VIEW
     }
   },
   {
@@ -201,9 +214,9 @@ const routes: Array<RouteRecordRaw> = [
     component: Carriers,
     beforeEnter: authGuard,
     meta: {
-      permissionId: "CARRIER_SETUP_VIEW",
+      permissionId: Actions.APP_CARRIERS_VIEW,
       title: "Carriers & Shipment Methods",
-      menuIndex: 7,
+      menuIndex: 8,
       groupMenuName: "Organization",
       childRoutes: ["/carrier-details"]
     }
@@ -214,7 +227,7 @@ const routes: Array<RouteRecordRaw> = [
     component: CreateCarrier,
     beforeEnter: authGuard,
     meta: {
-      permissionId: "CARRIER_SETUP_VIEW"
+      permissionId: Actions.APP_CARRIERS_CREATE
     }
   },
   {
@@ -224,7 +237,7 @@ const routes: Array<RouteRecordRaw> = [
     beforeEnter: authGuard,
     props: true,
     meta: {
-      permissionId: "CARRIER_SETUP_VIEW"
+      permissionId: Actions.APP_CARRIERS_VIEW
     }
   },
   {
@@ -234,7 +247,7 @@ const routes: Array<RouteRecordRaw> = [
     beforeEnter: authGuard,
     props: true,
     meta: {
-      permissionId: "CARRIER_SETUP_VIEW"
+      permissionId: Actions.APP_CARRIERS_VIEW
     }
   },
   {
@@ -249,7 +262,7 @@ const routes: Array<RouteRecordRaw> = [
     component: Rejections,
     beforeEnter: authGuard,
     meta: {
-      permissionId: "STOREFULFILLMENT_ADMIN"
+      permissionId: Actions.APP_REJECTIONS_VIEW
     }
   },
   {
@@ -270,6 +283,10 @@ const router = createRouter({
 })
 
 router.beforeEach((to, from) => {
+  // Enforce the canonical version URL on every navigation (no-op until the version is resolved, or if
+  // already canonical). Redirect cancels this navigation. Logic lives in useAuth so it's shared.
+  if (useAuth().checkAppVersionRedirect()) return false;
+
   if (to.meta.permissionId && !useUserStore().hasPermission(to.meta.permissionId as any)) {
     let redirectToPath = from.path;
     // If the user has navigated from Login page or if it is page load, redirect user to settings page without showing any toast

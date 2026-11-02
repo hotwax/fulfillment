@@ -13,11 +13,9 @@
   
 <script setup lang="ts">
 import { IonContent, IonItem, IonList, IonListHeader, popoverController } from "@ionic/vue";
-import { computed, defineProps } from "vue";
+import { computed } from "vue";
 import { commonUtil, logger, translate } from "@common";
 import { useUtilStore } from "@/store/util";
-import { DateTime } from "luxon";
-
 
 const props = defineProps(["reason"]);
 const utilStore = useUtilStore();
@@ -37,8 +35,7 @@ const updateVarianceType = async (selectedType: any) => {
       "description": props.reason.description,
       "enumName": props.reason.enumName,
       "enumCode": props.reason.enumCode,
-      "sequenceNum": props.reason.sequenceNum,
-      "thruDate": DateTime.now().toMillis()
+      "sequenceNum": props.reason.sequenceNum
     });
 
     if (!commonUtil.hasError(resp)) {
