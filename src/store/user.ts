@@ -140,6 +140,8 @@ export const useUserStore = defineStore("user", {
           if (resp.status === 200 && resp.data.docs?.length && !commonUtil.hasError(resp)) {
             serverPermissions.push(...resp.data.docs.map((permission: any) => permission.permissionId))
             viewIndex++
+            // A short page is the last one, so skip the extra request that would come back empty
+            if (resp.data.docs.length < viewSize) resp = null
           } else {
             resp = null
           }
