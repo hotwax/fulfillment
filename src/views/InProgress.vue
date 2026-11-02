@@ -146,10 +146,11 @@
                 <ion-button color="danger" fill="clear" size="small" @click.stop="openRejectReasonPopover($event, item, order)">
                   <ion-icon slot="icon-only" :icon="trashBinOutline" />
                 </ion-button>
-                <ion-note v-if="getProductStock(item.productId).qoh">{{ getProductStock(item.productId).qoh }} {{ translate('pieces in stock') }}</ion-note>
-                <ion-button color="medium" fill="clear" v-else size="small" @click.stop="fetchProductStock(item.productId)">
+                <ion-note v-if="getProductStock(item.productId).qoh >= 0">{{ getProductStock(item.productId).qoh }} {{ translate('pieces in stock') }}</ion-note>
+                <ion-button color="medium" fill="clear" v-else-if="!isFetchingStock(item.productId)" size="small" @click.stop="fetchProductStock(item.productId)">
                   <ion-icon slot="icon-only" :icon="cubeOutline" />
                 </ion-button>
+                <ion-spinner v-else color="medium" name="crescent" />
               </div>
               <div v-if="item.showKitComponents" class="kit-components">
                 <template v-if="!getProduct(item.productId)?.productComponents">
@@ -339,6 +340,7 @@ const currentFacility = computed(() => useProductStore().getCurrentFacility as a
 const getProduct = (productId: string) => useProduct().getProduct(productId);
 const boxTypeDesc = (boxTypeId: string) => useUtilStore().getShipmentBoxDesc(boxTypeId);
 const getProductStock = (productId: string) => useStockStore().getProductStock(productId);
+const isFetchingStock = (productId: string, facilityId = "") => useStockStore().isFetchingStock(productId, facilityId);
 const getShipmentMethodDesc = (shipmentMethodId: string) => live.shipmentMethodLabels.value.get(shipmentMethodId) ?? useUtilStore().getShipmentMethodDesc(shipmentMethodId);
 
 const getTime = (time: any) => {

@@ -92,10 +92,11 @@
                   <ion-icon v-if="isKitExpanded(order, item)" color="medium" slot="icon-only" :icon="chevronUpOutline" />
                   <ion-icon v-else color="medium" slot="icon-only" :icon="listOutline" />
                 </ion-button>
-                <ion-note v-if="getProductStock(item.productId).qoh">{{ getProductStock(item.productId).qoh }} {{ translate('pieces in stock') }}</ion-note>
-                <ion-button fill="clear" v-else size="small" @click.stop="fetchProductStock(item.productId)">
+                <ion-note v-if="getProductStock(item.productId).qoh >= 0">{{ getProductStock(item.productId).qoh }} {{ translate('pieces in stock') }}</ion-note>
+                <ion-button fill="clear" v-else-if="!isFetchingStock(item.productId)" size="small" @click.stop="fetchProductStock(item.productId)">
                   <ion-icon color="medium" slot="icon-only" :icon="cubeOutline" />
                 </ion-button>
+                <ion-spinner v-else color="medium" name="crescent" />
               </div>
               <div v-if="isKitExpanded(order, item)" class="kit-components">
                 <template v-if="!getProduct(item.productId)?.productComponents">
@@ -182,6 +183,7 @@ const unreadNotificationsStatus = computed(() => useNotificationStore().getUnrea
 const getProduct = (productId: string) => useProductStore().getProduct(productId);
 const getShipmentMethodDesc = (shipmentMethodId: string) => useUtilStore().getShipmentMethodDesc(shipmentMethodId);
 const getProductStock = (productId: string) => useStockStore().getProductStock(productId);
+const isFetchingStock = (productId: string, facilityId = "") => useStockStore().isFetchingStock(productId, facilityId);
 const currentFacility = computed(() => useAppProductStore().getCurrentFacility);
 const currentProductStore = computed(() => useAppProductStore().getCurrentProductStore);
 const productIdentificationPref = computed(() => useAppProductStore().getProductIdentificationPref);
