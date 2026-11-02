@@ -140,6 +140,8 @@ export const useUserStore = defineStore("user", {
           if (resp.status === 200 && resp.data.docs?.length && !commonUtil.hasError(resp)) {
             serverPermissions.push(...resp.data.docs.map((permission: any) => permission.permissionId))
             viewIndex++
+            // A short page is the last one, so skip the extra request that would come back empty
+            if (resp.data.docs.length < viewSize) resp = null
           } else {
             resp = null
           }
@@ -237,23 +239,17 @@ export const useUserStore = defineStore("user", {
     async postLogin() {
       try {
         const productStore = useProductStore();
-        await this.fetchPermissions()
-        await this.fetchUserProfile()
-        await productStore.fetchUserFacilities()
-        await productStore.fetchFacilityPreference();
-        // Not awaited, and started once the facility is known: the first sync fills its orders while the rest of the login runs.
-        void startLiveOrdersSync(productStore.getFacilities, productStore.getCurrentFacility?.facilityId, productStore.getCurrentProductStore?.productStoreId)
-        await productStore.fetchProductStores()
-        await productStore.fetchProductStorePreference();
-        await productStore.fetchProductStoreDependencies(productStore.getCurrentProductStore.productStoreId)
-
-        await useUtilStore().fetchCarrierShipmentBoxTypes()
-        await productStore.fetchAutoShippingLabelConfig()
-
         const notificationStore = useNotificationStore();
-        await notificationStore.fetchAllNotificationPrefs(import.meta.env.VITE_NOTIF_APP_ID as any, this.current.userId)
-        await firebaseUtil.initialiseFirebaseMessaging();
 
+        // Only permissions and profile may run before the profile sets the user: any other call is rejected as
+        // INVALID_APP_CONTEXT until then, and that logs the user out
+        await Promise.all([this.fetchPermissions(), this.fetchUserProfile()])
+        // The saved facility and product store load first, so the lists below select them as they load.
+        // Carrier box types need nothing from the session, so they load alongside
+        await Promise.all([productStore.fetchFacilityPreference(), productStore.fetchProductStorePreference(), useUtilStore().fetchCarrierShipmentBoxTypes()])
+        await productStore.fetchUserFacilities()
+
+        // A facility passed in the URL is applied before anything is loaded for the current facility
         const facilityId = router.currentRoute.value.query.facilityId
         if (facilityId) {
           const facility = productStore.getFacilities?.find((facility: any) => facility.facilityId === facilityId);
@@ -267,6 +263,21 @@ export const useUserStore = defineStore("user", {
             commonUtil.showToast(translate("Redirecting to home page due to incorrect information being passed."))
           }
         }
+
+        // Not awaited, and started once the facility is known: the first sync fills its orders while the rest of the login runs.
+        void startLiveOrdersSync(productStore.getFacilities, productStore.getCurrentFacility?.facilityId, productStore.getCurrentProductStore?.productStoreId)
+
+        // The auto shipping label config and notification preferences only need the facility and user, not the product stores
+        await Promise.all([
+          productStore.fetchProductStores(),
+          productStore.fetchAutoShippingLabelConfig(),
+          notificationStore.fetchAllNotificationPrefs(import.meta.env.VITE_NOTIF_APP_ID as any, this.current.userId)
+        ])
+        // Registering the device waits until the facility and product stores have loaded, then runs alongside the store's dependencies
+        await Promise.all([
+          productStore.fetchProductStoreDependencies(productStore.getCurrentProductStore.productStoreId),
+          firebaseUtil.initialiseFirebaseMessaging()
+        ])
       } catch (error: any) {
         // A login that fails after the sync started leaves nothing syncing.
         await stopLiveOrdersSync();
