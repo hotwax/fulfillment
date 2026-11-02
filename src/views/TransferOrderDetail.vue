@@ -163,7 +163,7 @@
 import { IonBackButton, IonBadge, IonButton, IonButtons, IonCard, IonChip, IonContent, IonFooter, IonHeader, IonIcon, IonInput, IonItem, IonLabel, IonPage, IonSegment, IonSegmentButton, IonSkeletonText, IonSpinner, IonThumbnail, IonTitle, IonToolbar, alertController, modalController, onIonViewDidLeave, onIonViewWillEnter } from "@ionic/vue";
 import { computed, ref } from "vue";
 import { barcodeOutline, pricetagOutline, printOutline, trashOutline } from "ionicons/icons";
-import { commonUtil, DxpShopifyImg, useEmbeddedAppStore, emitter, translate, useShopify } from "@common";
+import { commonUtil, DxpShopifyImg, useEmbeddedAppStore, emitter, logger, translate, useShopify } from "@common";
 import { useCarrierStore } from "@/store/carrier";
 import { useProductStore as useAppProductStore } from "@/store/productStore";
 import Scanner from "@/components/Scanner.vue";
@@ -304,7 +304,7 @@ const scanCode = async () => {
       const scannedCode = await useShopify().openPosScanner();
       if (scannedCode) updateProductCount(scannedCode);
     } catch(err) {
-      console.error("POS Scanner error:", err);
+      logger.error("POS Scanner error:", err);
     }
   } else {
     if (!(await commonUtil.hasWebcamAccess())) {
@@ -368,8 +368,9 @@ const regenerateShippingLabel = async (currentShipment: any) => {
       commonUtil.showToast(translate("Failed to generate shipping label"));
     }
   } catch (err) {
-    commonUtil.showToast(translate("Failed to generate shipping label"));
-    console.error(err);
+    const serverError = commonUtil.getErrorMessage(err);
+    logger.error(err);
+    commonUtil.showToast(`${translate("Failed to generate shipping label")}. ${serverError}`);
   } finally {
     currentShipment.isGeneratingShippingLabel = false;
   }
@@ -398,8 +399,9 @@ const rejectItems = async () => {
           commonUtil.showToast(translate("All order items are rejected"));
           router.replace("/transfer-orders");
         } catch (err) {
-          console.error(err);
-          commonUtil.showToast(translate("Failed to reject order"));
+          const serverError = commonUtil.getErrorMessage(err);
+          logger.error(err);
+          commonUtil.showToast(`${translate("Failed to reject order")}. ${serverError}`);
           await useTransferOrderStore().fetchTransferOrderDetail({ orderId: route.params.orderId });
         }
         emitter.emit("dismissLoader");
@@ -426,7 +428,7 @@ onIonViewWillEnter(async () => {
     useTransferOrderStore().fetchTransferOrderDetail({ orderId: route.params.orderId })
   ]);
   if(results[1].status === "rejected") {
-    console.error("Failed to fetch the transfer order", results[1].reason);
+    logger.error("Failed to fetch the transfer order", results[1].reason);
   }
   selectedSegment.value = hasOpenItems.value ? (route.params.category === "completed" ? "completed" : "open") : "completed";
   isLoading.value = false;

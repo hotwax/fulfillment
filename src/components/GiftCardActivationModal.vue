@@ -105,8 +105,9 @@ const activateGitCard = async () => {
       throw resp.data;
     }
   } catch (error: any) {
-    commonUtil.showToast(translate("Failed to activate gift card."));
+    const serverError = commonUtil.getErrorMessage(error);
     logger.error(error);
+    commonUtil.showToast(`${translate("Failed to activate gift card.")} ${serverError}`);
   }
 };
 
@@ -142,7 +143,7 @@ const scan = async () => {
       const scannedCode = await useShopify().openPosScanner();
       if (scannedCode) activationCode.value = scannedCode;
     } catch(err) {
-      console.error("POS Scanner error:", err);
+      logger.error("POS Scanner error:", err);
     }
   } else {
     if (!(await commonUtil.hasWebcamAccess())) {

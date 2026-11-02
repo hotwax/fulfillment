@@ -103,8 +103,9 @@ export function useStorePerformance() {
       lastPerformance.set(`${facilityId}:${productStoreId}`, fresh);
       if(load === latestLoad) {performance.value = fresh;}
     } catch (error) {
+      const serverError = commonUtil.getErrorMessage(error);
       logger.error("Failed to get today's store performance", error);
-      commonUtil.showToast(translate("Failed to get today's store performance"));
+      commonUtil.showToast(`${translate("Failed to get today's store performance")}. ${serverError}`);
     }
     if(load === latestLoad) {loading.value = false;}
   }

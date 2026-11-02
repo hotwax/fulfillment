@@ -397,8 +397,9 @@ const updateFacilityMaximumOrderLimit = async (maximumOrderLimit: number | strin
       throw resp.data;
     }
   } catch (err) {
-    commonUtil.showToast(translate("Failed to update facility"));
+    const serverError = commonUtil.getErrorMessage(err);
     logger.error("Failed to update facility", err);
+    commonUtil.showToast(`${translate("Failed to update facility")}. ${serverError}`);
   }
 };
 
@@ -419,8 +420,9 @@ const updateFacilityToGroup = async () => {
       throw resp.data;
     }
   } catch (err) {
-    commonUtil.showToast(translate("Failed to update eCom inventory status"));
+    const serverError = commonUtil.getErrorMessage(err);
     logger.error("Failed to update eCom inventory status", err);
+    commonUtil.showToast(`${translate("Failed to update eCom inventory status")}. ${serverError}`);
   }
 };
 
@@ -439,8 +441,9 @@ const addFacilityToGroup = async () => {
       throw resp.data;
     }
   } catch (err) {
-    commonUtil.showToast(translate("Failed to update eCom inventory status"));
+    const serverError = commonUtil.getErrorMessage(err);
     logger.error("Failed to update eCom inventory status", err);
+    commonUtil.showToast(`${translate("Failed to update eCom inventory status")}. ${serverError}`);
   }
 };
 
@@ -506,7 +509,9 @@ const updateNotificationPref = async (enumId: string) => {
     isToggledOn = notificationPref.isEnabled;
     commonUtil.showToast(translate("Notification preferences updated."));
   } catch (error) {
-    commonUtil.showToast(translate("Notification preferences not updated. Please try again."));
+    const serverError = commonUtil.getErrorMessage(error);
+    logger.error("Failed to update notification preferences", error);
+    commonUtil.showToast(`${translate("Notification preferences not updated. Please try again.")} ${serverError}`);
   } finally {
     emitter.emit("dismissLoader");
   }

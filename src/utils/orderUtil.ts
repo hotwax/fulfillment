@@ -121,7 +121,7 @@ const retryShippingLabel = async (order: any, showSuccessToast = true) => {
   order = await useOrderStore().updateShipmentPackageDetail(order)
 
   if (order.missingLabelImage) {
-    commonUtil.showToast(translate("Failed to generate shipping label"))
+    commonUtil.showToast(translate("Failed to generate shipping label"));
   } else {
     if (showSuccessToast) commonUtil.showToast(translate("Shipping Label generated successfully"))
     isGenerated = true;

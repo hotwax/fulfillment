@@ -3,7 +3,6 @@ import { useProductStore } from "@/store/product";
 import { useTransferOrderStore } from "@/store/transferorder";
 import { api, commonUtil, logger, translate } from "@common";
 
-
 /**
  * Sequential product addition queue to prevent API deadlocks.
  * 
@@ -189,7 +188,9 @@ export function useProductQueue() {
       }
     } catch (err) {
       itemToAdd.onError?.(product, err);
-      commonUtil.showToast(translate("Failed to add product to order"));
+      const serverError = commonUtil.getErrorMessage(err);
+      logger.error(err);
+      commonUtil.showToast(`${translate("Failed to add product to order")}. ${serverError}`);
     } finally {
       pendingProductIds.value.delete(product.productId);
     }

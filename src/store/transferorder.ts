@@ -288,8 +288,9 @@ export const useTransferOrderStore = defineStore("transferorder", {
           );
         }
       } catch (err) {
-        commonUtil.showToast(translate("Failed to print picklist"));
+        const serverError = commonUtil.getErrorMessage(err);
         logger.error("Failed to load picklist", err);
+        commonUtil.showToast(`${translate("Failed to print picklist")}. ${serverError}`);
       }
     },
     // Asks the backend to buy the label for the route segment that was just updated. Unlike orderStore.retryShippingLabel, a failure
@@ -374,10 +375,11 @@ export const useTransferOrderStore = defineStore("transferorder", {
 
         return isOpened;
       } catch (err) {
-        commonUtil.showToast(translate("Failed to print shipping label"));
+        const serverError = commonUtil.getErrorMessage(err);
         logger.error("Failed to load shipping label", err);
-
+        commonUtil.showToast(`${translate("Failed to print shipping label")}. ${serverError}`);
         return false;
+
       }
     },
     async createOutboundTransferShipmentAPI(query: any) {
@@ -614,8 +616,9 @@ export const useTransferOrderStore = defineStore("transferorder", {
           throw resp.data
         }
       } catch (error) {
-        logger.error(error)
-        commonUtil.showToast(translate("Failed to create shipment"))
+        const serverError = commonUtil.getErrorMessage(error);
+        logger.error(error);
+        commonUtil.showToast(`${translate("Failed to create shipment")}. ${serverError}`);
       }
       return shipmentId
     },

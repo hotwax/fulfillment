@@ -206,7 +206,7 @@ export const useProductStore = defineStore('productStore', {
           }
         });
       } catch (error) {
-        console.error('error', error)
+        logger.error('error', error)
       }
       this.preferredFacilityId = payload.facilityId;
       // A facility switch selects the new facility's first product store, so the saved one no longer applies
@@ -231,7 +231,7 @@ export const useProductStore = defineStore('productStore', {
         }) as any;
         this.preferredFacilityId = preferredFacilityResp.data?.[0]?.preferenceValue || "";
       } catch (error) {
-        console.error("Failed to fetch facility preference:", error);
+        logger.error("Failed to fetch facility preference:", error);
       }
     },
     async fetchProductStores(currentFacilityId?: string) {
@@ -532,7 +532,7 @@ export const useProductStore = defineStore('productStore', {
           }
         });
       } catch (error) {
-        console.error('error', error)
+        logger.error('error', error)
       }
       this.preferredProductStoreId = payload.productStoreId;
       this.currentProductStore = payload;
@@ -652,8 +652,9 @@ export const useProductStore = defineStore('productStore', {
           throw resp
         }
       } catch (err) {
-        commonUtil.showToast(translate('Failed to update Product Store setting.'))
-        logger.error(err)
+        const serverError = commonUtil.getErrorMessage(err);
+        logger.error(err);
+        commonUtil.showToast(`${translate("Failed to update Product Store setting.")} ${serverError}`);
       }
     },
 
@@ -682,7 +683,7 @@ export const useProductStore = defineStore('productStore', {
 
         fetchedGoodIdentificationOptions = resp.data
       } catch (error) {
-        console.error('Failed to fetch good identification types', error)
+        logger.error('Failed to fetch good identification types', error)
       }
 
       // Merge the arrays and remove duplicates
@@ -703,7 +704,7 @@ export const useProductStore = defineStore('productStore', {
           throw resp
         }
       } catch (error: any) {
-        console.error(error)
+        logger.error(error)
       }
     },
     shuffleProduct() {
@@ -746,7 +747,7 @@ export const useProductStore = defineStore('productStore', {
           throw resp.data;
         }
       } catch (err) {
-        console.error("Failed to fetch facility information", err)
+        logger.error("Failed to fetch facility information", err)
       }
     },
     clearFacilities() {

@@ -243,8 +243,9 @@ const updateItemQuantity = async (selectedItem: any) => {
       throw resp.data;
     }
   } catch (err) {
+    const serverError = commonUtil.getErrorMessage(err);
     logger.error(err);
-    commonUtil.showToast(translate("Failed to update item quantity"));
+    commonUtil.showToast(`${translate("Failed to update item quantity")}. ${serverError}`);
   }
 };
 
@@ -262,8 +263,9 @@ const removeOrderItem = async (selectedItem: any) => {
       throw resp.data;
     }
   } catch (err) {
+    const serverError = commonUtil.getErrorMessage(err);
     logger.error(err);
-    commonUtil.showToast(translate("Failed to remove item from order"));
+    commonUtil.showToast(`${translate("Failed to remove item from order")}. ${serverError}`);
   }
 };
 </script>
