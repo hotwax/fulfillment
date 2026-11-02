@@ -1,4 +1,4 @@
-import { firebaseMessaging, useNotificationStore } from "@common";
+import { firebaseMessaging, logger, useNotificationStore } from "@common";
 import { DateTime } from "luxon";
 
 const initialiseFirebaseMessaging = async () => {
@@ -8,8 +8,8 @@ const initialiseFirebaseMessaging = async () => {
   let appFirebaseConfig: any = null;
   try {
     appFirebaseConfig = import.meta.env.VITE_FIREBASE_CONFIG ? JSON.parse(import.meta.env.VITE_FIREBASE_CONFIG) : null;
-  } catch (e) {
-    appFirebaseConfig = null;
+  } catch (err) {
+    logger.warn("Invalid VITE_FIREBASE_CONFIG, skipping push notification setup", err);
   }
   const appFirebaseVapidKey = import.meta.env.VITE_FIREBASE_VAPID_KEY;
 
