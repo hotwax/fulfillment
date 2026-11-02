@@ -209,6 +209,8 @@ export const useProductStore = defineStore('productStore', {
         console.error('error', error)
       }
       this.preferredFacilityId = payload.facilityId;
+      // A facility switch selects the new facility's first product store, so the saved one no longer applies
+      this.preferredProductStoreId = "";
       this.currentFacility = payload;
     },
     // Only fetches the saved facility; fetchUserFacilities applies it, so call this first
@@ -232,8 +234,7 @@ export const useProductStore = defineStore('productStore', {
         console.error("Failed to fetch facility preference:", error);
       }
     },
-    // Login passes useSavedStore to select the user's saved store; a facility switch selects the first one
-    async fetchProductStores(currentFacilityId?: string, useSavedStore = false) {
+    async fetchProductStores(currentFacilityId?: string) {
       try {
         const facilityId = currentFacilityId ?? this.currentFacility.facilityId;
         const pageSize = 200;
@@ -272,10 +273,9 @@ export const useProductStore = defineStore('productStore', {
           ...this.currentFacility,
           productStores: stores
         }
-        // The saved store when asked for and the facility has it, otherwise the first one. Only selects the store: callers fetch its details
+        // The saved store when the facility has it, otherwise the first one. Only selects the store: callers fetch its details
         if (stores?.length) {
-          const savedStore = useSavedStore ? stores.find((store: any) => store.productStoreId === this.preferredProductStoreId) : undefined
-          this.currentProductStore = savedStore ?? stores[0]
+          this.currentProductStore = stores.find((store: any) => store.productStoreId === this.preferredProductStoreId) ?? stores[0]
         } else {
           // A facility with no product store must not keep the previous facility's: its orders would be filtered by it.
           this.currentProductStore = {}
