@@ -210,6 +210,7 @@ const toggleFilter = (dimensionId: string, value: string) => {
 };
 
 const getErrorMessage = () => {
+  if(!currentProductStore.value?.productStoreId) {return translate("isn't linked to a product store. Link it to one to fulfill its orders.", { facilityName: currentFacility.value?.facilityName });}
   const hasFilters = Object.values(selections.value).some((values) => values.length);
   if(!searchQuery.value && hasFilters) {return translate("No orders match the selected filters.");}
 

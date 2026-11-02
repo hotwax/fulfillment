@@ -348,6 +348,7 @@
   "is identified as unfulfillable.": "{ productName } is identified as unfulfillable.",
   "is identified as unfulfillable. other containing this product will be unassigned from this store and sent to be rebrokered.": "{ productName } is identified as unfulfillable.  { space } { orders } other { orderText } containing this product will be unassigned from this store and sent to be rebrokered.",
   "is identified as unfulfillable. This order item will be unassigned from this store and sent to be rebrokered.": "{ productName } is identified as unfulfillable. { space } This order item will be unassigned from this store and sent to be rebrokered.",
+  "isn't linked to a product store. Link it to one to fulfill its orders.": "{facilityName} isn't linked to a product store. Link it to one to fulfill its orders.",
   "item": "item",
   "Item count": "Item count",
   "Item description": "Item description",

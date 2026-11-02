@@ -314,6 +314,9 @@ export const useProductStore = defineStore('productStore', {
         }
         if (stores?.length) {
           this.setCurrentProductStore(stores[0])
+        } else {
+          // A facility with no product store must not keep the previous facility's: its orders would be filtered by it.
+          this.currentProductStore = {}
         }
       } catch (error: any) {
         logger.error("error", error);
@@ -541,6 +544,11 @@ export const useProductStore = defineStore('productStore', {
     },
     async findProductStoreShipmentMethCount(productStoreId: string) {
       let productStoreShipmentMethCount = 0
+      if (!productStoreId) {
+        this.setProductStoreShipmentMethCount(productStoreShipmentMethCount)
+
+        return
+      }
       const params = {
         partyId: "_NA_",
         partyId_op: "equals",
