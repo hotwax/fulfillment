@@ -3,7 +3,7 @@ import { createPinia } from "pinia"
 import piniaPluginPersistedstate from 'pinia-plugin-persistedstate'
 import App from './App.vue'
 import router from './router';
-import { logger, createDxpI18n, imagePreview, initialiseConfig } from '@common';
+import { logger, createDxpI18n, faroUtil, imagePreview, initialiseConfig } from '@common';
 
 import { IonicVue } from '@ionic/vue';
 
@@ -37,13 +37,16 @@ pinia.use(piniaPluginPersistedstate)
 export const i18n = createDxpI18n(localeMessages)
 
 
+faroUtil.initialiseFaro()
+
 const app = createApp(App)
   .use(IonicVue, {
     mode: 'md',
     innerHTMLTemplatesEnabled: true
   })
   .use(logger as any, {
-    level: import.meta.env.VITE_DEFAULT_LOG_LEVEL
+    level: import.meta.env.VITE_DEFAULT_LOG_LEVEL,
+    afterHooks: [faroUtil.faroLoggerHook]
   })
   .use(pinia)
   .use(router)

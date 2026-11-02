@@ -2,7 +2,9 @@ import { defineStore } from 'pinia'
 import { api, commonUtil, useEmbeddedAppStore, logger, translate, useSolrSearch } from '@common'
 import { useUserStore } from '@/store/user'
 import Actions from "@/authorization/actions"
-const defaultProductStoreSettings = JSON.parse(import.meta.env.VITE_DEFAULT_PRODUCT_STORE_SETTINGS as string || '{}')
+import { resolveProductStoreSettings } from "@/utils/productStoreSettings"
+
+const defaultProductStoreSettings = resolveProductStoreSettings(import.meta.env.VITE_DEFAULT_PRODUCT_STORE_SETTINGS as string)
 
 export const useProductStore = defineStore('productStore', {
   state: () => ({
@@ -312,6 +314,9 @@ export const useProductStore = defineStore('productStore', {
         }
         if (stores?.length) {
           this.setCurrentProductStore(stores[0])
+        } else {
+          // A facility with no product store must not keep the previous facility's: its orders would be filtered by it.
+          this.currentProductStore = {}
         }
       } catch (error: any) {
         logger.error("error", error);
@@ -539,6 +544,11 @@ export const useProductStore = defineStore('productStore', {
     },
     async findProductStoreShipmentMethCount(productStoreId: string) {
       let productStoreShipmentMethCount = 0
+      if (!productStoreId) {
+        this.setProductStoreShipmentMethCount(productStoreShipmentMethCount)
+
+        return
+      }
       const params = {
         partyId: "_NA_",
         partyId_op: "equals",

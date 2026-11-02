@@ -237,7 +237,7 @@
                     <ion-note slot="end" v-if="getProductStock(item.productId, shipGroup.facilityId).qoh >= 0">
                       {{ getProductStock(item.productId, shipGroup.facilityId).qoh }} {{ translate("pieces in stock") }}
                     </ion-note>
-                    <ion-spinner slot="end" v-else-if="isFetchingStock" color="medium" name="crescent" />
+                    <ion-spinner slot="end" v-else-if="isFetchingStock(item.productId, shipGroup.facilityId)" color="medium" name="crescent" />
                     <ion-button v-else fill="clear" @click.stop="fetchProductStock(item.productId, shipGroup.facilityId)">
                       <ion-icon color="medium" slot="icon-only" :icon="cubeOutline" />
                     </ion-button>
@@ -276,13 +276,13 @@ const props = defineProps(["orderId"]);
 
 const orderStatuses = JSON.parse(import.meta.env.VITE_ORDER_STATUS as any);
 const itemStatuses = JSON.parse(import.meta.env.VITE_ITEM_STATUS as any);
-const isFetchingStock = ref(false);
 const isFetchingOrderInfo = ref(false);
 const invoicingFacility = ref({} as any);
 const additionalDetailItemExt = shallowRef(null as any);
 
 const order = computed(() => useOrderLookupStore().getCurrentOrder);
 const getProduct = (productId: string) => useProductStore().getProduct(productId);
+const isFetchingStock = (productId: string, facilityId?: string) => useStockStore().isFetchingStock(productId, facilityId);
 const getProductStock = (productId: string, facilityId?: string) => useStockStore().getProductStock(productId, facilityId);
 const getStatusDesc = (statusId: string) => useUtilStore().getStatusDesc(statusId);
 const getShipmentMethodDesc = (shipmentMethodId: string) => useUtilStore().getShipmentMethodDesc(shipmentMethodId);
@@ -307,10 +307,8 @@ const findTimeDiff = (startTime: any, endTime: any) => {
   return diffString;
 };
 
-const fetchProductStock = async (productId: string, facilityId: string) => {
-  isFetchingStock.value = true;
-  await useStockStore().fetchStock({ productId, facilityId });
-  isFetchingStock.value = false;
+const fetchProductStock = (productId: string, facilityId: string) => {
+  useStockStore().fetchStock({ productId, facilityId });
 };
 
 const shippingLabelActionPopover = async (ev: Event, shipGroup: any) => {

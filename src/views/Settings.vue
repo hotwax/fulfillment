@@ -4,6 +4,12 @@
       <ion-toolbar>
         <ion-menu-button slot="start" />
         <ion-title>{{ translate("Settings") }}</ion-title>
+        <ion-buttons slot="end">
+          <ion-button fill="clear" @click="openLogs()">
+            <ion-icon slot="start" :icon="documentTextOutline" />
+            {{ translate("View logs") }}
+          </ion-button>
+        </ion-buttons>
       </ion-toolbar>
     </ion-header>
 
@@ -103,6 +109,20 @@
           </ion-item>
         </ion-card>
 
+        <ion-card>
+          <ion-card-header>
+            <ion-card-title>
+              {{ translate("Open order filters") }}
+            </ion-card-title>
+          </ion-card-header>
+          <ion-card-content>
+            {{ translate("Choose which filters appear on the Open page. Applies to this device.") }}
+          </ion-card-content>
+          <ion-item v-for="dimension in OPEN_ORDER_FILTER_DIMENSIONS" :key="dimension.id" lines="none">
+            <ion-toggle label-placement="start" :checked="deviceSettings.openOrderFilterDimensions.includes(dimension.id)" @ionChange="setOpenOrderFilterDimension(dimension.id, $event.detail.checked)">{{ translate(dimension.label) }}</ion-toggle>
+          </ion-item>
+        </ion-card>
+
         <ion-card v-if="notificationPrefs.length">
           <ion-card-header>
             <ion-card-title>
@@ -181,10 +201,11 @@
 </template>
 
 <script setup lang="ts">
-import { IonAvatar, IonButton, IonCard, IonCardContent, IonCardHeader, IonCardTitle, IonCardSubtitle, IonChip, IonContent, IonHeader, IonIcon, IonItem, IonLabel, IonList, IonMenuButton, IonPage, IonProgressBar, IonSelect, IonSelectOption, IonTitle, IonText, IonToggle, IonToolbar, alertController, popoverController, onIonViewWillEnter } from "@ionic/vue";
+import { IonAvatar, IonButtons, IonButton, IonCard, IonCardContent, IonCardHeader, IonCardTitle, IonCardSubtitle, IonChip, IonContent, IonHeader, IonIcon, IonItem, IonLabel, IonList, IonMenuButton, IonPage, IonProgressBar, IonSelect, IonSelectOption, IonTitle, IonText, IonToggle, IonToolbar, alertController, popoverController, onIonViewWillEnter, modalController } from "@ionic/vue";
 import { computed, ref } from "vue";
-import { openOutline } from "ionicons/icons";
-import { commonUtil, DxpShopifyImg, emitter, firebaseMessaging,logger, translate, useNotificationStore, useAuth } from "@common";
+import { openOutline, documentTextOutline } from "ionicons/icons";
+import { commonUtil, DxpShopifyImg, emitter, firebaseMessaging,logger, translate, useNotificationStore, useAuth, DxpLogsModal } from "@common";
+import { deviceSettings, setOpenOrderFilterDimension } from "@/db/deviceSettings";
 import { useProductStore } from "@/store/productStore";
 import { useUserStore } from "@/store/user";
 
@@ -202,6 +223,7 @@ import { useOrderStore } from "@/store/order";
 import router from "@/router";
 import { firebaseUtil } from "@/utils/firebaseUtil"
 import Actions from "@/authorization/actions"
+import { OPEN_ORDER_FILTER_DIMENSIONS } from "@/utils/openOrderFilters"
 
 const userStore = useUserStore();
 
@@ -632,6 +654,13 @@ onIonViewWillEnter(async () => {
   await useProductStore().fetchProductStoreSettings(preferredStore.value.productStoreId);
   await notificationStore.fetchNotificationPreferences(import.meta.env.VITE_NOTIF_ENUM_TYPE_ID, import.meta.env.VITE_NOTIF_APP_ID, userStore.getUserProfile.userLoginId, (enumId: string) => firebaseMessaging.generateTopicName(commonUtil.getOMSInstanceName(), productStore.getCurrentFacility.facilityId, enumId));
 });
+
+async function openLogs() {
+  const logsModal = await modalController.create({
+    component: DxpLogsModal
+  });
+  return logsModal.present();
+}
 </script>
 
 <style scoped>
