@@ -1021,8 +1021,18 @@ const updateShipmentBoxType = async (shipmentPackage: any, order: any, ev: Custo
   const result = await popover.onDidDismiss();
 
   if (result.data && shipmentPackage.shipmentBoxTypeId !== result.data) {
-    shipmentPackage.shipmentBoxTypeId = result.data;
+    try {
+      const resp = await orderStore.updateShipmentPackage({ shipmentId: shipmentPackage.shipmentId, shipmentPackageSeqId: shipmentPackage.shipmentPackageSeqId, shipmentBoxTypeId: result.data }) as any;
+      if (!commonUtil.hasError(resp)) {
+        shipmentPackage.shipmentBoxTypeId = result.data;
+      } else {
+        throw resp.data;
+      }
+    } catch (err) {
+      commonUtil.showToast(translate("Failed to update box type"));
+      logger.error("Failed to update box type", err);
     }
+  }
 };
 
 const recycleInProgressOrders = async () => {

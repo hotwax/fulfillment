@@ -260,6 +260,7 @@
   "Failed to ship order": "Failed to ship order",
   "Failed to ship orders": "Failed to ship orders",
   "Failed to unpack the order": "Failed to unpack the order",
+  "Failed to update box type": "Failed to update box type",
   "Failed to update carrier and shipment method association.": "Failed to update carrier and shipment method association.",
   "Failed to update delivery days.": "Failed to update delivery days.",
   "Failed to update eCom inventory status": "Failed to update eCom inventory status",
