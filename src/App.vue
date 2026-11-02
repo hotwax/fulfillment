@@ -133,10 +133,12 @@ onMounted(async () => {
 
   const currentProductStore: any = useProductStore().getCurrentProductStore;
 
-    if (useAuth().isAuthenticated.value && currentProductStore?.productStoreId) {
-      // A restored session skips postLogin, so the live order sync starts here too.
-      void startLiveOrdersSync(useProductStore().getFacilities, useProductStore().getCurrentFacility?.facilityId, useProductStore().getCurrentProductStore?.productStoreId);
+    // A restored session skips postLogin, so the live order sync starts here too, also for a facility with no product store.
+    if (useAuth().isAuthenticated.value) {
+      void startLiveOrdersSync(useProductStore().getFacilities, useProductStore().getCurrentFacility?.facilityId, currentProductStore?.productStoreId);
+    }
 
+    if (useAuth().isAuthenticated.value && currentProductStore?.productStoreId) {
       await useProductStore().fetchProductStoreSettings(currentProductStore.productStoreId).catch((error) => logger.error(error));
 
       if (allNotificationPrefs.value?.length) {
