@@ -1091,7 +1091,7 @@ const shipOrder = async (currentOrder: any) => {
     }
   } catch (err) {
     const serverError = commonUtil.getErrorMessage(err);
-    commonUtil.showToast(`${translate("Failed to ship order")}. ${serverError}`);
+    commonUtil.showToast(`${translate("Something went wrong, could not ship the order")}. ${serverError}`);
     logger.error("Failed to ship the order", err);
   } finally {
     emitter.emit("dismissLoader");

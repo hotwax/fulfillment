@@ -1,7 +1,7 @@
 
 import { useOrderStore } from "@/store/order";
 import { useProductStore } from "@/store/product";
-import { commonUtil, logger, translate } from "@common";
+import { commonUtil, translate } from "@common";
 
 const orderCategoryParameters = {
 
@@ -121,13 +121,7 @@ const retryShippingLabel = async (order: any, showSuccessToast = true) => {
   order = await useOrderStore().updateShipmentPackageDetail(order)
 
   if (order.missingLabelImage) {
-    const errorMsg = await useOrderStore().fetchShipmentLabelError(order.shipmentId);
-    if (errorMsg) {
-      logger.error(errorMsg);
-      commonUtil.showToast(`${translate("Failed to generate shipping label")}. ${errorMsg}`);
-    } else {
-      commonUtil.showToast(translate("Failed to generate shipping label"));
-    }
+    commonUtil.showToast(translate("Failed to generate shipping label"));
   } else {
     if (showSuccessToast) commonUtil.showToast(translate("Shipping Label generated successfully"))
     isGenerated = true;

@@ -703,7 +703,7 @@ function hasInvalidPickedQuantity() {
   return currentOrder.value.items.some((item: any) => !item.pickedQuantity || item.pickedQuantity <= 0);
 }
 
-async function approveOrder(orderId: string) {
+async function approveOrder(orderId: string, errorMessage = "Order approval failed") {
   try {
     const resp = await useTransferOrderStore().approveTransferOrder(orderId);
     if (!commonUtil.hasError(resp)) {
@@ -716,7 +716,8 @@ async function approveOrder(orderId: string) {
   } catch (err) {
     const serverError = commonUtil.getErrorMessage(err);
     logger.error("Failed to approve the transfer order", err);
-    commonUtil.showToast(`${translate("Order approval failed")}. ${serverError}`);
+    const translatedMsg = translate(errorMessage);
+    commonUtil.showToast(`${translatedMsg}${translatedMsg.endsWith(".") ? "" : "."} ${serverError}`);
     return false;
   }
 }
@@ -741,7 +742,7 @@ async function shiplater() {
         },
         handler: async () => {
           preventLeave.value = true;
-          const success = await approveOrder(currentOrder.value.orderId);
+          const success = await approveOrder(currentOrder.value.orderId, "Failed to approve the transfer order to ship later.");
           if (success) {
             router.replace({ path: "/transfer-orders" });
           } else {

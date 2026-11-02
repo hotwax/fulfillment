@@ -1057,9 +1057,8 @@ export const useCarrierStore = defineStore("carrier", {
         }
       } catch (error) {
         const serverError = commonUtil.getErrorMessage(error);
-        const baseMsg = messages?.errorMessage ? messages.errorMessage.replace(/\.$/, "") : "Failed to update shipment method";
-        logger.error(baseMsg, error);
-        commonUtil.showToast(`${translate(`${baseMsg}.`)} ${serverError}`);
+        logger.error(messages.errorMessage, error);
+        commonUtil.showToast(`${translate(messages.errorMessage)} ${serverError}`);
       }
     },
     async fetchFacilityCarriers() {
