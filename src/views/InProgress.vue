@@ -412,6 +412,7 @@ const openShipmentBoxPopover = async (ev: Event, item: any, orderItemSeqId: numb
 };
 
 const getErrorMessage = () => {
+  if(!currentProductStoreId.value) {return translate("isn't linked to a product store. Link it to one to fulfill its orders.", { facilityName: currentFacility.value?.facilityName });}
   return queryString.value ? (selectedPicklistId.value ? translate("No results found for . Try using different filters.", { searchedQuery: queryString.value }) : translate("No results found for . Try searching Open or Completed tab instead. If you still can't find what you're looking for, try switching stores.", { searchedQuery: queryString.value, lineBreak: "<br />" })) : translate("doesn't have any orders in progress right now.", { facilityName: currentFacility.value?.facilityName });
 };
 

@@ -310,6 +310,7 @@ const getTime = (time: any) => {
 };
 
 const getErrorMessage = () => {
+  if(!currentProductStoreId.value) {return translate("isn't linked to a product store. Link it to one to fulfill its orders.", { facilityName: currentFacility.value?.facilityName });}
   return queryString.value ? ((selectedCarrierPartyId.value || selectedShipmentMethods.value.length) ? translate("No results found for . Try using different filters.", { searchedQuery: queryString.value }) : translate("No results found for . Try searching In Progress or Open tab instead. If you still can't find what you're looking for, try switching stores.", { searchedQuery: queryString.value, lineBreak: "<br />" })) : translate("doesn't have any completed orders right now.", { facilityName: currentFacility.value?.facilityName });
 };
 

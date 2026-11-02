@@ -308,6 +308,7 @@
   "Invoicing facility": "Invoicing facility",
   "is identified as unfulfillable. other containing this product will be unassigned from this store and sent to be rebrokered.": "{ productName }は出荷不可能と判定されました。他の{ space }{ orders }件の{ orderText }がこのストアから解除され、再仲介のために送られます。",
   "is identified as unfulfillable. This order item will be unassigned from this store and sent to be rebrokered.": "{ productName }は出荷不可能と判定されました。{ space }この注文項目はこのストアから解除され、再仲介のために送られます。",
+  "isn't linked to a product store. Link it to one to fulfill its orders.": "{facilityName}は商品ストアに紐付けられていません。注文を処理するには商品ストアに紐付けてください。",
   "item": "項目",
   "Item count": "項目数",
   "Item description": "Item description",

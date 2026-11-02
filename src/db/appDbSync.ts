@@ -92,10 +92,11 @@ export async function startLiveOrdersSync(facilities: any[], facilityId?: string
 }
 
 // The Open page's facility gets its items and products first. A newly focused one gets them now, rather than on the next tick.
+// A facility with no product store passes none, which clears the last facility's.
 export async function focusLiveOrders(facilityId?: string, productStoreId?: string): Promise<void> {
-  const changed = facilityId !== focusedFacilityId || (!!productStoreId && productStoreId !== focusedProductStoreId);
+  const changed = facilityId !== focusedFacilityId || productStoreId !== focusedProductStoreId;
   focusedFacilityId = facilityId;
-  if(productStoreId) {focusedProductStoreId = productStoreId;}
+  focusedProductStoreId = productStoreId;
   if(!appDbSync.syncService()) {return;}
   await appDbSync.activateSyncDomains(liveOrderDomains(facilityId, masterFacilityIds, focusedProductStoreId), syncOwner);
   if(changed && facilityId) {await refreshLiveOrders([SHIPMENTS_DOMAIN, PICKLISTS_DOMAIN, TRANSFER_ORDERS_DOMAIN, ORDER_ITEMS_DOMAIN, PRODUCTS_DOMAIN]);}
