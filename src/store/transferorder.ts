@@ -1,5 +1,5 @@
 import { defineStore } from "pinia"
-import { api, commonUtil, logger, translate } from "@common";
+import { api, commonUtil, logger, translate, useShopify } from "@common";
 import { cogOutline } from "ionicons/icons";
 
 import { useProductStore } from "@/store/product"
@@ -278,7 +278,12 @@ export const useTransferOrderStore = defineStore("transferorder", {
 
         const pdfUrl = window.URL.createObjectURL(resp.data);
         try {
-          (window as any).open(pdfUrl, "_blank").focus();
+          // Inside Shopify the app is in a frame that can't open a new tab: the app bridge opens the pdf
+          if (commonUtil.isAppEmbedded()) {
+            useShopify().redirect(pdfUrl);
+          } else {
+            (window as any).open(pdfUrl, "_blank").focus();
+          }
         } catch {
           commonUtil.showToast(
             translate("Unable to open as browser is blocking pop-ups.", {
