@@ -54,17 +54,17 @@
             {{ translate("Setting fulfillment capacity to 0 disables new order from being allocated to this facility. Leave this empty if this facility's fulfillment capacity is unrestricted.") }}
           </ion-card-content>
           <ion-item lines="none" v-if="orderLimitType === 'custom'">
-            <ion-text>{{ currentFacilityDetails?.orderCount }}</ion-text>
-            <ion-progress-bar class="ion-margin" :value="currentFacilityDetails?.orderCount / (fulfillmentOrderLimit as any)"></ion-progress-bar>
-            <ion-chip :disabled="!userStore.hasPermission(Actions.APP_UPDT_STR_FULFLMNT_CONFIG)" :outline="true" @click="changeOrderLimitPopover">{{ currentFacilityDetails?.maximumOrderLimit }}</ion-chip>
+            <ion-text slot="start">{{ currentFacilityDetails?.orderCount }}</ion-text>
+            <ion-progress-bar :value="currentFacilityDetails?.orderCount / (fulfillmentOrderLimit as any)"></ion-progress-bar>
+            <ion-chip slot="end" :disabled="!userStore.hasPermission(Actions.APP_UPDT_STR_FULFLMNT_CONFIG)" :outline="true" @click="changeOrderLimitPopover">{{ currentFacilityDetails?.maximumOrderLimit }}</ion-chip>
           </ion-item>
           <ion-item lines="none" v-else-if="orderLimitType === 'unlimited'">
             <ion-label>{{ translate("orders allocated today", { orderCount: currentFacilityDetails?.orderCount }) }}</ion-label>
-            <ion-chip :disabled="!userStore.hasPermission(Actions.APP_UPDT_STR_FULFLMNT_CONFIG)" :outline="true" @click="changeOrderLimitPopover">{{ translate("Unlimited") }}</ion-chip>
+            <ion-chip slot="end" :disabled="!userStore.hasPermission(Actions.APP_UPDT_STR_FULFLMNT_CONFIG)" :outline="true" @click="changeOrderLimitPopover">{{ translate("Unlimited") }}</ion-chip>
           </ion-item>
           <ion-item lines="none" v-else>
             <ion-label>{{ translate("orders in fulfillment queue", { orderCount: currentFacilityDetails?.orderCount }) }}</ion-label>
-            <ion-chip :disabled="!userStore.hasPermission(Actions.APP_UPDT_STR_FULFLMNT_CONFIG)" :outline="true" @click="changeOrderLimitPopover" color="danger" fill="outline">{{ fulfillmentOrderLimit }}</ion-chip>
+            <ion-chip slot="end" :disabled="!userStore.hasPermission(Actions.APP_UPDT_STR_FULFLMNT_CONFIG)" :outline="true" @click="changeOrderLimitPopover" color="danger" fill="outline">{{ fulfillmentOrderLimit }}</ion-chip>
           </ion-item>
         </ion-card>
 
