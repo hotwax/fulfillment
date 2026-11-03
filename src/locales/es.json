@@ -234,6 +234,7 @@
   "Failed to ship orders": "Failed to ship orders",
   "Failed to unpack the order": "Error al desempacar la orden",
   "Failed to update box type": "Error al actualizar el tipo de caja",
+  "Failed to update carrier.": "No se pudo actualizar el transportista.",
   "Failed to update carrier and shipment method association.": "Error al actualizar transportadora y asociación de metodo de envio.",
   "Failed to update delivery days.": "Error al actualizar los dias de envio.",
   "Failed to update eCom inventory status": "Error al actualizar el estado del inventario de comercio electrónico",
