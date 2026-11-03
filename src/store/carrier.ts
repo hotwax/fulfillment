@@ -162,7 +162,7 @@ export const useCarrierStore = defineStore("carrier", {
     async updateCarrier(payload: any) {
       try {
         const resp = await api({
-          url: `/ admin / organizations / ${payload.partyId} `,
+          url: `/admin/organizations/${payload.partyId}`,
           method: "POST",
           data: payload
         })

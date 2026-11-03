@@ -170,7 +170,9 @@ const updateCarrierName = async () => {
             commonUtil.showToast(translate("Carrier name updated successfully."));
             await carrierStore.fetchCarrierDetail({ partyId: currentCarrier.value.partyId });
           } catch (err) {
+            const serverError = commonUtil.getErrorMessage(err);
             logger.error(err);
+            commonUtil.showToast(`${translate("Failed to update carrier.")} ${serverError}`);
           }
           emitter.emit("dismissLoader");
         }

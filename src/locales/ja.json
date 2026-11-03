@@ -234,6 +234,7 @@
   "Failed to ship orders": "Failed to ship orders",
   "Failed to unpack the order": "注文の梱包解除に失敗しました",
   "Failed to update box type": "箱の種類の更新に失敗しました",
+  "Failed to update carrier.": "キャリアの更新に失敗しました。",
   "Failed to update carrier and shipment method association.": "キャリアと出荷方法の関連付けの更新に失敗しました。",
   "Failed to update delivery days.": "配達日数の更新に失敗しました。",
   "Failed to update eCom inventory status": "EC在庫ステータスの更新に失敗しました",
