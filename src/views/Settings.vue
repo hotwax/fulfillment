@@ -276,6 +276,7 @@ const getCurrentFacilityDetails = async () => {
 
 const getFacilityOrderCount = async () => {
   let resp: any;
+  currentFacilityDetails.value.orderCount = 0;
   try {
     resp = await useProductStore().getFacilityOrderCount({
       facilityId: currentFacility.value?.facilityId,
@@ -286,10 +287,9 @@ const getFacilityOrderCount = async () => {
     if (!commonUtil.hasError(resp) && resp.data.length) {
       currentFacilityDetails.value.orderCount = resp.data[0]?.lastOrderCount;
     } else {
-      throw resp.data;
+      logger.warn("Unable to find total orders count");
     }
   } catch (err) {
-    currentFacilityDetails.value.orderCount = 0;
     logger.error("Failed to fetch total orders count", err);
   }
 };
@@ -317,7 +317,7 @@ const getEcomInvStatus = async () => {
       pageSize: 1
     });
 
-    if (!commonUtil.hasError(resp)) {
+    if (!commonUtil.hasError(resp) && resp.data?.length) {
       facilityGroupDetails.value.facilityGroupId = resp.data[0].facilityGroupId;
       resp = await useProductStore().getFacilityGroupAndMemberDetails({
         customParametersMap: {
@@ -337,7 +337,7 @@ const getEcomInvStatus = async () => {
         throw resp.data;
       }
     } else {
-      throw resp.data;
+      logger.warn("No record found for eCom inventory config");
     }
   } catch (err) {
     logger.error("Failed to fetch eCom inventory config", err);
