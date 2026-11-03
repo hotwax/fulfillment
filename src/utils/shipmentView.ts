@@ -63,21 +63,6 @@ export function toShipmentView(shipment: any, { requiresLabel }: { requiresLabel
   };
 }
 
-// The boxes the server has for the items, from fresh route segments. A pack that fails on the label has already saved its box
-// changes, so a change the server has becomes the current box and the next pack does not send it again (sent again, it makes
-// the pack retry the label instead of taking a manual tracking code). A change the server lacks stays pending, and an item
-// with no pending change moves to the server's box.
-export function withSavedBoxes(items: any[], routeSegments: any[]) {
-  return (items ?? []).map((item: any) => {
-    const packageName = (routeSegments ?? []).find((segment) => segment.shipmentItemSeqId === item.shipmentItemSeqId)?.packageName;
-    if(!packageName) {return item;}
-
-    const selectedBox = item.selectedBox === item.currentBox ? packageName : item.selectedBox;
-
-    return { ...item, selectedBox, currentBox: packageName };
-  });
-}
-
 export interface ShipmentFilters {
   query?: string;
   picklistId?: string;

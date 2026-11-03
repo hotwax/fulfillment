@@ -1,7 +1,6 @@
 import { api, commonUtil, emitter, logger, useShopify, useSolrSearch, translate } from "@common";
 import { defineStore } from "pinia"
 import { orderUtil } from "@/utils/orderUtil";
-import { withSavedBoxes } from "@/utils/shipmentView";
 
 import { DateTime } from "luxon"
 import { cogOutline } from "ionicons/icons";
@@ -791,10 +790,24 @@ export const useOrderStore = defineStore("order", {
             return { ...shipmentPackage, ...shipmentPackageRouteSegDetail }
           })
 
+          // A pack that fails on the label has already saved its box changes, so a box the server has becomes the item's
+          // current box and the next pack does not send it again (sent again, the pack retries the label instead of taking a
+          // manual tracking code). A change the server lacks stays pending; an item with no pending change takes the server's box.
+          const getItemsWithSavedBoxes = (items: any[] = []) => items.map((item: any) => {
+            const packageName = responseData.find((detail: any) => detail.shipmentItemSeqId === item.shipmentItemSeqId)?.packageName
+            if (!packageName) {
+              return item
+            }
+
+            return { ...item, selectedBox: item.selectedBox === item.currentBox ? packageName : item.selectedBox, currentBox: packageName }
+          })
+
+          let isOrderUpdated = false
           const updateShipmentPackages = (order: any) => {
+            isOrderUpdated = true
             order.shipmentPackageRouteSegDetails = responseData
             order.shipmentPackages = shipmentPackages
-            order.items = withSavedBoxes(order.items, responseData)
+            order.items = getItemsWithSavedBoxes(order.items)
             order.labelImageUrl = shipmentPackageRouteSegDetails[0]?.labelImageUrl
             order.carrierPartyId = responseData[0]?.carrierPartyId
             order.shipmentMethodTypeId = responseData[0]?.shipmentMethodTypeId
@@ -824,6 +837,11 @@ export const useOrderStore = defineStore("order", {
               currentOrder = order
               this.setInProgressOrders({ orders: inProgressOrders, total: this.inProgress.total })
             }
+          }
+          // The In Progress page's cards come from the synced shipments, not from a list in this store: update the order passed in.
+          if (!isOrderUpdated) {
+            currentOrder = JSON.parse(JSON.stringify(payload))
+            updateShipmentPackages(currentOrder)
           }
         } else {
           throw resp.data
