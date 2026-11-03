@@ -23,16 +23,16 @@
         <ion-label>{{ translate("Loading...") }}</ion-label>
       </div>
 
-      <template v-else-if="filteredFacilities().length">
-        <ion-item v-for="facility in filteredFacilities()" :key="facility.facilityId" @click="selectFacility(facility.facilityId)">
-          <ion-radio data-testid="facility-radio-options" label-placement="end" justify="start" :value="facility.facilityId" :checked="facility.facilityId === selectedDestinationFacilityId">
+      <ion-radio-group v-else-if="filteredFacilities().length" v-model="selectedDestinationFacilityId">
+        <ion-item v-for="facility in filteredFacilities()" :key="facility.facilityId">
+          <ion-radio data-testid="facility-radio-options" label-placement="end" justify="start" :value="facility.facilityId">
             <ion-label>
               {{ facility.facilityName || facility.facilityId }}
               <p>{{ facility.facilityId }}</p>
             </ion-label>
           </ion-radio>
         </ion-item>
-      </template>
+      </ion-radio-group>
 
       <div v-else lines="none" class="empty-state">
         <ion-label>{{ translate('No facilities found') }}</ion-label>
@@ -48,7 +48,7 @@
 </template>
 
 <script setup lang="ts">
-import { IonHeader, IonToolbar, IonButtons, IonButton, IonIcon, IonTitle, IonContent, IonInput, IonSearchbar, IonList, IonListHeader, IonItem, IonRadio, IonLabel, IonFab, IonFabButton, modalController } from '@ionic/vue';
+import { IonHeader, IonToolbar, IonButtons, IonButton, IonIcon, IonTitle, IonContent, IonInput, IonSearchbar, IonList, IonListHeader, IonItem, IonRadio, IonRadioGroup, IonLabel, IonFab, IonFabButton, modalController } from '@ionic/vue';
 import { closeOutline, saveOutline } from 'ionicons/icons';
 import { computed, ref, onMounted } from 'vue';
 import { commonUtil, logger, translate } from "@common";
@@ -100,10 +100,6 @@ function filteredFacilities() {
     const id = (facility.facilityId || "").toLowerCase();
     return name.includes(value) || id.includes(value);
   });
-}
-
-function selectFacility(id: string) {
-  selectedDestinationFacilityId.value = id;
 }
 
 function closeModal() {
