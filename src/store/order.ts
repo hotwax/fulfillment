@@ -1,6 +1,7 @@
 import { api, commonUtil, emitter, logger, useShopify, useSolrSearch, translate } from "@common";
 import { defineStore } from "pinia"
 import { orderUtil } from "@/utils/orderUtil";
+import { withSavedBoxes } from "@/utils/shipmentView";
 
 import { DateTime } from "luxon"
 import { cogOutline } from "ionicons/icons";
@@ -793,6 +794,7 @@ export const useOrderStore = defineStore("order", {
           const updateShipmentPackages = (order: any) => {
             order.shipmentPackageRouteSegDetails = responseData
             order.shipmentPackages = shipmentPackages
+            order.items = withSavedBoxes(order.items, responseData)
             order.labelImageUrl = shipmentPackageRouteSegDetails[0]?.labelImageUrl
             order.carrierPartyId = responseData[0]?.carrierPartyId
             order.shipmentMethodTypeId = responseData[0]?.shipmentMethodTypeId

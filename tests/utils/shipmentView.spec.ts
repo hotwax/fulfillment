@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { filterShipments, lastActivityOf, matchesQuery, picklistView, sortShipments, toShipmentView, withoutKitComponents } from "@/utils/shipmentView";
+import { filterShipments, lastActivityOf, matchesQuery, picklistView, sortShipments, toShipmentView, withSavedBoxes, withoutKitComponents } from "@/utils/shipmentView";
 
 const shipment = (overrides: Record<string, unknown> = {}) => ({
   shipmentId: "S1",
@@ -141,5 +141,41 @@ describe("picklistView", () => {
     expect(view.pickersName).toBe("Casey Morgan, Night shift");
     expect(view.pickerIds).toEqual(["1", "2"]);
     expect(view.date).toBe("t1000");
+  });
+});
+
+describe("withSavedBoxes", () => {
+  const segments = [
+    { shipmentItemSeqId: "01", packageName: "A" },
+    { shipmentItemSeqId: "02", packageName: "B" }
+  ];
+
+  it("takes a box change the server already saved as the current box, so it is not sent again", () => {
+    // A pack that failed on the label had saved the move of item 02 to box B.
+    const items = [
+      { shipmentItemSeqId: "01", selectedBox: "A", currentBox: "A" },
+      { shipmentItemSeqId: "02", selectedBox: "B", currentBox: "A" }
+    ];
+
+    expect(withSavedBoxes(items, segments).map((item: any) => [item.selectedBox, item.currentBox])).toEqual([["A", "A"], ["B", "B"]]);
+  });
+
+  it("keeps a box change the server did not save, so the next pack sends it", () => {
+    const items = [{ shipmentItemSeqId: "02", selectedBox: "C", currentBox: "A" }];
+
+    expect(withSavedBoxes(items, [{ shipmentItemSeqId: "02", packageName: "A" }])[0]).toMatchObject({ selectedBox: "C", currentBox: "A" });
+  });
+
+  it("moves an item with no pending change to the box the server has", () => {
+    const items = [{ shipmentItemSeqId: "02", selectedBox: "A", currentBox: "A" }];
+
+    expect(withSavedBoxes(items, segments)[0]).toMatchObject({ selectedBox: "B", currentBox: "B" });
+  });
+
+  it("leaves an item the server has no package for as it is", () => {
+    const items = [{ shipmentItemSeqId: "03", selectedBox: "A", currentBox: "A" }];
+
+    expect(withSavedBoxes(items, segments)[0]).toMatchObject({ selectedBox: "A", currentBox: "A" });
+    expect(withSavedBoxes(undefined as any, segments)).toEqual([]);
   });
 });
