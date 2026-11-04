@@ -14,7 +14,7 @@
       <ion-list-header>
         {{ translate("Manifests from the last seven days") }}
       </ion-list-header>
-      <ion-item v-for="manifest in carrierConfiguration[selectedCarrierPartyId]?.manifests" :key="manifest.fromDate">
+      <ion-item v-for="manifest in facilityManifests" :key="manifest.manifestId || manifest.contentId">
         <ion-label>
           {{ translate("Manifest") }}
           <p>{{ DateTime.fromMillis(manifest.fromDate).toFormat("dd MMMM yyyy hh:mm a ZZZZ") }}</p>
@@ -22,13 +22,13 @@
         <ion-button fill="outline" @click="downloadCarrierManifest(manifest)">
           <ion-icon :icon="printOutline" slot="start"/>
           {{ translate("Print") }}
-          <ion-spinner name="crescent" slot="end" v-if="loadingContentId === manifest.contentId" />
+          <ion-spinner name="crescent" slot="end" v-if="loadingContentId === (manifest.manifestId || manifest.contentId)" />
         </ion-button>
       </ion-item>
     </ion-list>
 
     <!-- Empty state -->
-    <div class="empty-state" v-if="!carrierConfiguration[selectedCarrierPartyId]?.manifests?.length">
+    <div class="empty-state" v-if="!facilityManifests.length">
       <p>{{ translate("No historical manifests found.") }}</p>
     </div>
   </ion-content>
@@ -48,6 +48,11 @@ const currentFacility = computed(() => useAppProductStore().getCurrentFacility);
 const loadingContentId = ref(null as any);
 const carrierStore = useCarrierStore();
 
+const facilityManifests = computed(() => {
+  const manifests = props.carrierConfiguration[props.selectedCarrierPartyId]?.manifests || [];
+  return manifests.filter((manifest: any) => manifest.facilityId === currentFacility.value?.facilityId);
+});
+
 const closeModal = () => {
   modalController.dismiss({ dismissed: true });
 };
@@ -58,7 +63,8 @@ const downloadCarrierManifest = async (manifest: any) => {
     facilityId: currentFacility.value?.facilityId,
     carrierPartyId: props.selectedCarrierPartyId,
     manifestServiceName: props.carrierConfiguration[props.selectedCarrierPartyId]?.["MANIFEST_PRINT"],
-    manifestContentId: manifest.contentId
+    manifestContentId: manifest.contentId,
+    manifestId: manifest.manifestId
   };
 
   try {
