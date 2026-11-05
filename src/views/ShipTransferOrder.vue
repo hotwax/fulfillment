@@ -260,12 +260,14 @@ import { useProductStore } from "@/store/product";
 import { useUtilStore } from "@/store/util";
 import { useCarrierStore } from "@/store/carrier";
 import { useTransferOrderStore } from "@/store/transferorder";
+import { useStockStore } from "@/store/stock";
 import { dedupeShippingRates, shippingRateKey, shippingRateName } from "@/utils/shippingRates";
 import { CARRIER_PACKAGE_WEIGHT_LIMIT_LB, type PackageView, toPackageView, weightBreakdown } from "@/utils/packageDetails";
 import { formatDeliveryDate, isAfter, orderDeliveryEstimate, suggestRate, toIsoDate } from "@/utils/deliveryEstimate";
 import router from "@/router";
 import { refreshLiveOrders } from "@/db/appDbSync";
 import { TRANSFER_ORDERS_DOMAIN } from "@/db/domains";
+import { type TransferInventoryValidation, validateTransferInventory } from "@/utils/transferInventory";
 
 const route = router.currentRoute.value;
 const shipmentId = route?.params?.shipmentId as string;
@@ -275,6 +277,7 @@ const productIdentificationPref = computed(() => useAppProductStore().getProduct
 const orderStore = useOrderStore();
 const transferOrderStore = useTransferOrderStore();
 const carrierStore = useCarrierStore();
+const stockStore = useStockStore();
 
 const getProduct = (productId: string) => useProductStore().getProduct(productId);
 const shipmentMethodsByCarrier = computed(() => useUtilStore().getShipmentMethodsByCarrier);
@@ -998,8 +1001,19 @@ async function shipOrder() {
     return;
   }
 
+  isProcessingShipment.value = true;
+  const inventoryValidation = await refreshShipmentOnHand();
+  if(inventoryValidation.status !== "valid") {
+    const message = inventoryValidation.status === "insufficient"
+      ? translate("Only {quantity} on hand at this store. Count the item and adjust it, then ship.", { quantity: inventoryValidation.onHand })
+      : translate("On-hand inventory could not be verified. Try again before shipping.");
+    commonUtil.showToast(message);
+    isProcessingShipment.value = false;
+
+    return;
+  }
+
   try {
-    isProcessingShipment.value = true;
     const payload: any = {
       shipmentId: shipment.shipmentId,
       shipmentRouteSegmentId: shipment.shipmentRouteSegmentId,
@@ -1029,6 +1043,23 @@ async function shipOrder() {
     logger.error("Failed to ship the shipment.", err);
     commonUtil.showToast(`${translate("Something went wrong, could not ship the shipment")}. ${serverError}`);
   }
+}
+
+async function refreshShipmentOnHand(): Promise<TransferInventoryValidation> {
+  const facilityId = shipmentDetails.value.originFacilityId || useAppProductStore().getCurrentFacility?.facilityId;
+  const productIds = [...new Set(shipmentItems.value.map((item: any) => item.productId))] as string[];
+  const stockByProduct: Record<string, any> = {};
+
+  if(facilityId) {
+    await Promise.all(productIds.map(async (productId) => {
+      const stock = await stockStore.fetchStock({ productId, facilityId });
+      if(stock) {
+        stockByProduct[productId] = stock;
+      }
+    }));
+  }
+
+  return validateTransferInventory(shipmentItems.value.map((item: any) => ({ productId: item.productId, quantity: item.quantity })), stockByProduct);
 }
 
 // Leaving after a shipment, a label or a new transfer order: the list the user returns to is read again.
