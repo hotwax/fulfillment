@@ -129,6 +129,23 @@ const getPickedToOrderedFraction = (currentItem: any) => {
   return 0;
 };
 
+const exceedsOnHand = (quantity: any, selectedItem: any) => {
+  if(!router.currentRoute.value.path.includes("/transfer-order-details")) {
+    return false;
+  }
+
+  const onHand = Number(selectedItem.qoh);
+
+  return selectedItem.qoh !== null && selectedItem.qoh !== undefined && Number.isFinite(onHand) && Number(quantity) > onHand;
+};
+
+const setPickedQuantityValidity = (quantity: any, selectedItem: any) => {
+  const exceedsOrdered = quantity > (selectedItem.orderedQuantity - (selectedItem.shippedQuantity || 0));
+  const isInvalid = exceedsOrdered || exceedsOnHand(quantity, selectedItem);
+  pickedQuantityInput.value?.$el.classList.toggle("ion-invalid", isInvalid);
+  pickedQuantityInput.value?.$el.classList.toggle("ion-valid", !isInvalid);
+};
+
 const pickAll = async (selectedItem: any) => {
   const currentItem = currentOrder.value.items.find((ele: any) => ele.orderItemSeqId === selectedItem.orderItemSeqId);
   if (currentItem) {
@@ -136,8 +153,11 @@ const pickAll = async (selectedItem: any) => {
     currentItem.pickedQuantity = pickedQuantity.value;
     currentItem.progress = currentItem.pickedQuantity / currentItem.quantity;
   }
-  pickedQuantityInput.value?.$el.classList.remove("ion-valid");
-  pickedQuantityInput.value?.$el.classList.remove("ion-invalid");
+  pickedQuantityInput.value?.$el.classList.add("ion-touched");
+  setPickedQuantityValidity(pickedQuantity.value, selectedItem);
+  if(exceedsOnHand(pickedQuantity.value, selectedItem)) {
+    commonUtil.showToast(translate("Only {quantity} on hand at this store. Count the item and adjust it, then ship.", { quantity: selectedItem.qoh }));
+  }
   await useTransferOrderStore().updateCurrentTransferOrder(currentOrder.value);
 };
 
@@ -171,9 +191,7 @@ const validatePickedQuantity = (event: any, selectedItem: any) => {
 
   if (value === "") return;
 
-  value > (selectedItem.orderedQuantity - item.value.shippedQuantity)
-    ? pickedQuantityInput.value?.$el.classList.add("ion-invalid")
-    : pickedQuantityInput.value?.$el.classList.add("ion-valid");
+  setPickedQuantityValidity(value, selectedItem);
 };
 
 const markPickedQuantityTouched = () => {
@@ -182,6 +200,10 @@ const markPickedQuantityTouched = () => {
 
 const getErrorText = () => {
   const path = router.currentRoute.value.path;
+  if(exceedsOnHand(item.value.pickedQuantity, item.value)) {
+    return translate("Only {quantity} on hand at this store. Count the item and adjust it, then ship.", { quantity: item.value.qoh });
+  }
+
   return path.includes("/create-transfer-order")
     ? translate("Please enter valid item quantity.")
     : translate("The picked quantity cannot exceed the ordered quantity.") + " " + (item.value.shippedQuantity > 0 ? translate("already shipped.", { shippedQuantity: item.value.shippedQuantity }) : "");
