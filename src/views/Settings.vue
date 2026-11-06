@@ -276,6 +276,7 @@ const getCurrentFacilityDetails = async () => {
 
 const getFacilityOrderCount = async () => {
   let resp: any;
+  currentFacilityDetails.value.orderCount = 0;
   try {
     resp = await useProductStore().getFacilityOrderCount({
       facilityId: currentFacility.value?.facilityId,
@@ -283,13 +284,16 @@ const getFacilityOrderCount = async () => {
       pageSize: 1,
       fieldsToSelect: ["entryDate", "lastOrderCount"]
     });
-    if (!commonUtil.hasError(resp) && resp.data.length) {
-      currentFacilityDetails.value.orderCount = resp.data[0]?.lastOrderCount;
-    } else {
+    if (commonUtil.hasError(resp)) {
       throw resp.data;
     }
+
+    if (resp.data?.length) {
+      currentFacilityDetails.value.orderCount = resp.data[0]?.lastOrderCount;
+    } else {
+      logger.warn("Unable to find total orders count");
+    }
   } catch (err) {
-    currentFacilityDetails.value.orderCount = 0;
     logger.error("Failed to fetch total orders count", err);
   }
 };
@@ -317,28 +321,33 @@ const getEcomInvStatus = async () => {
       pageSize: 1
     });
 
-    if (!commonUtil.hasError(resp)) {
-      facilityGroupDetails.value.facilityGroupId = resp.data[0].facilityGroupId;
-      resp = await useProductStore().getFacilityGroupAndMemberDetails({
-        customParametersMap: {
-          facilityId: currentFacility.value?.facilityId,
-          facilityGroupId: facilityGroupDetails.value.facilityGroupId,
-          pageIndex: 0,
-          pageSize: 1
-        },
-        dataDocumentId: "FacilityGroupAndMember",
-        filterByDate: true
-      });
-
-      if (!commonUtil.hasError(resp)) {
-        facilityGroupDetails.value = { ...facilityGroupDetails.value, ...resp.data.entityValueList[0] };
-        isEComInvEnabled.value = true;
-      } else {
-        throw resp.data;
-      }
-    } else {
+    if (commonUtil.hasError(resp)) {
       throw resp.data;
     }
+
+    if (!resp.data?.length) {
+      logger.warn("No record found for eCom inventory config");
+      return;
+    }
+
+    facilityGroupDetails.value.facilityGroupId = resp.data[0].facilityGroupId;
+    resp = await useProductStore().getFacilityGroupAndMemberDetails({
+      customParametersMap: {
+        facilityId: currentFacility.value?.facilityId,
+        facilityGroupId: facilityGroupDetails.value.facilityGroupId,
+        pageIndex: 0,
+        pageSize: 1
+      },
+      dataDocumentId: "FacilityGroupAndMember",
+      filterByDate: true
+    });
+
+    if (commonUtil.hasError(resp)) {
+      throw resp.data;
+    }
+
+    facilityGroupDetails.value = { ...facilityGroupDetails.value, ...resp.data.entityValueList[0] };
+    isEComInvEnabled.value = true;
   } catch (err) {
     logger.error("Failed to fetch eCom inventory config", err);
   }
