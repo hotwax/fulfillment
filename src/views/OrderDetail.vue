@@ -1153,7 +1153,7 @@ const fetchOrderInvoicingStatus = async () => {
       if (Object.keys(retailProStatus).length && retailProStatus?.attrValue === "Invoiced") {
         orderInvoicingInfoValue["invoicingConfirmationDate"] = retailProStatus?.lastUpdatedStamp;
       }
-    } else {
+    } else if (commonUtil.hasError(resp)) {
       throw resp.data;
     }
   } catch (error: any) {

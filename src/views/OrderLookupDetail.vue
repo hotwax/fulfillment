@@ -344,7 +344,7 @@ const fetchOrderInvoicingFacility = async () => {
       if (invoicingFacilityValue) {
         invoicingFacility.value = invoicingFacilityValue;
       }
-    } else {
+    } else if (commonUtil.hasError(resp)) {
       throw resp.data;
     }
   } catch (error: any) {

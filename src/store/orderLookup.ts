@@ -205,8 +205,12 @@ export const useOrderLookupStore = defineStore("orderLookup", {
           else stateOrders = orders
           await useProductStore().getProductInformation({ orders })
           await useUtilStore().fetchShipmentMethodTypeDesc(shipmentMethodTypeIds)
-        } else {
+        } else if (commonUtil.hasError(resp)) {
           throw resp.data
+        } else if (params?.isFilterUpdated && (!params?.viewIndex || params.viewIndex == 0)) {
+          stateOrders = []
+          orderCount = 0
+          itemCount = 0
         }
       } catch (error) {
         logger.error(error)
