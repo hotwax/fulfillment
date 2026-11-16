@@ -7,10 +7,10 @@
     "origin": "https://hotwax-fulfillment.web.app"
   },
   "versions": [],
-  "defaultVersion": null,
-  "configuredEnvironment": null,
-  "defaultSource": null,
-  "checkedAt": "2026-11-16T11:32:32.349Z",
+  "defaultVersion": "v4.2.6",
+  "configuredEnvironment": "AppEnvProd",
+  "defaultSource": "Compiled build metadata",
+  "checkedAt": "2026-11-16T13:17:34.113Z",
   "deployedAt": "2026-10-30T12:31:04.453Z",
   "release": "sites/hotwax-fulfillment/channels/live/releases/1793363464453000",
   "fileCount": 51
