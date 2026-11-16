@@ -410,7 +410,7 @@ export const useProductStore = defineStore('productStore', {
 
         if (!commonUtil.hasError(resp) && resp.data?.entityValueList?.length > 0) {
           isFacilityZPLConfigured = true
-        } else {
+        } else if (commonUtil.hasError(resp)) {
           throw resp.data;
         }
       } catch (err) {
@@ -700,8 +700,6 @@ export const useProductStore = defineStore('productStore', {
         if (resp.products.length) {
           this.settings.productIdentifier.sampleProducts = resp.products;
           this.shuffleProduct()
-        } else {
-          throw resp
         }
       } catch (error: any) {
         logger.error(error)
@@ -743,7 +741,7 @@ export const useProductStore = defineStore('productStore', {
           resp.data.map((facility: any) => {
             this.userFacilities[facility.facilityId] = facility["facilityName"]
           })
-        } else {
+        } else if (commonUtil.hasError(resp)) {
           throw resp.data;
         }
       } catch (err) {

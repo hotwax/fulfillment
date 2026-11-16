@@ -383,7 +383,7 @@ async function fetchBarcodeIdentificationDesc() {
         identifierDesc[identifier.goodIdentificationTypeId] = identifier.description;
         return identifierDesc;
       }, {});
-    } else {
+    } else if (commonUtil.hasError(resp)) {
       throw resp.data;
     }
   } catch (err) {

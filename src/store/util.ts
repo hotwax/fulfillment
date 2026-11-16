@@ -507,7 +507,7 @@ export const useUtilStore = defineStore("util", {
           })
 
           this.setFacilityTypeDesc(facilityTypeDesc)
-        } else {
+        } else if (commonUtil.hasError(resp)) {
           throw resp.data
         }
       } catch (err) {
@@ -801,8 +801,11 @@ export const useUtilStore = defineStore("util", {
           params: { "systemResourceId": carrierId, "systemPropertyId": "shipment.carrier.labelImageType", "pageSize": 1 }
         });
 
-        if (commonUtil.hasError(resp) || !resp.data.length) {
+        if (commonUtil.hasError(resp)) {
           throw resp.data
+        }
+        if (!resp.data.length) {
+          return
         }
 
         const labelImageType = resp?.data[0]?.systemPropertyValue

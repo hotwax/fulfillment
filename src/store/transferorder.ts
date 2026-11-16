@@ -493,7 +493,7 @@ export const useTransferOrderStore = defineStore("transferorder", {
           } else {
             orders = resp.data.orders
           }
-        } else {
+        } else if (commonUtil.hasError(resp)) {
           throw resp.data
         }
       } catch (err) {
