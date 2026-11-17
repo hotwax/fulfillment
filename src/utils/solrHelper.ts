@@ -34,7 +34,18 @@ const prepareOrderQuery = (params: any) => {
 
       if (Array.isArray(filterValue)) {
         const filterOperator = params.filters[key].op ? params.filters[key].op : 'OR' ;
-        payload.json.filter += ` AND ${key}: (${filterValue.join(' ' + filterOperator + ' ')})`
+
+        // Added support to allow filtering orders when selecting uncategorized category filter
+        if(filterValue.includes("")) {
+          const value = filterValue.filter((val: any) => val)
+          if(value.length) {
+            payload.json.filter += ` AND ((*:* -${key}: [* TO *]) OR ${key}: (${value.join(' ' + filterOperator + ' ')}))`
+          } else {
+            payload.json.filter += ` AND (*:* -${key}: [* TO *])`
+          }
+        } else {
+          payload.json.filter += ` AND ${key}: (${filterValue.join(' ' + filterOperator + ' ')})`
+        }
       } else {
         payload.json.filter += ` AND ${key}: ${filterValue}`
       }
