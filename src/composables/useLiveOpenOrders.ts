@@ -76,6 +76,10 @@ export function useLiveOpenOrders(options: LiveOpenOrdersOptions) {
   let viewCache = new Map<string, { version: string; view: any }>();
 
   const allOrders = computed(() => {
+    // IndexedDB survives browser sessions. Do not let a prior session's open-order rows become actionable
+    // before this session has reconciled the complete server-side open-order bucket.
+    if(!liveOrdersStatus.firstSyncAt) {return [];}
+
     const productStoreId = options.productStoreId.value;
     const nextCache = new Map<string, { version: string; view: any }>();
     const views: any[] = [];
