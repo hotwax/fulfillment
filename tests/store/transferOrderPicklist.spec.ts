@@ -9,7 +9,7 @@ vi.mock("@common", () => ({
   api: apiMock,
   commonUtil: {
     getErrorMessage: () => "",
-    getMaargHostURL: () => "https://maarg.test/",
+    getMaargBaseURL: () => "https://maarg.test/",
     hasError: () => false,
     isAppEmbedded: isAppEmbeddedMock,
     showToast: vi.fn()

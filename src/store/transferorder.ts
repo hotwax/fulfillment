@@ -266,7 +266,7 @@ export const useTransferOrderStore = defineStore("transferorder", {
       try {
         const resp: any = await api({
           method: "get",
-          baseURL: commonUtil.getMaargHostURL(),
+          baseURL: commonUtil.getMaargBaseURL(),
           url: `/fop/apps/pdf/PrintTransferOrderPicklist`,
           params: { orderId },
           responseType: "blob",
@@ -320,7 +320,7 @@ export const useTransferOrderStore = defineStore("transferorder", {
         url: "/fop/apps/pdf/PrintLabel",
         params: { shipmentId },
         responseType: "blob",
-        baseURL: commonUtil.getMaargHostURL(),
+        baseURL: commonUtil.getMaargBaseURL(),
       })
 
       if(!resp || resp.status !== 200 || commonUtil.hasError(resp)) {
