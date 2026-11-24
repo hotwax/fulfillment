@@ -812,5 +812,10 @@
   "You are packing orders. Select additional documents that you would like to print.": "Estás empacando {count} pedidos. {space} Selecciona documentos adicionales que te gustaría imprimir.",
   "You are shipping orders. You cannot unpack and edit orders after they have been shipped. Are you sure you are ready to ship this orders?": "Estás enviando {count} pedido. {space} No puedes desempacar ni editar los pedidos una vez que se hayan enviado. ¿Estás seguro/a de que estás listo/a para enviar este pedido? | Estás enviando {count} pedidos. {space} No puedes desempacar ni editar los pedidos una vez que se hayan enviado. ¿Estás seguro/a de que estás listo/a para enviar estos pedidos?",
   "You do not have permission to access this page": "Usted no tiene permiso para acceder a esta página",
-  "Your scanner isn’t focused yet.": "Your scanner isn’t focused yet."
+  "Your scanner isn’t focused yet.": "Your scanner isn’t focused yet.",
+  "Reload": "Recargar",
+  "Session changed": "Sesión cambiada",
+  "Signed in to another instance": "Sesión iniciada en otra instancia",
+  "This browser is now signed in to a different session from another tab or app. Reload to continue.": "La sesión de este navegador cambió desde otra pestaña o aplicación. Recarga para continuar.",
+  "This browser is now signed in to {instance} from another tab or app. Reload to continue.": "Este navegador ahora tiene una sesión iniciada en {instance} desde otra pestaña o aplicación. Recarga para continuar."
 }
