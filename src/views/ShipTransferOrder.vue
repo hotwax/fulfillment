@@ -134,6 +134,16 @@
 
           <template v-else>
             <template v-if="selectedSegment === 'generate'">
+              <div v-if="rateError && !isLoadingRates" class="rate-error" data-testid="rate-error">
+                <ion-icon :icon="alertCircleOutline" />
+                <p>{{ rateError }}</p>
+              </div>
+
+              <div v-if="labelError" class="rate-error" data-testid="label-error">
+                <ion-icon :icon="alertCircleOutline" />
+                <p>{{ labelError }}</p>
+              </div>
+
               <StepProgress v-if="isLoadingRates" data-testid="shipping-rates-loading" :title="translate('Finding your shipping options')" :steps="rateSteps" :active-index="0" />
 
               <ion-list v-else-if="displayRates.length">
@@ -160,11 +170,6 @@
                     <ion-icon v-else slot="icon-only" :icon="refreshOutline" />
                   </ion-button>
                 </ion-item>
-                <ion-item v-if="labelError" lines="none">
-                  <ion-label color="danger" class="ion-text-wrap" data-testid="label-error">
-                    {{ labelError }}
-                  </ion-label>
-                </ion-item>
               </ion-list>
 
               <div v-else class="empty-state">
@@ -172,9 +177,6 @@
                 <ion-button data-testid="retry-rates-btn" fill="outline" size="small" @click="loadShippingRates(true)">
                   <ion-icon slot="icon-only" :icon="refreshOutline" />
                 </ion-button>
-                <ion-label v-if="labelError" color="danger" class="ion-text-wrap" data-testid="label-error">
-                  {{ labelError }}
-                </ion-label>
               </div>
             </template>
 
@@ -226,7 +228,7 @@
 
 <script setup lang="ts">
 import { IonAvatar, IonBackButton, IonBadge, IonButton, IonButtons, IonCard, IonCardContent, IonCardHeader, IonCardSubtitle, IonCardTitle, IonContent, IonFooter, IonHeader, IonIcon, IonInput, IonItem, IonLabel, IonList, IonListHeader, IonNote, IonPage, IonSegment, IonSegmentButton, IonSelect, IonSelectOption, IonSkeletonText, IonSpinner, IonThumbnail, IonTitle, IonToolbar, alertController, modalController, onIonViewWillEnter, onIonViewDidLeave } from "@ionic/vue";
-import { calendarOutline, createOutline, cubeOutline, openOutline, pricetagOutline, printOutline, refreshOutline, storefrontOutline } from "ionicons/icons";
+import { alertCircleOutline, calendarOutline, createOutline, cubeOutline, openOutline, pricetagOutline, printOutline, refreshOutline, storefrontOutline } from "ionicons/icons";
 import { computed, ref, watch } from "vue";
 import { commonUtil, logger, translate } from "@common";
 import { useProductStore as useAppProductStore } from "@/store/productStore";
@@ -275,6 +277,7 @@ const shipmentDetails = ref({}) as any;
 // The rate lookup lives in the carrier store, so the one the create-shipment prefetch started is the one this page shows.
 const rateStream = computed(() => carrierStore.rateStreams[shipmentId]);
 const rawShippingRates = computed(() => rateStream.value?.rates ?? []);
+const rateError = computed(() => rateStream.value?.error ?? "");
 const isRateLookupRunning = computed(() => rateStream.value?.status === "loading");
 // The progress card shows until there is something to list.
 const isLoadingRates = computed(() => !rateStream.value || (isRateLookupRunning.value && !rawShippingRates.value.length));
@@ -1042,6 +1045,27 @@ ion-note {
 
 .package-note {
   color: var(--ion-color-warning-shade);
+}
+
+.rate-error {
+  display: flex;
+  align-items: center;
+  gap: var(--spacer-sm);
+  margin: var(--spacer-sm) var(--spacer-base);
+  padding: var(--spacer-sm) var(--spacer-base);
+  border-inline-start: 4px solid var(--ion-color-danger);
+  border-radius: 4px;
+  background: rgba(var(--ion-color-danger-rgb), 0.08);
+  color: var(--ion-color-danger-shade);
+}
+
+.rate-error ion-icon {
+  flex-shrink: 0;
+  font-size: 20px;
+}
+
+.rate-error p {
+  margin: 0;
 }
 
 .label-note {

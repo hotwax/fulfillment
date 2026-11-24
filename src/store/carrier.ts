@@ -24,6 +24,7 @@ const getSessionStorage = () => {
 export interface RateStream {
   status: "loading" | "done"
   rates: any[]
+  error: string
   runId: number
 }
 
@@ -620,10 +621,13 @@ export const useCarrierStore = defineStore("carrier", {
           })
 
           if(!commonUtil.hasError(resp)) {
-            if(shipmentId && resp.data?.shippingRates?.length) {
+            if(shipmentId && resp.data?.shippingRates?.length && !resp.data.rateError) {
               const entry = { at: Date.now(), rates: resp.data.shippingRates }
               shippingRatesCache.set(shipmentId, entry)
               writeShippingRatesCache(getSessionStorage(), shipmentId, entry)
+            } else if(shipmentId) {
+              shippingRatesCache.delete(shipmentId)
+              removeShippingRatesCache(getSessionStorage(), shipmentId)
             }
 
             return Promise.resolve(resp.data)
@@ -632,6 +636,10 @@ export const useCarrierStore = defineStore("carrier", {
           }
         } catch (err) {
           logger.error("Failed to fetch shipping rates", err)
+          if(shipmentId) {
+            shippingRatesCache.delete(shipmentId)
+            removeShippingRatesCache(getSessionStorage(), shipmentId)
+          }
 
           return Promise.reject(err)
         }
@@ -655,7 +663,7 @@ export const useCarrierStore = defineStore("carrier", {
         const entry = isFreshCacheEntry(memoryEntry) ? memoryEntry : readShippingRatesCache(getSessionStorage(), shipmentId)
         if(entry) {
           shippingRatesCache.set(shipmentId, entry)
-          this.rateStreams[shipmentId] = { status: "done", rates: entry.rates, runId: 0 }
+          this.rateStreams[shipmentId] = { status: "done", rates: entry.rates, error: "", runId: 0 }
 
           return this.rateStreams[shipmentId]
         }
@@ -665,7 +673,7 @@ export const useCarrierStore = defineStore("carrier", {
       const runId = ++rateStreamRunId
       // A refresh keeps the rates on screen until the new ones are there.
       const keptRates = current?.rates?.length ? current.rates : []
-      this.rateStreams[shipmentId] = { status: "loading", rates: keptRates, runId }
+      this.rateStreams[shipmentId] = { status: "loading", rates: keptRates, error: "", runId }
       const live = () => this.rateStreams[shipmentId]
       const isCancelled = () => live()?.runId !== runId
 
@@ -673,10 +681,13 @@ export const useCarrierStore = defineStore("carrier", {
         const data = await this.fetchShippingRates({ shipmentId, forceRefresh: true })
         if(isCancelled()) {return live()}
         live().rates = data?.shippingRates || []
+        live().error = data?.rateError || ""
       } catch (err) {
         logger.error("Failed to fetch shipping rates", err)
-        // A refresh that fails keeps the rates that are on screen.
-        if(!isCancelled()) {live().rates = keptRates}
+        if(!isCancelled()) {
+          live().rates = []
+          live().error = commonUtil.getErrorMessage(err) || translate("Failed to fetch shipping rates")
+        }
       }
       if(!isCancelled()) {live().status = "done"}
 
