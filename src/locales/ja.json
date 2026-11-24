@@ -809,5 +809,10 @@
   "You are shipping order. You cannot unpack and edit orders after they have been shipped. Are you sure you are ready to ship this order?": "{count}件の注文を出荷しています。{ space }出荷後は注文の梱包解除や編集はできません。この注文を出荷する準備ができていますか？ | {count}件の注文を出荷しています。{ space }出荷後は注文の梱包解除や編集はできません。これらの注文を出荷する準備ができていますか？",
   "You are shipping orders. You cannot unpack and edit orders after they have been shipped. Are you sure you are ready to ship this orders?": "You are shipping { count } order. { space } You cannot unpack and edit orders after they have been shipped. Are you sure you are ready to ship this order? | You are shipping { count } orders. { space } You cannot unpack and edit orders after they have been shipped. Are you sure you are ready to ship these orders?",
   "You do not have permission to access this page": "このページにアクセスする権限がありません",
-  "Your scanner isn’t focused yet.": "Your scanner isn’t focused yet."
+  "Your scanner isn’t focused yet.": "Your scanner isn’t focused yet.",
+  "Reload": "再読み込み",
+  "Session changed": "セッションが変更されました",
+  "Signed in to another instance": "別のインスタンスにサインインしました",
+  "This browser is now signed in to a different session from another tab or app. Reload to continue.": "このブラウザは別のタブまたはアプリから別のセッションにサインインしました。続行するには再読み込みしてください。",
+  "This browser is now signed in to {instance} from another tab or app. Reload to continue.": "このブラウザは別のタブまたはアプリから {instance} にサインインしました。続行するには再読み込みしてください。"
 }

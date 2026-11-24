@@ -48,7 +48,7 @@
 <script setup lang="ts">
 import { IonApp, IonContent, IonHeader, IonIcon, IonItem, IonItemDivider, IonLabel, IonList, IonMenu, IonMenuToggle, IonProgressBar, IonRouterOutlet, IonSplitPane, IonTitle, IonToolbar, toastController } from "@ionic/vue";
 import { computed, onMounted, onUnmounted, ref, watch } from "vue";
-import { translate, emitter, logger, useNotificationStore, useAuth, i18n } from "@common";
+import { translate, emitter, logger, useNotificationStore, useAuth, i18n, useSessionChangeAlert } from "@common";
 import { Settings } from "luxon";
 import { init } from "@module-federation/runtime";
 import { focusLiveOrders, startLiveOrdersSync, syncMasterFacilities } from "@/db/appDbSync";
@@ -59,6 +59,9 @@ import { firebaseUtil } from "@/utils/firebaseUtil";
 import { useRegisterSW } from 'virtual:pwa-register/vue'
 
 const { needRefresh, updateServiceWorker } = useRegisterSW()
+
+// A login in another tab or app replaced the shared session cookies: ask the user to reload.
+useSessionChangeAlert()
 
 // Work in flight shows as a slim bar over the page rather than a blocking overlay. It only appears if the work outlasts
 // a short grace period, so quick calls never flash it, and it clears itself if a dismiss never arrives.
