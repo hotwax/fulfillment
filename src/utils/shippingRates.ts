@@ -48,10 +48,10 @@ export const shippingRateKey = (rate: ShippingRate) => `${shippingRateServiceKey
 //     since the gateway did price it (FEDEX_2_DAY keeps its SECOND_DAY row).
 //   - Among the rows left for a service, pick a method that is specific to the carrier, then the first row the backend
 //     returned. The pick is the method and service that go to the label request.
-// Rows without a carrier, method, service or a numeric amount cannot be bought and are dropped.
+// Rows without a carrier, service or a numeric amount cannot be bought and are dropped.
 export function dedupeShippingRates(rates: ShippingRate[] | null | undefined, options: DedupeOptions = {}) {
   const { isCarrierSpecificMethod } = options;
-  const rows = (rates ?? []).filter((rate) => rate?.carrierPartyId && rate.shipmentMethodTypeId && (rate.gatewayRateId || rate.carrierService) && Number.isFinite(amountOf(rate)));
+  const rows = (rates ?? []).filter((rate) => rate?.carrierPartyId && (rate.gatewayRateId || rate.carrierService) && Number.isFinite(amountOf(rate)));
 
   const methodClaims = new Map<string, number>();
   for(const rate of rows) {

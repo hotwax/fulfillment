@@ -134,16 +134,19 @@
 
           <template v-else>
             <template v-if="selectedSegment === 'generate'">
+              <div v-if="rateError && !isLoadingRates" class="rate-error" data-testid="rate-error">
+                <ion-icon :icon="alertCircleOutline" />
+                <p>{{ rateError }}</p>
+              </div>
+
+              <div v-if="labelError" class="rate-error" data-testid="label-error">
+                <ion-icon :icon="alertCircleOutline" />
+                <p>{{ labelError }}</p>
+              </div>
+
               <StepProgress v-if="isLoadingRates" data-testid="shipping-rates-loading" :title="translate('Finding your shipping options')" :steps="rateSteps" :active-index="0" />
 
-              <ion-list v-else-if="displayRates.length || isStreamingRates">
-                <!-- Where the backend rates one service at a time, the bar counts the services whose carrier has answered. -->
-                <ion-item v-if="isStreamingRates && isRateLookupRunning" lines="none" data-testid="rates-progress">
-                  <ion-label>
-                    {{ translate("Checking {total} shipping services, {done} back", { total: rateRows.length, done: settledRateCount }) }}
-                    <ion-progress-bar :value="settledRateCount / rateRows.length" />
-                  </ion-label>
-                </ion-item>
+              <ion-list v-else-if="displayRates.length">
                 <ion-item v-for="shippingRate in displayRates" :key="shippingRateKey(shippingRate)">
                   <ion-avatar slot="start">
                     <Image :src="getCarrierLogo(shippingRate.actualCarrierCode || shippingRate.carrierPartyId)" />
@@ -161,30 +164,11 @@
                     {{ translate("Generate label") }}
                   </ion-button>
                 </ion-item>
-                <ion-item v-for="row in unratedRows" :key="row.key" lines="none" class="unrated" :data-testid="`rate-row-${row.status}`">
-                  <ion-avatar slot="start">
-                    <Image :src="getCarrierLogo(row.carrierPartyId)" />
-                  </ion-avatar>
-                  <ion-label color="medium">
-                    {{ rowName(row) }}
-                    <p v-if="row.status === 'pending'">{{ row.attempt > 1 ? translate("FedEx did not answer, asking again ({attempt} of {total})", { attempt: row.attempt, total: row.maxAttempts }) : translate("Checking the price") }}</p>
-                    <p v-else>{{ translate("No rate available") }}</p>
-                  </ion-label>
-                  <ion-spinner v-if="row.status === 'pending'" slot="end" name="dots" />
-                  <ion-button v-else slot="end" data-testid="retry-rate-row-btn" fill="clear" size="small" color="medium" :disabled="isBusy" :aria-label="translate('Try again')" @click="retryRateRow(row.key)">
-                    <ion-icon slot="icon-only" :icon="refreshOutline" />
-                  </ion-button>
-                </ion-item>
                 <ion-item lines="none">
                   <ion-button slot="end" data-testid="refresh-rates-btn" fill="clear" size="small" color="medium" :disabled="isBusy || isRefreshingRates || isRateLookupRunning" @click="loadShippingRates(true)">
                     <ion-spinner v-if="isRefreshingRates" slot="icon-only" name="crescent" />
                     <ion-icon v-else slot="icon-only" :icon="refreshOutline" />
                   </ion-button>
-                </ion-item>
-                <ion-item v-if="labelError" lines="none">
-                  <ion-label color="danger" class="ion-text-wrap" data-testid="label-error">
-                    {{ labelError }}
-                  </ion-label>
                 </ion-item>
               </ion-list>
 
@@ -193,9 +177,6 @@
                 <ion-button data-testid="retry-rates-btn" fill="outline" size="small" @click="loadShippingRates(true)">
                   <ion-icon slot="icon-only" :icon="refreshOutline" />
                 </ion-button>
-                <ion-label v-if="labelError" color="danger" class="ion-text-wrap" data-testid="label-error">
-                  {{ labelError }}
-                </ion-label>
               </div>
             </template>
 
@@ -246,8 +227,8 @@
 </template>
 
 <script setup lang="ts">
-import { IonAvatar, IonBackButton, IonBadge, IonButton, IonButtons, IonCard, IonCardContent, IonCardHeader, IonCardSubtitle, IonCardTitle, IonContent, IonFooter, IonHeader, IonIcon, IonInput, IonItem, IonLabel, IonList, IonListHeader, IonNote, IonPage, IonProgressBar, IonSegment, IonSegmentButton, IonSelect, IonSelectOption, IonSkeletonText, IonSpinner, IonThumbnail, IonTitle, IonToolbar, alertController, modalController, onIonViewWillEnter, onIonViewDidLeave } from "@ionic/vue";
-import { calendarOutline, createOutline, cubeOutline, openOutline, pricetagOutline, printOutline, refreshOutline, storefrontOutline } from "ionicons/icons";
+import { IonAvatar, IonBackButton, IonBadge, IonButton, IonButtons, IonCard, IonCardContent, IonCardHeader, IonCardSubtitle, IonCardTitle, IonContent, IonFooter, IonHeader, IonIcon, IonInput, IonItem, IonLabel, IonList, IonListHeader, IonNote, IonPage, IonSegment, IonSegmentButton, IonSelect, IonSelectOption, IonSkeletonText, IonSpinner, IonThumbnail, IonTitle, IonToolbar, alertController, modalController, onIonViewWillEnter, onIonViewDidLeave } from "@ionic/vue";
+import { alertCircleOutline, calendarOutline, createOutline, cubeOutline, openOutline, pricetagOutline, printOutline, refreshOutline, storefrontOutline } from "ionicons/icons";
 import { computed, ref, watch } from "vue";
 import { commonUtil, logger, translate } from "@common";
 import { useProductStore as useAppProductStore } from "@/store/productStore";
@@ -296,17 +277,12 @@ const shipmentDetails = ref({}) as any;
 // The rate lookup lives in the carrier store, so the one the create-shipment prefetch started is the one this page shows.
 const rateStream = computed(() => carrierStore.rateStreams[shipmentId]);
 const rawShippingRates = computed(() => rateStream.value?.rates ?? []);
-const rateRows = computed(() => rateStream.value?.rows ?? []);
-const isStreamingRates = computed(() => rateStream.value?.mode === "stream");
+const rateError = computed(() => rateStream.value?.error ?? "");
 const isRateLookupRunning = computed(() => rateStream.value?.status === "loading");
-// The progress card shows until there is something to list. Where services are rated one at a time they are listed at once.
-const isLoadingRates = computed(() => !rateStream.value || (isRateLookupRunning.value && !isStreamingRates.value && !rawShippingRates.value.length));
+// The progress card shows until there is something to list.
+const isLoadingRates = computed(() => !rateStream.value || (isRateLookupRunning.value && !rawShippingRates.value.length));
 // A refresh keeps the list and only spins the refresh button.
-const isRefreshingRates = computed(() => isRateLookupRunning.value && !isStreamingRates.value && rawShippingRates.value.length > 0);
-const settledRateCount = computed(() => rateRows.value.filter((row) => row.status !== "pending").length);
-// A service that has not answered yet, and one that did not return a rate. When none did (the carrier is down) they are all listed,
-// each with its own retry.
-const unratedRows = computed(() => rateRows.value.filter((row) => row.status === "pending" || row.status === "failed"));
+const isRefreshingRates = computed(() => isRateLookupRunning.value && rawShippingRates.value.length > 0);
 const labelError = ref("");
 const isLabelWindowBlocked = ref(false);
 const isOrderShipped = ref(false);
@@ -395,7 +371,9 @@ const shippingMethodName = computed(() => {
   const shipment = shipmentDetails.value;
   if(isLabelAccepted.value) {
     const carrierPartyId = shipment.actualCarrierCode || shipment.routeSegCarrierPartyId;
-    const label = { carrierPartyId, carrierService: shipment.carrierService, shipmentMethodTypeId: shipment.routeSegShipmentMethodTypeId };
+    // The route segment keeps the carrier's service code, so the name of the bought service is read from its rate.
+    const boughtRate = rawShippingRates.value.find((rate: any) => rate.carrierServiceCode === shipment.carrierService);
+    const label = { carrierPartyId, carrierService: boughtRate?.carrierService || shipment.carrierService, shipmentMethodTypeId: shipment.routeSegShipmentMethodTypeId };
 
     return shippingRateName(label, getCarrierDesc(carrierPartyId), shipment.routeSegShipmentMethodDescription);
   }
@@ -681,17 +659,6 @@ watch(rawShippingRates, (rates) => {
   fetchCarrierLogos(rates.map((rate: any) => rate.actualCarrierCode || rate.carrierPartyId));
 });
 
-function retryRateRow(key: string) {
-  carrierStore.retryRateService(shipmentId, key);
-}
-
-// The name of a service that has no rate yet: the carrier's own name for its shipment method.
-function rowName(row: { carrierPartyId: string; shipmentMethodTypeIds: string[] }) {
-  const shipmentMethodTypeId = row.shipmentMethodTypeIds.find((id: string) => isCarrierSpecificMethod(row.carrierPartyId, id)) ?? row.shipmentMethodTypeIds[0];
-
-  return getRateName({ carrierPartyId: row.carrierPartyId, shipmentMethodTypeId });
-}
-
 function getCarrierLogo(partyId: string) {
   const carrier = facilityCarriers.value.find((carrier: any) => carrier.partyId === partyId);
   return carrier?.logoUrl || carrierLogos.value[partyId?.toUpperCase()] || "";
@@ -798,7 +765,8 @@ async function generateLabel(shippingRate: any) {
     const payload = {
       shipmentId: shipmentDetails.value.shipmentId,
       shipmentRouteSegmentId: shipmentDetails.value.shipmentRouteSegmentId,
-      shipmentMethodTypeId: shippingRate.shipmentMethodTypeId || shippingRate.carrierServiceCode,
+      // A carrier rate has no OMS method, so it is bought under the shipment's own (STANDARD on a transfer order).
+      shipmentMethodTypeId: shipmentDetails.value.shipmentMethodTypeId,
       carrierPartyId: shippingRate.carrierPartyId,
       actualCost: shippingRate.shippingEstimateAmount,
       carrierServiceStatusId: "SHRSCS_CONFIRMED"
@@ -807,8 +775,9 @@ async function generateLabel(shippingRate: any) {
     if(shippingRate.actualCarrierCode) {
       payload.actualCarrierCode = shippingRate.actualCarrierCode;
     }
-    if(shippingRate.carrierService) {
-      payload.carrierService = shippingRate.carrierService;
+    // The label request uses this as the carrier's service code, not its display name.
+    if(shippingRate.carrierServiceCode) {
+      payload.carrierService = shippingRate.carrierServiceCode;
     }
     if(shippingRate.gatewayRateId) {
       payload.gatewayRateId = shippingRate.gatewayRateId;
@@ -1076,6 +1045,27 @@ ion-note {
 
 .package-note {
   color: var(--ion-color-warning-shade);
+}
+
+.rate-error {
+  display: flex;
+  align-items: center;
+  gap: var(--spacer-sm);
+  margin: var(--spacer-sm) var(--spacer-base);
+  padding: var(--spacer-sm) var(--spacer-base);
+  border-inline-start: 4px solid var(--ion-color-danger);
+  border-radius: 4px;
+  background: rgba(var(--ion-color-danger-rgb), 0.08);
+  color: var(--ion-color-danger-shade);
+}
+
+.rate-error ion-icon {
+  flex-shrink: 0;
+  font-size: 20px;
+}
+
+.rate-error p {
+  margin: 0;
 }
 
 .label-note {

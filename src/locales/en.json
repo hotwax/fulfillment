@@ -232,6 +232,7 @@
   "Failed to fetch eCom inventory config": "Failed to fetch eCom inventory config",
   "Failed to fetch fulfillment group facilities.": "Failed to fetch fulfillment group facilities.",
   "Failed to fetch packed shipments": "Failed to fetch packed shipments",
+  "Failed to fetch shipping rates": "Failed to fetch shipping rates",
   "Failed to fetch user facilities for Shopify POS location.": "Failed to fetch user facilities for Shopify POS location.",
   "Failed to fetch user facilities.": "Failed to fetch user facilities.",
   "Failed to fetch user profile information": "Failed to fetch user profile information",

@@ -113,7 +113,6 @@ describe("dedupeShippingRates", () => {
       rate("FDX_GROUND", "GROUND_HOME_DELIVERY", "FedEx Home Delivery®", "20.71"),
       rate("NEXT_DAY", "STANDARD_OVERNIGHT", "FedEx Standard Overnight®", ""),
       rate("SECOND_DAY", "FEDEX_2_DAY", "FedEx 2Day®", "not a number"),
-      rate("", "PRIORITY_OVERNIGHT", "FedEx Priority Overnight®", "56.77"),
       rate("STANDARD", "", "", "9.00", { gatewayRateId: undefined }),
       rate("STANDARD", "GROUND", "Ground", "9.00", { carrierPartyId: "" })
     ];
