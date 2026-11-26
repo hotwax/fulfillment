@@ -167,29 +167,16 @@
             </ion-item>
           </div>
 
-          <ShipmentActions
-            v-if="props.category === 'completed'"
-            :order="order"
-            :can-ship="canShipNow"
-            :can-force-ship="canForceShip"
-            :can-add-tracking="order.missingLabelImage && !!shipmentMethodTypeId && !!carrierPartyId"
-            label="Ship order"
-            @ship="shipOrder(order)"
-            @more="shippingPopover"
-            @add-tracking="openTrackingCodeModal"
-          >
-            <template #icon><ion-icon slot="start" :icon="bagCheckOutline" /></template>
-            <template #documents>
-              <ion-button :disabled="order.hasMissingShipmentInfo || order.hasMissingPackageInfo" fill="outline" @click.stop="printPackingSlip(order)">
-                {{ translate("Print Customer Letter") }}
-                <ion-spinner data-spinner-size="medium" color="primary" slot="end" v-if="order.isGeneratingPackingSlip" name="crescent" />
+          <div v-else-if="props.category === 'completed'" class="mobile-only">
+            <ion-item>
+              <ion-button :disabled="!hasPackedShipments(order) || !!shipReason" :aria-describedby="shipReason ? shipReasonId : undefined" fill="clear" @click.stop="shipOrder(order)">{{ translate(order.statusId === "SHIPMENT_SHIPPED" ? "Shipped" : "Ship Now") }}</ion-button>
+              <ion-button slot="end" fill="clear" color="medium" :aria-label="translate('Options')" @click.stop="shippingPopover(order, $event)">
+                <ion-icon slot="icon-only" :icon="ellipsisVerticalOutline" />
               </ion-button>
-            </template>
-            <template #other>
-              <ion-button :disabled="!canUnpack || order.hasMissingShipmentInfo || order.hasMissingPackageInfo || !hasPackedShipments(order)" fill="outline" color="danger" @click.stop="unpackOrder(order)">{{ translate("Unpack") }}</ion-button>
-            </template>
-          </ShipmentActions>
-          <div v-else class="actions">
+            </ion-item>
+          </div>
+
+          <div class="actions">
             <div>
               <template v-if="props.category === 'in-progress'">
                 <ion-button :color="order.hasAllRejectedItem || rejectionOutcome(order) === 'whole' ? 'danger' : ''" :disabled="rejectionOutcome(order) === 'checking'" @click="packOrder(order)">
@@ -205,8 +192,31 @@
                 <ion-icon slot="start" :icon="personAddOutline" />
                 {{ translate("Pick order") }}
               </ion-button>
+              <div v-else-if="props.category === 'completed'" class="desktop-only">
+                <ion-button v-if="order.statusId === 'SHIPMENT_SHIPPED'" :disabled="true">
+                  <ion-icon slot="start" :icon="bagCheckOutline" />
+                  {{ translate("Shipped") }}
+                </ion-button>
+                <ion-button v-else :disabled="!!shipReason" :aria-describedby="shipReason ? shipReasonId : undefined" @click.stop="shipOrder(order)">
+                  <ion-icon slot="start" :icon="bagCheckOutline" />
+                  {{ translate("Ship order") }}
+                </ion-button>
+                <ion-button :disabled="order.hasMissingShipmentInfo || order.hasMissingPackageInfo" fill="outline" @click.stop="printPackingSlip(order)">
+                  {{ translate("Print Customer Letter") }}
+                  <ion-spinner data-spinner-size="medium" color="primary" slot="end" v-if="order.isGeneratingPackingSlip" name="crescent" />
+                </ion-button>
+              </div>
+            </div>
+            <div class="desktop-only" v-if="props.category === 'completed'">
+              <ion-button :disabled="!canUnpack || order.hasMissingShipmentInfo || order.hasMissingPackageInfo || !hasPackedShipments(order)" fill="outline" color="danger" @click.stop="unpackOrder(order)">{{ translate("Unpack") }}</ion-button>
             </div>
           </div>
+          <ion-item v-if="props.category === 'completed' && shipReason" lines="none" class="ship-reason">
+            <ion-note :id="shipReasonId">{{ translate(shipReason) }}</ion-note>
+            <ion-button v-if="shipReason === TRACKING_REQUIRED && order.missingLabelImage && shipmentMethodTypeId && carrierPartyId" slot="end" fill="clear" @click="openTrackingCodeModal">
+              {{ translate("Add tracking details") }}
+            </ion-button>
+          </ion-item>
         </ion-card>
       <div class="shipgroup-details">
           <ion-card>
@@ -398,13 +408,12 @@
 
 <script setup lang="ts">
 import { IonBackButton, IonBadge, IonButton, IonCard, IonCardHeader, IonCardSubtitle, IonCardTitle, IonCheckbox, IonChip, IonContent, IonHeader, IonIcon, IonItem, IonLabel, IonList, IonNote, IonPage, IonRow, IonSelect, IonSelectOption, IonSkeletonText, IonSpinner, IonTitle, IonToolbar, IonThumbnail, alertController, popoverController, modalController, onIonViewDidEnter, onIonViewWillEnter } from "@ionic/vue";
-import { computed, defineProps, onMounted, reactive, ref, shallowRef, watch } from "vue";
+import { computed, defineProps, onMounted, reactive, ref, shallowRef, useId, watch } from "vue";
 import { useRoute } from "vue-router";
 import { addOutline, archiveOutline, bagCheckOutline, cashOutline, caretDownOutline, checkmarkCircleOutline, chevronUpOutline, closeCircleOutline, cubeOutline, documentTextOutline, ellipsisVerticalOutline, fileTrayOutline, gift, giftOutline, informationCircleOutline, listOutline, locateOutline, personAddOutline, pricetagOutline, ribbonOutline, trashBinOutline } from "ionicons/icons";
 import { cookieHelper, commonUtil, DxpShopifyImg, emitter, logger, moduleFederationUtil, translate, useLiveEntity } from "@common";
-import ShipmentActions from "@/components/ShipmentActions.vue";
 import { fulfillmentDb } from "@/db/fulfillmentDb";
-import { toShipmentView } from "@/utils/shipmentView";
+import { TRACKING_REQUIRED, getShipDisabledReason, toShipmentView } from "@/utils/shipmentView";
 import { useOnePackageReroute } from "@/composables/useOnePackageReroute";
 import { useProductStore } from "@/store/productStore";
 
@@ -490,6 +499,8 @@ const facilityCarriers = computed(() => useCarrierStore().getFacilityCarriers);
 const productStoreShipmentMethCount = computed(() => useProductStore().getProductStoreShipmentMethCount);
 const canShipNow = computed(() => userStore.hasPermission(Actions.APP_SHIP_ORDER));
 const canForceShip = computed(() => userStore.hasPermission(Actions.APP_FORCE_SHIP_ORDER));
+const shipReasonId = useId();
+const shipReason = computed(() => getShipDisabledReason(order.value, canShipNow.value, canForceShip.value));
 const canUnpack = computed(() => userStore.hasPermission(Actions.APP_UNPACK_ORDER));
 const filteredFacilityCarriers = computed(() => {
   if (initialShipmentMethodTypeId.value === 'SHIP_TO_STORE') {
@@ -852,25 +863,24 @@ const getShipmentBoxTypes = (carrierPartyIdValue: string) => {
 };
 
 
-const shippingPopover = async (ev: Event) => {
-  const currentOrder = order.value;
+const shippingPopover = async (order: any, ev: Event) => {
   const popover = await popoverController.create({
     component: Popover,
     event: ev,
     translucent: true,
     showBackdrop: false,
     componentProps: {
-      disablePrint: currentOrder.hasMissingShipmentInfo || currentOrder.hasMissingPackageInfo,
-      disableUnpack: !canUnpack.value || currentOrder.hasMissingShipmentInfo || currentOrder.hasMissingPackageInfo || !hasPackedShipments(currentOrder)
+      disablePrint: order.hasMissingShipmentInfo || order.hasMissingPackageInfo,
+      disableUnpack: !canUnpack.value || order.hasMissingShipmentInfo || order.hasMissingPackageInfo || !hasPackedShipments(order)
     }
   });
 
   popover.onDidDismiss().then((result) => {
     if (result.data) {
       const { action } = result.data;
-      if (action === "printShippingLabel") regenerateShippingLabel(currentOrder);
-      else if (action === "printPackingSlip") printPackingSlip(currentOrder);
-      else if (action === "unpack") unpackOrder(currentOrder);
+      if (action === "printShippingLabel") regenerateShippingLabel(order);
+      else if (action === "printPackingSlip") printPackingSlip(order);
+      else if (action === "unpack") unpackOrder(order);
     }
   });
   return popover.present();
