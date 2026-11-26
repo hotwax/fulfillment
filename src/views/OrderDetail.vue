@@ -169,7 +169,7 @@
 
           <div v-else-if="props.category === 'completed'" class="mobile-only">
             <ion-item>
-              <ion-button :disabled="!canShipNow || order.hasMissingShipmentInfo || order.hasMissingPackageInfo || ((isTrackingRequiredForAnyShipmentPackage(order) && !order.trackingCode) && !userStore.hasPermission(Actions.APP_FORCE_SHIP_ORDER))" fill="clear" @click.stop="shipOrder(order)">{{ translate("Ship Now") }}</ion-button>
+              <ShipOrderButton :order="order" :can-ship="canShipNow" :can-force-ship="canForceShip" fill="clear" @ship="shipOrder(order)" />
               <ion-button slot="end" fill="clear" color="medium" @click.stop="shippingPopover(order, $event)">
                 <ion-icon slot="icon-only" :icon="ellipsisVerticalOutline" />
               </ion-button>
@@ -193,14 +193,9 @@
                 {{ translate("Pick order") }}
               </ion-button>
               <div v-else-if="props.category === 'completed'" class="desktop-only">
-                <ion-button v-if="!hasPackedShipments(order)" :disabled="true">
+                <ShipOrderButton :order="order" :can-ship="canShipNow" :can-force-ship="canForceShip" label="Ship order" @ship="shipOrder(order)">
                   <ion-icon slot="start" :icon="bagCheckOutline" />
-                  {{ translate("Shipped") }}
-                </ion-button>
-                <ion-button v-else :disabled="!canShipNow || order.hasMissingShipmentInfo || order.hasMissingPackageInfo || ((isTrackingRequiredForAnyShipmentPackage(order) && !order.trackingCode) && !userStore.hasPermission(Actions.APP_FORCE_SHIP_ORDER))" @click.stop="shipOrder(order)">
-                  <ion-icon slot="start" :icon="bagCheckOutline" />
-                  {{ translate("Ship order") }}
-                </ion-button>
+                </ShipOrderButton>
                 <ion-button :disabled="order.hasMissingShipmentInfo || order.hasMissingPackageInfo" fill="outline" @click.stop="printPackingSlip(order)">
                   {{ translate("Print Customer Letter") }}
                   <ion-spinner data-spinner-size="medium" color="primary" slot="end" v-if="order.isGeneratingPackingSlip" name="crescent" />
@@ -406,6 +401,7 @@ import { computed, defineProps, onMounted, reactive, ref, shallowRef, watch } fr
 import { useRoute } from "vue-router";
 import { addOutline, archiveOutline, bagCheckOutline, cashOutline, caretDownOutline, checkmarkCircleOutline, chevronUpOutline, closeCircleOutline, cubeOutline, documentTextOutline, ellipsisVerticalOutline, fileTrayOutline, gift, giftOutline, informationCircleOutline, listOutline, locateOutline, personAddOutline, pricetagOutline, ribbonOutline, trashBinOutline } from "ionicons/icons";
 import { cookieHelper, commonUtil, DxpShopifyImg, emitter, logger, moduleFederationUtil, translate, useLiveEntity } from "@common";
+import ShipOrderButton from "@/components/ShipOrderButton.vue";
 import { fulfillmentDb } from "@/db/fulfillmentDb";
 import { toShipmentView } from "@/utils/shipmentView";
 import { useOnePackageReroute } from "@/composables/useOnePackageReroute";
@@ -492,6 +488,7 @@ const productStoreShipmentMethods = computed(() => useCarrierStore().getProductS
 const facilityCarriers = computed(() => useCarrierStore().getFacilityCarriers);
 const productStoreShipmentMethCount = computed(() => useProductStore().getProductStoreShipmentMethCount);
 const canShipNow = computed(() => userStore.hasPermission(Actions.APP_SHIP_ORDER));
+const canForceShip = computed(() => userStore.hasPermission(Actions.APP_FORCE_SHIP_ORDER));
 const canUnpack = computed(() => userStore.hasPermission(Actions.APP_UNPACK_ORDER));
 const filteredFacilityCarriers = computed(() => {
   if (initialShipmentMethodTypeId.value === 'SHIP_TO_STORE') {
@@ -1167,10 +1164,6 @@ const getInvoicingConfirmationDate = (date: any) => {
   return DateTime.fromMillis(date).setZone(userProfile.value.userTimeZone).toFormat("dd MMMM yyyy hh:mm a ZZZZ");
 };
 
-
-const isTrackingRequiredForAnyShipmentPackage = (currentOrder: any) => {
-  return currentOrder.isTrackingRequired === "Y";
-};
 
 const scanOrder = async (currentOrder: any, updateParameter?: string) => {
   const modal = await modalController.create({
