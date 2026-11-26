@@ -15,25 +15,26 @@
         <ion-icon slot="icon-only" :icon="ellipsisVerticalOutline" />
       </ion-button>
     </div>
-    <div v-if="reason" :id="reasonId" class="ship-reason" data-testid="ship-order-disabled-reason">
-      <ion-icon :icon="informationCircleOutline" aria-hidden="true" />
-      <div>
+    <ion-item v-if="reason" lines="none" class="ship-reason">
+      <ion-note :id="reasonId" data-testid="ship-order-disabled-reason">
         {{ translate(reason) }}
-        <router-link v-if="reason === TRACKING_REQUIRED && detailsRoute" :to="detailsRoute">
+      </ion-note>
+      <router-link v-if="reason === TRACKING_REQUIRED && detailsRoute" v-slot="{ href, navigate }" :to="detailsRoute" custom>
+        <ion-button slot="end" fill="clear" :href="href" @click="navigate">
           {{ translate("Open order details") }}
-        </router-link>
-        <button v-else-if="reason === TRACKING_REQUIRED && canAddTracking" type="button" @click="emit('addTracking')">
-          {{ translate("Add tracking number") }}
-        </button>
-      </div>
-    </div>
+        </ion-button>
+      </router-link>
+      <ion-button v-else-if="reason === TRACKING_REQUIRED && canAddTracking" slot="end" fill="clear" @click="emit('addTracking')">
+        {{ translate("Add tracking number") }}
+      </ion-button>
+    </ion-item>
   </div>
 </template>
 
 <script setup lang="ts">
 import { translate } from "@common";
-import { IonButton, IonIcon } from "@ionic/vue";
-import { ellipsisVerticalOutline, informationCircleOutline } from "ionicons/icons";
+import { IonButton, IonIcon, IonItem, IonNote } from "@ionic/vue";
+import { ellipsisVerticalOutline } from "ionicons/icons";
 import { computed, useId } from "vue";
 import { type RouteLocationRaw, RouterLink } from "vue-router";
 import { type ShipmentForShipping, TRACKING_REQUIRED, getShipDisabledReason } from "@/utils/shipDisabledReason";
@@ -78,28 +79,17 @@ const reason = computed(() => {
   display: none;
 }
 .ship-reason {
-  display: flex;
-  align-items: baseline;
-  gap: var(--spacer-xs);
-  margin-block: var(--spacer-xs);
-  color: var(--ion-text-color);
+  --padding-start: 0;
+  --inner-padding-end: 0;
+  width: fit-content;
+  max-width: 100%;
+}
+.ship-reason ion-note {
+  align-self: center;
   font-size: 0.875rem;
-  line-height: 1.5;
 }
-.ship-reason ion-icon {
-  align-self: flex-start;
-  flex-shrink: 0;
-  font-size: 1.125rem;
-}
-.ship-reason a, .ship-reason button {
-  margin-inline-start: 0.25em;
-  padding: 0;
-  background: transparent;
-  color: var(--ion-color-primary);
-  font: inherit;
-  text-decoration: underline;
-  text-underline-offset: 0.15em;
-  cursor: pointer;
+.ship-reason ion-button {
+  margin-inline: var(--spacer-xs) 0;
 }
 @media (max-width: 990px) {
   .documents, .other-actions { display: none; }
