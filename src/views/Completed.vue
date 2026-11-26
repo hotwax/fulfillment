@@ -49,8 +49,8 @@
 
       <div v-if="completedOrders.total">
         <div class="results">
-          <ion-button :disabled="!!bulkShipReason" :aria-describedby="bulkShipReason ? bulkReasonId : undefined" expand="block" class="bulk-action desktop-only" fill="outline" size="large" @click="bulkShipOrders()">{{ translate("Ship") }}</ion-button>
-          <p v-if="bulkShipReason" :id="bulkReasonId" class="ion-margin-horizontal" data-testid="bulk-ship-disabled-reason">
+          <ion-button v-if="completedOrders.total > 1" :disabled="!!bulkShipReason" :aria-describedby="bulkShipReason ? bulkReasonId : undefined" expand="block" class="bulk-action desktop-only" fill="outline" size="large" @click="bulkShipOrders()">{{ translate("Ship") }}</ion-button>
+          <p v-if="completedOrders.total > 1 && bulkShipReason" :id="bulkReasonId" class="ion-margin-horizontal" data-testid="bulk-ship-disabled-reason">
             {{ bulkShipReason }}
           </p>
           <ion-card class="order" v-for="(order, index) in completedOrdersList" :key="index">
@@ -136,18 +136,15 @@
               </div>
             </div>
 
-            <div class="mobile-only">
-              <ion-item>
-                <ShipOrderButton :order="order" :can-ship="canShipNow" :can-force-ship="canForceShip" fill="clear" @ship="shipOrder(order)" />
-                <ion-button slot="end" fill="clear" color="medium" @click.stop="shippingPopover(order, $event)">
-                  <ion-icon slot="icon-only" :icon="ellipsisVerticalOutline" />
-                </ion-button>
-              </ion-item>
-            </div>
-
-            <div class="actions">
-              <div class="desktop-only">
-                <ShipOrderButton :order="order" :can-ship="canShipNow" :can-force-ship="canForceShip" @ship="shipOrder(order)" />
+            <ShipmentActions
+              :order="order"
+              :can-ship="canShipNow"
+              :can-force-ship="canForceShip"
+              :details-route="{ name: 'ShipmentDetail', params: { category: 'completed', orderId: order.orderId, shipmentId: order.shipmentId } }"
+              @ship="shipOrder(order)"
+              @more="shippingPopover(order, $event)"
+            >
+              <template #documents>
                 <ion-button :disabled="order.hasMissingShipmentInfo || order.hasMissingPackageInfo" fill="outline" @click.stop="regenerateShippingLabel(order)">
                   {{ translate(order.missingLabelImage ? "Regenerate Shipping Label" : "Print Shipping Label") }}
                   <ion-spinner color="primary" slot="end" v-if="order.isGeneratingShippingLabel" name="crescent" />
@@ -156,13 +153,12 @@
                   {{ translate("Print Customer Letter") }}
                   <ion-spinner color="primary" slot="end" v-if="order.isGeneratingPackingSlip" name="crescent" />
                 </ion-button>
-
-              </div>
-              <div class="desktop-only">
+              </template>
+              <template #other>
                 <ion-button v-if="order.missingLabelImage" fill="outline" @click.stop="showShippingLabelErrorModal(order)">{{ translate("Shipping label error") }}</ion-button>
                 <ion-button :disabled="!canUnpack || order.hasMissingShipmentInfo || order.hasMissingPackageInfo || !hasPackedShipments(order)" fill="outline" color="danger" @click.stop="unpackOrder(order)">{{ translate("Unpack") }}</ion-button>
-              </div>
-            </div>
+              </template>
+            </ShipmentActions>
           </ion-card>
           <ion-infinite-scroll @ionInfinite="loadMoreCompletedOrders($event)" threshold="100px" v-show="isCompletedOrderScrollable()" ref="infiniteScrollRef">
             <ion-infinite-scroll-content loading-spinner="crescent" :loading-text="translate('Loading')" />
@@ -175,12 +171,12 @@
           <ion-item lines="none"><ion-skeleton-text animated style="height: 64px;" /></ion-item>
         </ion-card>
       </div>
-      <ion-fab v-else-if="completedOrders.total" class="mobile-only" vertical="bottom" horizontal="end" slot="fixed">
+      <ion-fab v-else-if="completedOrders.total > 1" class="mobile-only" vertical="bottom" horizontal="end" slot="fixed">
         <ion-fab-button :disabled="!!bulkShipReason" :aria-describedby="bulkShipReason ? bulkReasonId : undefined" @click="bulkShipOrders()">
           <ion-icon :icon="checkmarkDoneOutline" />
         </ion-fab-button>
       </ion-fab>
-      <div class="empty-state" v-else>
+      <div v-else-if="!completedOrders.total" class="empty-state">
         <p v-html="getErrorMessage()"></p>
       </div>
     </ion-content>
@@ -207,7 +203,7 @@
 import { IonBadge, IonButton, IonButtons, IonCard, IonCheckbox, IonChip, IonContent, IonFab, IonFabButton, IonFooter, IonHeader, IonIcon, IonInfiniteScroll, IonInfiniteScrollContent, IonItem, IonLabel, IonMenuButton, IonNote, IonPage, IonRadio, IonRadioGroup, IonRow, IonSearchbar, IonSkeletonText, IonSpinner, IonThumbnail, IonTitle, IonToolbar, alertController, modalController, onIonViewWillEnter, popoverController } from "@ionic/vue";
 import { computed, ref, useId, watch } from "vue";
 import { onBeforeRouteLeave } from "vue-router";
-import ShipOrderButton from "@/components/ShipOrderButton.vue";
+import ShipmentActions from "@/components/ShipmentActions.vue";
 import router from "@/router";
 import { caretDownOutline, chevronUpOutline, cubeOutline, printOutline, gift, giftOutline, listOutline, pricetagOutline, ellipsisVerticalOutline, checkmarkDoneOutline, optionsOutline, timeOutline } from "ionicons/icons";
 import { getShipDisabledReason } from "@/utils/shipDisabledReason";
@@ -324,12 +320,9 @@ const getErrorMessage = () => {
 const bulkReasonId = useId();
 const bulkShipReason = computed(() => {
   if(!canShipNow.value) {return translate("Your role does not have permission to ship orders.");}
-  for(const order of filteredOrders.value) {
-    const reason = getShipDisabledReason(order, canShipNow.value, canForceShip.value);
-    if(reason) {return translate("Order {order}: {reason}", { order: order.orderName || order.orderId || order.shipmentId, reason: translate(reason) });}
-  }
+  const blocked = filteredOrders.value.filter((order: any) => getShipDisabledReason(order, canShipNow.value, canForceShip.value));
 
-  return "";
+  return blocked.length ? translate("Shipments blocking bulk shipping: {count}", { count: blocked.length }) : "";
 });
 
 const fetchKitComponents = async (orderItem: any) => {
