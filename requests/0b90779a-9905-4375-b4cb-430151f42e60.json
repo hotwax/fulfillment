@@ -6,8 +6,19 @@
   "action": "publish",
   "version": "v4.2.7",
   "actor": "ravilodhi",
-  "status": "running",
+  "status": "failed",
   "createdAt": "2026-11-27T09:40:17.741Z",
-  "steps": [],
-  "runUrl": "https://github.com/hotwax/fulfillment/actions/runs/45975591020"
+  "steps": [
+    {
+      "message": "Checking out v4.2.7",
+      "at": "2026-11-27T09:40:23.506Z"
+    },
+    {
+      "message": "Installing pinned dependencies for v4.2.7",
+      "at": "2026-11-27T09:40:25.248Z"
+    }
+  ],
+  "runUrl": "https://github.com/hotwax/fulfillment/actions/runs/45975591020",
+  "error": "pnpm failed (1). Inspect the isolated source checkout; no deployment was published.",
+  "finishedAt": "2026-11-27T09:40:25.649Z"
 }
