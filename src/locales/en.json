@@ -599,6 +599,7 @@
   "These shipments are packed but not shipped. The transfer order is not fulfilled until the shipment is shipped.": "These shipments are packed but not shipped. The transfer order is not fulfilled until the shipment is shipped.",
   "This gift card code will be activated. The customer may also receive a notification about this activation. Please verify all information is entered correctly. This cannot be edited after activation.": "This gift card code will be activated. The customer may also receive a notification about this activation. Please verify all information is entered correctly.{space} This cannot be edited after activation.",
   "This is the name of the OMS you are connected to right now. Make sure that you are connected to the right instance before proceeding.": "This is the name of the OMS you are connected to right now. Make sure that you are connected to the right instance before proceeding.",
+  "This order is no longer open.": "This order is no longer open.",
   "This shipment will be cancelled and its items will go back to the transfer order. You can pack it again later.": "This shipment will be cancelled and its items will go back to the transfer order. You can pack it again later.",
   "This shipping label will include order level charges because it is the first label.": "This shipping label will include order level charges because it is the first label.",
   "This shipping label will not include order level charges.": "This shipping label will not include order level charges.",
