@@ -169,8 +169,8 @@
 
           <div v-else-if="props.category === 'completed'" class="mobile-only">
             <ion-item>
-              <ion-button :disabled="!canShipNow || order.hasMissingShipmentInfo || order.hasMissingPackageInfo || ((isTrackingRequiredForAnyShipmentPackage(order) && !order.trackingCode) && !userStore.hasPermission(Actions.APP_FORCE_SHIP_ORDER))" fill="clear" @click.stop="shipOrder(order)">{{ translate("Ship Now") }}</ion-button>
-              <ion-button slot="end" fill="clear" color="medium" @click.stop="shippingPopover(order, $event)">
+              <ion-button :disabled="!hasPackedShipments(order) || !!shipReason" :aria-describedby="shipReason ? shipReasonId : undefined" fill="clear" @click.stop="shipOrder(order)">{{ translate(order.statusId === "SHIPMENT_SHIPPED" ? "Shipped" : "Ship Now") }}</ion-button>
+              <ion-button slot="end" fill="clear" color="medium" :aria-label="translate('Options')" @click.stop="shippingPopover(order, $event)">
                 <ion-icon slot="icon-only" :icon="ellipsisVerticalOutline" />
               </ion-button>
             </ion-item>
@@ -193,11 +193,11 @@
                 {{ translate("Pick order") }}
               </ion-button>
               <div v-else-if="props.category === 'completed'" class="desktop-only">
-                <ion-button v-if="!hasPackedShipments(order)" :disabled="true">
+                <ion-button v-if="order.statusId === 'SHIPMENT_SHIPPED'" :disabled="true">
                   <ion-icon slot="start" :icon="bagCheckOutline" />
                   {{ translate("Shipped") }}
                 </ion-button>
-                <ion-button v-else :disabled="!canShipNow || order.hasMissingShipmentInfo || order.hasMissingPackageInfo || ((isTrackingRequiredForAnyShipmentPackage(order) && !order.trackingCode) && !userStore.hasPermission(Actions.APP_FORCE_SHIP_ORDER))" @click.stop="shipOrder(order)">
+                <ion-button v-else :disabled="!!shipReason" :aria-describedby="shipReason ? shipReasonId : undefined" @click.stop="shipOrder(order)">
                   <ion-icon slot="start" :icon="bagCheckOutline" />
                   {{ translate("Ship order") }}
                 </ion-button>
@@ -211,6 +211,12 @@
               <ion-button :disabled="!canUnpack || order.hasMissingShipmentInfo || order.hasMissingPackageInfo || !hasPackedShipments(order)" fill="outline" color="danger" @click.stop="unpackOrder(order)">{{ translate("Unpack") }}</ion-button>
             </div>
           </div>
+          <ion-item v-if="props.category === 'completed' && shipReason" lines="none" class="ship-reason">
+            <ion-note :id="shipReasonId">{{ translate(shipReason) }}</ion-note>
+            <ion-button v-if="shipReason === TRACKING_REQUIRED && order.missingLabelImage && shipmentMethodTypeId && carrierPartyId" slot="end" fill="clear" @click="openTrackingCodeModal">
+              {{ translate("Add tracking details") }}
+            </ion-button>
+          </ion-item>
         </ion-card>
       <div class="shipgroup-details">
           <ion-card>
@@ -402,12 +408,12 @@
 
 <script setup lang="ts">
 import { IonBackButton, IonBadge, IonButton, IonCard, IonCardHeader, IonCardSubtitle, IonCardTitle, IonCheckbox, IonChip, IonContent, IonHeader, IonIcon, IonItem, IonLabel, IonList, IonNote, IonPage, IonRow, IonSelect, IonSelectOption, IonSkeletonText, IonSpinner, IonTitle, IonToolbar, IonThumbnail, alertController, popoverController, modalController, onIonViewDidEnter, onIonViewWillEnter } from "@ionic/vue";
-import { computed, defineProps, onMounted, reactive, ref, shallowRef, watch } from "vue";
+import { computed, defineProps, onMounted, reactive, ref, shallowRef, useId, watch } from "vue";
 import { useRoute } from "vue-router";
 import { addOutline, archiveOutline, bagCheckOutline, cashOutline, caretDownOutline, checkmarkCircleOutline, chevronUpOutline, closeCircleOutline, cubeOutline, documentTextOutline, ellipsisVerticalOutline, fileTrayOutline, gift, giftOutline, informationCircleOutline, listOutline, locateOutline, personAddOutline, pricetagOutline, ribbonOutline, trashBinOutline } from "ionicons/icons";
 import { cookieHelper, commonUtil, DxpShopifyImg, emitter, logger, moduleFederationUtil, translate, useLiveEntity } from "@common";
 import { fulfillmentDb } from "@/db/fulfillmentDb";
-import { toShipmentView } from "@/utils/shipmentView";
+import { TRACKING_REQUIRED, getShipDisabledReason, toShipmentView } from "@/utils/shipmentView";
 import { useOnePackageReroute } from "@/composables/useOnePackageReroute";
 import { useProductStore } from "@/store/productStore";
 
@@ -492,6 +498,9 @@ const productStoreShipmentMethods = computed(() => useCarrierStore().getProductS
 const facilityCarriers = computed(() => useCarrierStore().getFacilityCarriers);
 const productStoreShipmentMethCount = computed(() => useProductStore().getProductStoreShipmentMethCount);
 const canShipNow = computed(() => userStore.hasPermission(Actions.APP_SHIP_ORDER));
+const canForceShip = computed(() => userStore.hasPermission(Actions.APP_FORCE_SHIP_ORDER));
+const shipReasonId = useId();
+const shipReason = computed(() => getShipDisabledReason(order.value, canShipNow.value, canForceShip.value));
 const canUnpack = computed(() => userStore.hasPermission(Actions.APP_UNPACK_ORDER));
 const filteredFacilityCarriers = computed(() => {
   if (initialShipmentMethodTypeId.value === 'SHIP_TO_STORE') {
@@ -854,7 +863,7 @@ const getShipmentBoxTypes = (carrierPartyIdValue: string) => {
 };
 
 
-const shippingPopover = async (ev: Event) => {
+const shippingPopover = async (order: any, ev: Event) => {
   const popover = await popoverController.create({
     component: Popover,
     event: ev,
@@ -1167,10 +1176,6 @@ const getInvoicingConfirmationDate = (date: any) => {
   return DateTime.fromMillis(date).setZone(userProfile.value.userTimeZone).toFormat("dd MMMM yyyy hh:mm a ZZZZ");
 };
 
-
-const isTrackingRequiredForAnyShipmentPackage = (currentOrder: any) => {
-  return currentOrder.isTrackingRequired === "Y";
-};
 
 const scanOrder = async (currentOrder: any, updateParameter?: string) => {
   const modal = await modalController.create({

@@ -348,6 +348,10 @@ img {
   padding: var(--spacer-xs);
 }
 
+.ship-reason { width: fit-content; max-width: 100%; }
+.ship-reason ion-note { align-self: center; }
+.ship-reason ion-button { margin-inline: var(--spacer-xs) 0; }
+
 /* shipment card layout end */
 
 .desktop-only {

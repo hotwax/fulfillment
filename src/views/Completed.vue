@@ -49,8 +49,11 @@
 
       <div v-if="completedOrders.total">
         <div class="results">
-          <ion-button :disabled="!canShipNow || hasAnyMissingInfo() || (hasAnyShipmentTrackingInfoMissing() && !userStore.hasPermission(Actions.APP_FORCE_SHIP_ORDER))" expand="block" class="bulk-action desktop-only" fill="outline" size="large" @click="bulkShipOrders()">{{ translate("Ship") }}</ion-button>
-          <ion-card class="order" v-for="(order, index) in completedOrdersList" :key="index">
+          <ion-button v-if="completedOrders.total > 1" :disabled="!!bulkShipReason" :aria-describedby="bulkShipReason ? bulkReasonId : undefined" expand="block" class="bulk-action desktop-only" fill="outline" size="large" @click="bulkShipOrders()">{{ translate("Ship") }}</ion-button>
+          <p v-if="completedOrders.total > 1 && bulkShipReason" :id="bulkReasonId" class="ion-margin-horizontal" data-testid="bulk-ship-disabled-reason">
+            {{ bulkShipReason }}
+          </p>
+          <ion-card class="order" v-for="{ order, shipReason } in completedOrdersList" :key="order.shipmentId">
             <div class="order-header">
               <div class="order-primary-info">
                 <ion-label>
@@ -135,8 +138,8 @@
 
             <div class="mobile-only">
               <ion-item>
-                <ion-button :disabled="!canShipNow || order.hasMissingShipmentInfo || order.hasMissingPackageInfo || ((isTrackingRequiredForAnyShipmentPackage(order) && !order.trackingCode) && !userStore.hasPermission(Actions.APP_FORCE_SHIP_ORDER))" fill="clear" @click.stop="shipOrder(order)">{{ translate("Ship Now") }}</ion-button>
-                <ion-button slot="end" fill="clear" color="medium" @click.stop="shippingPopover(order, $event)">
+                <ion-button :disabled="!hasPackedShipments(order) || !!shipReason" :aria-describedby="shipReason ? `ship-reason-${order.shipmentId}` : undefined" fill="clear" @click.stop="shipOrder(order)">{{ translate(order.statusId === "SHIPMENT_SHIPPED" ? "Shipped" : "Ship Now") }}</ion-button>
+                <ion-button slot="end" fill="clear" color="medium" :aria-label="translate('Options')" @click.stop="shippingPopover(order, $event)">
                   <ion-icon slot="icon-only" :icon="ellipsisVerticalOutline" />
                 </ion-button>
               </ion-item>
@@ -144,8 +147,8 @@
 
             <div class="actions">
               <div class="desktop-only">
-                <ion-button v-if="!hasPackedShipments(order)" :disabled="true">{{ translate("Shipped") }}</ion-button>
-                <ion-button v-else :disabled="!canShipNow || order.hasMissingShipmentInfo || order.hasMissingPackageInfo || ((isTrackingRequiredForAnyShipmentPackage(order) && !order.trackingCode) && !userStore.hasPermission(Actions.APP_FORCE_SHIP_ORDER))" @click.stop="shipOrder(order)">{{ translate("Ship Now") }}</ion-button>
+                <ion-button v-if="order.statusId === 'SHIPMENT_SHIPPED'" :disabled="true">{{ translate("Shipped") }}</ion-button>
+                <ion-button v-else :disabled="!!shipReason" :aria-describedby="shipReason ? `ship-reason-${order.shipmentId}` : undefined" @click.stop="shipOrder(order)">{{ translate("Ship Now") }}</ion-button>
                 <ion-button :disabled="order.hasMissingShipmentInfo || order.hasMissingPackageInfo" fill="outline" @click.stop="regenerateShippingLabel(order)">
                   {{ translate(order.missingLabelImage ? "Regenerate Shipping Label" : "Print Shipping Label") }}
                   <ion-spinner color="primary" slot="end" v-if="order.isGeneratingShippingLabel" name="crescent" />
@@ -161,6 +164,12 @@
                 <ion-button :disabled="!canUnpack || order.hasMissingShipmentInfo || order.hasMissingPackageInfo || !hasPackedShipments(order)" fill="outline" color="danger" @click.stop="unpackOrder(order)">{{ translate("Unpack") }}</ion-button>
               </div>
             </div>
+            <ion-item v-if="shipReason" lines="none" class="ship-reason">
+              <ion-note :id="`ship-reason-${order.shipmentId}`">{{ translate(shipReason) }}</ion-note>
+              <router-link v-if="shipReason === TRACKING_REQUIRED" v-slot="{ href, navigate }" :to="{ name: 'ShipmentDetail', params: { category: 'completed', orderId: order.orderId, shipmentId: order.shipmentId } }" custom>
+                <ion-button slot="end" fill="clear" :href="href" @click="navigate">{{ translate("Order details") }}</ion-button>
+              </router-link>
+            </ion-item>
           </ion-card>
           <ion-infinite-scroll @ionInfinite="loadMoreCompletedOrders($event)" threshold="100px" v-show="isCompletedOrderScrollable()" ref="infiniteScrollRef">
             <ion-infinite-scroll-content loading-spinner="crescent" :loading-text="translate('Loading')" />
@@ -173,12 +182,12 @@
           <ion-item lines="none"><ion-skeleton-text animated style="height: 64px;" /></ion-item>
         </ion-card>
       </div>
-      <ion-fab v-else-if="completedOrders.total" class="mobile-only" vertical="bottom" horizontal="end" slot="fixed">
-        <ion-fab-button :disabled="!canShipNow || hasAnyMissingInfo() || (hasAnyShipmentTrackingInfoMissing() && !userStore.hasPermission(Actions.APP_FORCE_SHIP_ORDER))" @click="bulkShipOrders()">
+      <ion-fab v-else-if="completedOrders.total > 1" class="mobile-only" vertical="bottom" horizontal="end" slot="fixed">
+        <ion-fab-button :disabled="!!bulkShipReason" :aria-describedby="bulkShipReason ? bulkReasonId : undefined" @click="bulkShipOrders()">
           <ion-icon :icon="checkmarkDoneOutline" />
         </ion-fab-button>
       </ion-fab>
-      <div class="empty-state" v-else>
+      <div v-else-if="!completedOrders.total" class="empty-state">
         <p v-html="getErrorMessage()"></p>
       </div>
     </ion-content>
@@ -203,7 +212,7 @@
 
 <script setup lang="ts">
 import { IonBadge, IonButton, IonButtons, IonCard, IonCheckbox, IonChip, IonContent, IonFab, IonFabButton, IonFooter, IonHeader, IonIcon, IonInfiniteScroll, IonInfiniteScrollContent, IonItem, IonLabel, IonMenuButton, IonNote, IonPage, IonRadio, IonRadioGroup, IonRow, IonSearchbar, IonSkeletonText, IonSpinner, IonThumbnail, IonTitle, IonToolbar, alertController, modalController, onIonViewWillEnter, popoverController } from "@ionic/vue";
-import { computed, ref, watch } from "vue";
+import { computed, ref, useId, watch } from "vue";
 import { onBeforeRouteLeave } from "vue-router";
 import router from "@/router";
 import { caretDownOutline, chevronUpOutline, cubeOutline, printOutline, gift, giftOutline, listOutline, pricetagOutline, ellipsisVerticalOutline, checkmarkDoneOutline, optionsOutline, timeOutline } from "ionicons/icons";
@@ -229,7 +238,7 @@ import { useLiveShipments } from "@/composables/useLiveShipments";
 import { hideShipmentsLocally, refreshLiveOrders } from "@/db/appDbSync";
 import { SHIPMENTS_DOMAIN } from "@/db/domains";
 import { SHIPMENT_STAGE } from "@/db/fulfillmentDb";
-import { filterShipments } from "@/utils/shipmentView";
+import { TRACKING_REQUIRED, filterShipments, getShipDisabledReason, getShippingBlocker } from "@/utils/shipmentView";
 import { useProductStore as useProduct } from "@/store/product";
 import { useStockStore } from "@/store/stock";
 import { useUtilStore } from "@/store/util";
@@ -268,7 +277,8 @@ const filteredOrders = computed(() => filterShipments(live.shipments.value, {
   carrierPartyId: selectedCarrierPartyId.value,
   shipmentMethodTypeIds: selectedShipmentMethods.value
 }));
-const completedOrdersList = computed(() => filteredOrders.value.slice(0, (viewIndex.value + 1) * pageSize.value));
+const completedOrdersList = computed(() => filteredOrders.value.slice(0, (viewIndex.value + 1) * pageSize.value)
+  .map(order => ({ order, shipReason: getShipDisabledReason(order, canShipNow.value, canForceShip.value) })));
 // Shaped as the page has always read it: the shipments, how many there are, and how many are showing.
 const completedOrders = computed(() => ({
   list: live.shipments.value,
@@ -305,6 +315,7 @@ const isProductStoreSettingEnabled = computed(() => (settingTypeEnumId: string) 
 const currentFacility = computed(() => useProductStore().getCurrentFacility);
 const productIdentificationPref = computed(() => useProductStore().getProductIdentificationPref);
 const canShipNow = computed(() => userStore.hasPermission(Actions.APP_SHIP_ORDER));
+const canForceShip = computed(() => userStore.hasPermission(Actions.APP_FORCE_SHIP_ORDER));
 const canUnpack = computed(() => userStore.hasPermission(Actions.APP_UNPACK_ORDER));
 
 const getTime = (time: any) => {
@@ -316,11 +327,13 @@ const getErrorMessage = () => {
   return queryString.value ? ((selectedCarrierPartyId.value || selectedShipmentMethods.value.length) ? translate("No results found for . Try using different filters.", { searchedQuery: queryString.value }) : translate("No results found for . Try searching In Progress or Open tab instead. If you still can't find what you're looking for, try switching stores.", { searchedQuery: queryString.value, lineBreak: "<br />" })) : translate("doesn't have any completed orders right now.", { facilityName: currentFacility.value?.facilityName });
 };
 
-const hasAnyMissingInfo = () => {
-  return filteredOrders.value.some((order: any) => {
-    return order.hasMissingShipmentInfo || order.hasMissingPackageInfo;
-  });
-};
+const bulkReasonId = useId();
+const bulkShipReason = computed(() => {
+  if(!canShipNow.value) {return translate("Your role does not have permission to ship orders.");}
+  const count = filteredOrders.value.filter(order => getShippingBlocker(order, canShipNow.value, canForceShip.value)).length;
+
+  return count ? translate("Shipments blocking bulk shipping: {count}", { count }) : "";
+});
 
 const fetchKitComponents = async (orderItem: any) => {
   await useProduct().fetchProductComponents({ productId: orderItem.productId });
@@ -583,10 +596,6 @@ const fetchProductStock = (productId: string) => {
 
 const isTrackingRequiredForAnyShipmentPackage = (order: any) => {
   return order.isTrackingRequired === "Y";
-};
-
-const hasAnyShipmentTrackingInfoMissing = () => {
-  return filteredOrders.value.some((order: any) => isTrackingRequiredForAnyShipmentPackage(order) && !order.trackingCode);
 };
 
 const orderActionsPopover = async (order: any, ev: Event) => {

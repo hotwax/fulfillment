@@ -63,6 +63,23 @@ export function toShipmentView(shipment: any, { requiresLabel }: { requiresLabel
   };
 }
 
+export const TRACKING_REQUIRED = "Tracking number required.";
+
+export function getShippingBlocker(order: Record<string, unknown>, canShip: boolean, canForceShip: boolean) {
+  if(!canShip) {return "Your role does not have permission to ship orders.";}
+  if(order.hasMissingShipmentInfo || order.hasMissingPackageInfo) {return "Shipment or package details could not be loaded. Refresh the page to try again.";}
+  if(order.isTrackingRequired === "Y" && !order.trackingCode && !canForceShip) {return TRACKING_REQUIRED;}
+
+  return "";
+}
+
+export function getShipDisabledReason(order: Record<string, unknown>, canShip: boolean, canForceShip: boolean) {
+  if(order.statusId === "SHIPMENT_SHIPPED") {return "";}
+  if(order.statusId !== "SHIPMENT_PACKED") {return "This shipment must be packed before it can ship.";}
+
+  return getShippingBlocker(order, canShip, canForceShip);
+}
+
 export interface ShipmentFilters {
   query?: string;
   picklistId?: string;
