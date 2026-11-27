@@ -637,8 +637,15 @@ export const useTransferOrderStore = defineStore("transferorder", {
         return itemVal === payload && orderItem.statusId === "ITEM_PENDING_FULFILL"
       })
       if (item) {
-        item.pickedQuantity = parseInt(item.pickedQuantity) + 1
+        const nextQuantity = parseInt(item.pickedQuantity) + 1
+        const onHand = Number(item.qoh)
+        if(item.qoh !== null && item.qoh !== undefined && Number.isFinite(onHand) && nextQuantity > onHand) {
+          return { isProductFound: true, exceedsOnHand: true, orderItem: item }
+        }
+
+        item.pickedQuantity = nextQuantity
         this.setCurrent(this.current)
+
         return { isProductFound: true, orderItem: item }
       }
 

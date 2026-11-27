@@ -53,6 +53,8 @@ export const useStockStore = defineStore("stock", {
 
         if (!commonUtil.hasError(resp)) {
           this.addProductStock({ productId: productId, facilityId: id, stock: resp.data })
+
+          return resp.data
         } else {
           throw resp.data
         }

@@ -176,13 +176,16 @@ import { useUserStore } from "@/store/user";
 import { useTransferOrderStore } from "@/store/transferorder";
 import { useUtilStore } from "@/store/util";
 import { useProductStore } from "@/store/product";
+import { useStockStore } from "@/store/stock";
 import router from "@/router";
 import Actions from "@/authorization/actions";
 import { refreshLiveOrders } from "@/db/appDbSync";
 import { TRANSFER_ORDERS_DOMAIN } from "@/db/domains";
+import { type TransferInventoryValidation, validateTransferInventory } from "@/utils/transferInventory";
 
 const userStore = useUserStore();
 const transferOrderStore = useTransferOrderStore();
+const stockStore = useStockStore();
 
 const getProductIdentificationValue = commonUtil.getProductIdentificationValue;
 
@@ -232,6 +235,14 @@ const getTOItems = (orderType: string) => {
 
 const createShipment = async () => {
   isCreatingShipment.value = true;
+  const inventoryValidation = await refreshOnHand();
+  if(inventoryValidation.status !== "valid") {
+    showInventoryValidation(inventoryValidation);
+    isCreatingShipment.value = false;
+
+    return;
+  }
+
   const shipmentId = await useTransferOrderStore().createOutboundTransferShipment(currentOrder.value);
   if (shipmentId) {
     // Rate shopping takes seconds. It starts now, and the Ship page picks up the request that is already running.
@@ -268,7 +279,38 @@ const isEligibleForCreatingShipment = () => {
   if (isEligible) {
     isEligible = !currentOrder.value.items?.some((item: any) => item.pickedQuantity > 0 && (item.shippedQuantity + item.pickedQuantity) > item.orderedQuantity);
   }
+
   return isEligible;
+};
+
+const refreshOnHand = async (): Promise<TransferInventoryValidation> => {
+  const orderItems = (currentOrder.value.items || []).filter((item: any) => item.statusId === "ITEM_PENDING_FULFILL");
+  const items = orderItems.filter((item: any) => item.pickedQuantity > 0);
+  const facilityId = currentOrder.value.facilityId || currentOrder.value.originFacilityId || useAppProductStore().getCurrentFacility?.facilityId;
+  const productIds = [...new Set(orderItems.map((item: any) => item.productId))] as string[];
+  const stockByProduct: Record<string, any> = {};
+
+  if(facilityId) {
+    await Promise.all(productIds.map(async (productId) => {
+      const stock = await stockStore.fetchStock({ productId, facilityId });
+      if(stock) {
+        stockByProduct[productId] = stock;
+      }
+    }));
+  }
+
+  orderItems.forEach((item: any) => {
+    item.qoh = stockByProduct[item.productId]?.qoh;
+  });
+
+  return validateTransferInventory(items.map((item: any) => ({ productId: item.productId, quantity: item.pickedQuantity })), stockByProduct);
+};
+
+const showInventoryValidation = (validation: TransferInventoryValidation) => {
+  const message = validation.status === "insufficient"
+    ? translate("Only {quantity} on hand at this store. Count the item and adjust it, then ship.", { quantity: validation.onHand })
+    : translate("On-hand inventory could not be verified. Try again before shipping.");
+  commonUtil.showToast(message);
 };
 
 const updateProductCount = async (payload: any) => {
@@ -279,6 +321,8 @@ const updateProductCount = async (payload: any) => {
   const result = await useTransferOrderStore().updateOrderProductCount(payload);
   if (result.isCompleted) {
     commonUtil.showToast(translate("Scanned item is already completed:", { itemName: payload }));
+  } else if(result.exceedsOnHand) {
+    commonUtil.showToast(translate("Only {quantity} on hand at this store. Count the item and adjust it, then ship.", { quantity: result.orderItem.qoh }));
   } else if (result.isProductFound) {
     const item = result.orderItem;
     if (item.pickedQuantity > item.orderedQuantity - item.shippedQuantity) {
@@ -429,6 +473,8 @@ onIonViewWillEnter(async () => {
   ]);
   if(results[1].status === "rejected") {
     logger.error("Failed to fetch the transfer order", results[1].reason);
+  } else {
+    await refreshOnHand();
   }
   selectedSegment.value = hasOpenItems.value ? (route.params.category === "completed" ? "completed" : "open") : "completed";
   isLoading.value = false;
