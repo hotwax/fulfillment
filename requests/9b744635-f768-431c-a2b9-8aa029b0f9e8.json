@@ -6,8 +6,26 @@
   "action": "",
   "version": null,
   "actor": "ravilodhi",
-  "status": "running",
+  "status": "completed",
   "createdAt": "2026-11-27T09:00:26.390Z",
   "steps": [],
-  "runUrl": "https://github.com/hotwax/fulfillment/actions/runs/45970036286"
+  "runUrl": "https://github.com/hotwax/fulfillment/actions/runs/45970036286",
+  "hosting": {
+    "available": true,
+    "target": {
+      "project": "digital-commerce-71eb8",
+      "site": "hotwax-fulfillment",
+      "environment": "prod",
+      "origin": "https://hotwax-fulfillment.web.app"
+    },
+    "versions": [],
+    "defaultVersion": "v4.2.6",
+    "configuredEnvironment": "AppEnvProd",
+    "defaultSource": "Compiled build metadata",
+    "checkedAt": "2026-11-27T09:00:31.336Z",
+    "deployedAt": "2026-10-30T12:31:04.453Z",
+    "release": "sites/hotwax-fulfillment/channels/live/releases/1793363464453000",
+    "fileCount": 51
+  },
+  "finishedAt": "2026-11-27T09:00:32.664Z"
 }
