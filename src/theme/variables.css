@@ -333,6 +333,10 @@ img {
   border-top: var(--border-medium);
 }
 
+.order-item ~ .actions {
+  border-top: var(--border-medium);
+}
+
 .product-metadata {
   margin-inline-start: auto;
   padding-inline-end: var(--spacer-sm);
