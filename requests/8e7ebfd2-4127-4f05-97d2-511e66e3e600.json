@@ -6,8 +6,76 @@
   "action": "publish",
   "version": "v4.2.7",
   "actor": "ravilodhi",
-  "status": "running",
+  "status": "completed",
   "createdAt": "2026-11-27T09:38:42.026Z",
   "steps": [],
-  "runUrl": "https://github.com/hotwax/fulfillment/actions/runs/45975363445"
+  "runUrl": "https://github.com/hotwax/fulfillment/actions/runs/45975363445",
+  "plan": {
+    "schemaVersion": 1,
+    "id": "8e7ebfd2-4127-4f05-97d2-511e66e3e600",
+    "repo": "hotwax/fulfillment",
+    "actor": "ravilodhi",
+    "toolsSha": "ec2e10970b12f022aa8e840ebb98a13b35f23bca",
+    "action": "publish",
+    "environment": "uat",
+    "version": "v4.2.7",
+    "targetDefault": null,
+    "build": [
+      "v4.2.7"
+    ],
+    "added": [
+      "v4.2.7"
+    ],
+    "replaced": [],
+    "removed": [],
+    "retained": [
+      "v4.2.7"
+    ],
+    "previousDefault": null,
+    "nextDefault": null,
+    "rootChanges": false,
+    "confirmation": null,
+    "app": {
+      "id": "fulfillment",
+      "repo": "hotwax/fulfillment",
+      "name": "fulfillment"
+    },
+    "target": {
+      "project": "hotwax-digital-commerce",
+      "site": "uat-fulfillment",
+      "environment": "uat",
+      "origin": "https://uat-fulfillment.web.app"
+    },
+    "baseFingerprint": "a144d9278a0cb0a031ca755645c4e6fd0d69076cf14611be19e44c167f8129a2",
+    "baseRelease": "sites/uat-fulfillment/channels/live/releases/1794909673951000",
+    "sources": [
+      {
+        "version": "v4.2.7",
+        "appCommit": "d49a2eed062b319e060c28b8b1a5570bda830a18",
+        "frameworkCommit": "2d81ce390bc5d45bf926fcea3a4ff5acbdd1254e",
+        "frameworkPin": "v1.13.3",
+        "appId": "FULFILLMENT",
+        "config": {
+          "appId": "FULFILLMENT",
+          "environmentTypeId": "AppEnvDev",
+          "buildVersion": ""
+        }
+      }
+    ],
+    "sourceCommits": [
+      {
+        "version": "v4.2.7",
+        "appCommit": "d49a2eed062b319e060c28b8b1a5570bda830a18",
+        "frameworkCommit": "2d81ce390bc5d45bf926fcea3a4ff5acbdd1254e",
+        "frameworkPin": "v1.13.3",
+        "appId": "FULFILLMENT"
+      }
+    ],
+    "createdAt": "2026-11-27T09:38:48.411Z",
+    "expiresAt": "2026-11-27T10:38:48.411Z",
+    "writable": true,
+    "warnings": [],
+    "planSha": "731c20268664782038bba290423e8ff23a78f70c"
+  },
+  "finishedAt": "2026-11-27T09:38:51.231Z"
 }
