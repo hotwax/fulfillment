@@ -1429,7 +1429,12 @@ const printPicklist = async(order: any) => {
 const loadOrderDetail = async () => {
   await useUtilStore().fetchRejectReasonOptions();
   if (props.category === "open") {
-    await useOrderStore().getOpenOrder({ orderId: props.orderId, shipGroupSeqId: props.shipGroupSeqId });
+    const isOpen = await useOrderStore().getOpenOrder({ orderId: props.orderId, shipGroupSeqId: props.shipGroupSeqId });
+    if (!isOpen) {
+      commonUtil.showToast(translate("This order is no longer open."));
+      router.replace("/open");
+      return;
+    }
   } else if (props.category === "in-progress") {
     await useOrderStore().getInProgressOrder({ orderId: props.orderId, shipmentId: props.shipmentId });
   } else {

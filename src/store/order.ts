@@ -191,6 +191,7 @@ export const useOrderStore = defineStore("order", {
         filters: {
           '-shipmentMethodTypeId': { value: ['STOREPICKUP', 'POS_COMPLETED'] },
           orderStatusId: { value: 'ORDER_APPROVED' },
+          orderItemStatusId: { value: 'ITEM_APPROVED' },
           orderTypeId: { value: 'SALES_ORDER' },
           productStoreId: { value: useAppProductStore().getCurrentProductStore?.productStoreId }
         },
@@ -444,12 +445,19 @@ export const useOrderStore = defineStore("order", {
       const { orders } = await this.searchOpenOrders({ openOrderQuery })
       const order = orders[0]
 
+      // The ship group has left the open queue (picked, or every item cancelled) since the list was loaded.
+      if (!order) {
+        emitter.emit("dismissLoader")
+        return false
+      }
+
       const productIds = order.items.map((item: any) => item.productId)
       useProduct().fetchProducts({ productIds })
       useUtilStore().fetchShipmentMethodTypeDesc([order.shipmentMethodTypeId])
 
       await this.updateCurrent(order)
       emitter.emit("dismissLoader")
+      return true
     },
     async getInProgressOrder(payload: any) {
       emitter.emit("presentLoader")
@@ -549,7 +557,7 @@ export const useOrderStore = defineStore("order", {
             shipGroupSeqId: shipGroupSeqId,
             shipGroupSeqId_op: "equals",
             shipGroupSeqId_not: "Y",
-            "fieldToSelect": ["orderId", "orderItemseqId", "shipGroupSeqId", "productId"],
+            "fieldToSelect": ["orderId", "orderItemSeqId", "shipGroupSeqId", "productId", "statusId"],
             "pageSize": 50
           }
         }) as any;
@@ -559,7 +567,8 @@ export const useOrderStore = defineStore("order", {
             ...new Set(otherShipments.flatMap((shipment: any) => shipment.items.map((item: any) => item.orderItemSeqId)))
           ]
 
-          const pendingAllocationItems = resp.data.filter((item: any) => item.shipGroupSeqId !== shipGroupSeqId && !allocatedOrderItemSeqIds.includes(item.orderItemSeqId))
+          // Cancelled items are in no open or shipment group, but they are not waiting on allocation either.
+          const pendingAllocationItems = resp.data.filter((item: any) => item.shipGroupSeqId !== shipGroupSeqId && item.statusId !== "ITEM_CANCELLED" && !allocatedOrderItemSeqIds.includes(item.orderItemSeqId))
           if (pendingAllocationItems.length) {
             let facilityInfo = {} as any
             const facilityIds = [

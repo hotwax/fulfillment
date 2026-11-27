@@ -265,6 +265,7 @@ const fetchShipmentMethods = async () => {
     filters: {
       "-shipmentMethodTypeId": { value: ["STOREPICKUP", "POS_COMPLETED"] },
       orderStatusId: { value: "ORDER_APPROVED" },
+      orderItemStatusId: { value: "ITEM_APPROVED" },
       orderTypeId: { value: "SALES_ORDER" },
       productStoreId: { value: currentProductStore.value.productStoreId },
       ...getFacilityFilter(currentFacility.value?.facilityId)
